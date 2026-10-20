@@ -10,3 +10,7 @@ test-results/
 *.tsbuildinfo
 
 data/*.sqlite*
+.vercel/
+.agents/skills/neon/
+.agents/skills/neon-postgres/
+skills-lock.json

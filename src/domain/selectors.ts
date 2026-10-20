@@ -1,4 +1,4 @@
-import type { Meeting, MeetingStatus, Topic, Workspace } from './models';
+import type { Meeting, MeetingStatus, Topic, Workspace } from './models.js';
 export const TIME_ZONE = 'Asia/Seoul';
 export function meetingStatus(meeting: Meeting, now: string): MeetingStatus {
   if (meeting.cancelled) return 'cancelled';

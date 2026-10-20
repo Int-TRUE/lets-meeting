@@ -1,4 +1,4 @@
-# 로컬 데모 데이터베이스
+# 데모 데이터베이스
 
 ## 실행과 저장
 
@@ -23,9 +23,13 @@ Node 22.14 이상에서 `npm install` 후 `npm run dev -- --port 4174`를 실행
 
 Owner의 위임·삭제는 기존 화면에서 아직 준비 중이다. 이 데이터 작업으로 실제 삭제·위임 정책을 자동 확정하지 않았다. “관리팀 전체 참조”도 자동 부여하지 않았다. 향후 참조는 편집 권한인 Master와 분리한 읽기 전용 권한으로 두는 것이 적절하다.
 
+## 배포 환경
+
+Vercel 배포에서는 `api/demo.ts`와 `server/postgres.ts`가 같은 도메인 API를 Neon PostgreSQL에 연결한다. 로컬 SQLite와 영속 데이터는 별개이며, 같은 중앙 seed를 사용한다. Production·Preview 브랜치·Development 스키마를 분리한다. 배포의 환경변수·리전·검증은 [배포 운영 지침](DEPLOYMENT.md)을 따른다.
+
 ## 실행 범위
 
-이 API는 로컬 데모 전용이다. 사용자 선택은 테스트 편의를 위한 것으로 실제 인증이 아니다. loopback Host와 동일 Origin을 검사하지만 운영 인증을 대체하지 않는다. 실제 SSO, 원텔 예약, Mattermost 발송은 연결하지 않았다. 생성 완료의 예약은 DB에 저장한 데모 일정이며 초대 알림은 미전송으로 표시한다. `vite preview` 또는 정적 배포에는 이 개발 API가 없으므로 운영 서버 구성이 별도로 필요하다.
+로컬 API는 loopback 전용이며 배포 API도 더미 데이터 데모 범위다. 사용자 선택은 테스트 편의를 위한 것으로 실제 인증이 아니다. loopback Host와 동일 Origin을 검사하지만 운영 인증을 대체하지 않는다. 실제 SSO, 원텔 예약, Mattermost 발송은 연결하지 않았다. 생성 완료의 예약은 DB에 저장한 데모 일정이며 초대 알림은 미전송으로 표시한다. `vite preview` 또는 정적 배포에는 이 개발 API가 없으므로 Vercel 배포는 별도 Node Function과 Neon DB로 동작한다.
 
 ## 검증
 

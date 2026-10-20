@@ -6,8 +6,8 @@ import type {
   Room,
   Summary,
   Topic,
-} from './models';
-import { meetingStatus } from './selectors';
+} from './models.js';
+import { meetingStatus } from './selectors.js';
 export class RuleError extends Error {}
 export const rooms: Room[] = [
   { id: 'md-9', name: '9층 대회의실', location: '명동', floor: '9층', capacity: 8, active: true },

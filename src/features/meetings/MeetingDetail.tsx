@@ -259,7 +259,7 @@ export function MeetingDetail() {
                     <strong>{file.name}</strong>
                     <small>
                       {file.type || '파일'} ·{' '}
-                      {file.blob
+                      {file.blob || file.downloadable
                         ? `${new Intl.NumberFormat('ko-KR').format(file.size)} bytes`
                         : '예시 자료'}
                       <br />
@@ -269,7 +269,7 @@ export function MeetingDetail() {
                   </div>
                   <Button
                     variant="secondary"
-                    disabled={!file.blob || busy}
+                    disabled={!(file.blob || file.downloadable) || busy}
                     aria-label={`${file.name} 다운로드`}
                     onClick={() => void download(file.id)}
                   >

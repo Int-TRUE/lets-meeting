@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { initialDatabase } from '../src/data/previewService';
-import type { Meeting, PreviewDatabase, Topic } from '../src/domain/models';
+import { initialDatabase } from '../src/data/previewService.js';
+import type { Meeting, PreviewDatabase, Topic } from '../src/domain/models.js';
 
 export function demoSeed(): PreviewDatabase {
   const db = initialDatabase();

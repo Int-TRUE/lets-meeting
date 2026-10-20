@@ -1,5 +1,5 @@
-import { fixture, people } from './workspace';
-import { encodeWire, decodeWire } from './wire';
+import { fixture, people } from './workspace.js';
+import { encodeWire, decodeWire } from './wire.js';
 import type {
   Attachment,
   Meeting,
@@ -7,8 +7,8 @@ import type {
   PreviewDatabase,
   Summary,
   Workspace,
-} from '../domain/models';
-import { visibleWorkspace } from '../domain/selectors';
+} from '../domain/models.js';
+import { visibleWorkspace } from '../domain/selectors.js';
 import {
   canCreateMeeting,
   canEditMeeting,
@@ -25,7 +25,7 @@ import {
   RuleError,
   saveSummary,
   validateSchedule,
-} from '../domain/workflows';
+} from '../domain/workflows.js';
 const DB_NAME = 'robot-butler-preview-v1';
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {

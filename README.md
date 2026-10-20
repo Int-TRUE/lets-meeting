@@ -30,7 +30,7 @@ npm run dev
 
 Owner 위임·영구 삭제, 기존 관리자 제거, 완료 회의 재개·완료 후 요약 수정, 파일 삭제, 외부 회의실 변경과 재전송은 정책 확정 전 활성화하지 않습니다. 서비스 내 알림함은 보조 제안이므로 이번 범위에 추가하지 않습니다. 원본 보드의 회의실 사진·길찾기를 실제 안내로 쓰지 않습니다.
 
-SQLite API는 `npm run dev`의 로컬 전용 서버에서 동작합니다. `vite preview`나 정적 배포에는 이 API가 포함되지 않으므로 운영 서버 구성이 필요합니다. 기존 IndexedDB 어댑터는 `VITE_DATA_MODE=fixture`인 격리 테스트에서만 사용하며, 실제 앱의 DB 장애를 숨기는 대체 저장소로 사용하지 않습니다.
+로컬에서는 `npm run dev`의 SQLite API를 사용하고, [Vercel 배포](https://robot-butler.vercel.app/)에서는 Node Function과 Neon PostgreSQL을 사용합니다. 같은 사례 데이터로 시작하며 로컬·배포·Preview 브랜치 데이터는 별도로 보존합니다. `vite preview`에는 서버 API가 없습니다. 기존 IndexedDB 어댑터는 `VITE_DATA_MODE=fixture`인 격리 테스트에서만 사용하며, 실제 앱의 DB 장애를 숨기는 대체 저장소로 사용하지 않습니다.
 
 ## 검증
 

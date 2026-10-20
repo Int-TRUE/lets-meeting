@@ -1,14 +1,15 @@
-import type { PreviewState, Workspace } from '../domain/models';
+import type { Person, PreviewState, Workspace } from '../domain/models';
 import { visibleWorkspace } from '../domain/selectors';
-const people = [
+export const people: Person[] = [
   { id: 'kim', name: '김하늘', team: '디지털기획팀' },
   { id: 'lee', name: '이서준', team: '개발팀' },
   { id: 'park', name: '박지우', team: '디지털기획팀' },
   { id: 'choi', name: '최민준', team: '디자인팀' },
   { id: 'jung', name: '정수아', team: '마케팅팀' },
   { id: 'yoon', name: '윤도현', team: '개발팀' },
+  { id: 'ops', name: '운영관리자', team: '서비스운영팀', isAdmin: true },
 ];
-const fixture: Workspace = {
+export const fixture: Workspace = {
   user: people[0],
   people,
   now: '2026-10-20T13:30:00+09:00',

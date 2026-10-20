@@ -34,6 +34,9 @@ export function PreviewTools({
         <select id="preview-user" value={userId} onChange={(e) => onChange(state, e.target.value)}>
           <option value="kim">김하늘 · Owner / Master / Attendee</option>
           <option value="lee">이서준 · Master</option>
+          <option value="ops">운영관리자 · 운영 전용</option>
+          <option value="choi">최민준 · 브랜드 Owner</option>
+          <option value="jung">정수아 · 조직 Owner</option>
           <option value="park">박지우 · Topic 권한 없음</option>
         </select>
       </div>

@@ -1,10 +1,20 @@
 import { useState, type ReactNode, type RefObject } from 'react';
-import { Bell, CalendarDays, ChevronDown, FolderOpen, Home, Menu, Search, X } from 'lucide-react';
+import {
+  Bell,
+  CalendarDays,
+  ChevronDown,
+  Settings2,
+  FolderOpen,
+  Home,
+  Menu,
+  Search,
+  X,
+} from 'lucide-react';
 import { Link, NavLink, useSearchParams } from 'react-router-dom';
 import { Brand } from '../components/Brand';
 import { Button, Modal } from '../components/ui';
 import type { Person } from '../domain/models';
-const navItems = [
+const baseNavItems = [
   { to: '/', label: '홈', icon: Home },
   { to: '/topics', label: 'Topic', icon: FolderOpen },
   { to: '/rooms', label: '회의실', icon: CalendarDays },
@@ -21,6 +31,9 @@ export function AppShell({
   tools: ReactNode;
   searchTriggerRef: RefObject<HTMLButtonElement | null>;
 }) {
+  const navItems = user?.isAdmin
+    ? [...baseNavItems, { to: '/admin', label: '관리자 관리', icon: Settings2 }]
+    : baseNavItems;
   const [params, setParams] = useSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);

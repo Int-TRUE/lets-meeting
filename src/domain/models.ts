@@ -4,6 +4,7 @@ export interface Person {
   id: string;
   name: string;
   team: string;
+  isAdmin?: boolean;
 }
 export interface Topic {
   id: string;
@@ -27,6 +28,10 @@ export interface Meeting {
   material: 'pending' | 'none' | 'uploaded';
   completed: boolean;
   cancelled: boolean;
+  revision?: number;
+  roomId?: string;
+  summary?: Summary;
+  attachments?: Attachment[];
 }
 export interface Workspace {
   user: Person;
@@ -37,3 +42,50 @@ export interface Workspace {
 }
 export type PreviewState =
   'normal' | 'empty-meetings' | 'empty' | 'error' | 'loading' | 'forbidden' | 'expired';
+
+export interface Summary {
+  discussion: string;
+  decisions: string;
+  nextSteps: string;
+  savedAt: string;
+}
+export interface Attachment {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  authorId: string;
+  updatedAt: string;
+  blob?: Blob;
+}
+export interface Room {
+  id: string;
+  name: string;
+  location: '명동' | '분당';
+  floor: string;
+  capacity: number;
+  active: boolean;
+}
+export interface NotificationSettings {
+  materials: boolean;
+  summary: boolean;
+  reminders: string[];
+}
+export interface DeliveryLog {
+  id: string;
+  meetingId: string;
+  event: 'created' | 'changed' | 'cancelled' | 'materials' | 'summary';
+  recipientId: string;
+  time: string;
+  channel: 'Mattermost';
+  result: 'not-connected';
+  detail: string;
+}
+export interface PreviewDatabase {
+  version: 1;
+  topics: Topic[];
+  meetings: Meeting[];
+  preferences: Record<string, NotificationSettings>;
+  logs: DeliveryLog[];
+  requests: Record<string, string>;
+}

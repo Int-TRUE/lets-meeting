@@ -1,0 +1,202 @@
+import 'fake-indexeddb/auto';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { previewService, type MeetingInput } from './previewService';
+import { defaultPreferences } from '../domain/workflows';
+const input = (extra: Partial<MeetingInput> = {}): MeetingInput => ({
+  topicId: 'system',
+  title: '새 회의',
+  description: '요청사항 검토',
+  roomId: 'md-9',
+  start: '2026-10-21T14:00:00+09:00',
+  end: '2026-10-21T15:00:00+09:00',
+  participantIds: ['kim', 'park'],
+  material: 'none',
+  attachments: [],
+  ...extra,
+});
+beforeEach(async () => {
+  await new Promise<void>((resolve, reject) => {
+    const r = indexedDB.deleteDatabase('robot-butler-preview-v1');
+    r.onsuccess = () => resolve();
+    r.onerror = () => reject(r.error);
+  });
+});
+describe('transactional preview workflow', () => {
+  it('persists Topic creation and assigns Owner and Master without arbitrary limits', async () => {
+    const id = await previewService.createTopic(
+      'kim',
+      {
+        title: '연구 주제',
+        description: '함께 연구합니다',
+        managerIds: ['kim', 'lee', 'park', 'choi', 'jung', 'yoon', 'ops'],
+      },
+      'topic-request',
+    );
+    const data = await previewService.snapshot('park');
+    const topic = data.topics.find((t) => t.id === id)!;
+    expect(topic.roles.kim).toBe('Owner');
+    expect(topic.roles.park).toBe('Master');
+    expect(
+      await previewService.createTopic(
+        'kim',
+        { title: '다른 제목', description: '재시도', managerIds: [] },
+        'topic-request',
+      ),
+    ).toBe(id);
+  });
+  it('enforces Topic owner editing and does not remove existing managers', async () => {
+    await expect(
+      previewService.updateTopic('lee', 'system', {
+        title: '변경',
+        description: '설명',
+        managerIds: ['kim', 'lee'],
+      }),
+    ).rejects.toThrow('소유자');
+    await expect(
+      previewService.updateTopic('kim', 'system', {
+        title: '변경',
+        description: '설명',
+        managerIds: ['kim'],
+      }),
+    ).rejects.toThrow('제거 정책');
+    expect(
+      (await previewService.snapshot('kim')).topics.find((t) => t.id === 'system')?.title,
+    ).toBe('전산기기 교체');
+  });
+  it('serializes two competing reservations and preserves the losing input as an error', async () => {
+    const results = await Promise.allSettled([
+      previewService.createMeeting('kim', input(), 'a'),
+      previewService.createMeeting('lee', input(), 'b'),
+    ]);
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    expect(results.filter((r) => r.status === 'rejected')).toHaveLength(1);
+    expect(
+      (await previewService.snapshot('kim')).meetings.filter((m) => m.title === '새 회의'),
+    ).toHaveLength(1);
+  });
+  it('returns the same meeting for duplicate submissions without duplicate events', async () => {
+    const [a, b] = await Promise.all([
+      previewService.createMeeting('kim', input(), 'same'),
+      previewService.createMeeting('kim', input(), 'same'),
+    ]);
+    expect(a).toBe(b);
+    expect((await previewService.adminLogs('ops')).filter((l) => l.meetingId === a)).toHaveLength(
+      2,
+    );
+    expect(
+      (await previewService.snapshot('park')).topics.find((t) => t.id === 'system')?.roles.park,
+    ).toBe('Attendee');
+  });
+  it('checks final reservation conflict, keeps original booking on edit failure and releases cancellation', async () => {
+    const a = await previewService.createMeeting('kim', input(), 'a');
+    await expect(
+      previewService.updateMeeting(
+        'kim',
+        a,
+        input({ start: '2026-10-20T14:00:00+09:00', end: '2026-10-20T15:00:00+09:00' }),
+        0,
+      ),
+    ).rejects.toThrow('겹칩니다');
+    expect((await previewService.snapshot('kim')).meetings.find((m) => m.id === a)?.start).toBe(
+      input().start,
+    );
+    await previewService.cancelMeeting('kim', a, 0);
+    expect(await previewService.createMeeting('lee', input(), 'b')).toBeTruthy();
+    await expect(previewService.cancelMeeting('kim', a, 0)).rejects.toThrow('변경되었습니다');
+  });
+  it('denies Attendee creation, other Master editing and hidden file access', async () => {
+    await expect(
+      previewService.createMeeting('kim', input({ topicId: 'team' }), 'a'),
+    ).rejects.toThrow('관리자');
+    const other = await previewService.createMeeting('choi', input({ topicId: 'brand' }), 'other');
+    await expect(
+      previewService.updateMeeting('kim', other, input({ topicId: 'brand' }), 0),
+    ).rejects.toThrow('수정');
+    await expect(previewService.cancelMeeting('lee', 'equipment', 1)).rejects.toThrow(
+      '변경되었습니다',
+    );
+    await expect(
+      previewService.download('kim', 'restricted', 'example-restricted-0'),
+    ).rejects.toThrow('접근');
+    expect((await previewService.snapshot('ops')).meetings).toHaveLength(0);
+  });
+  it('keeps draft summaries incomplete and only allows the creator to complete an ended meeting', async () => {
+    const summary = {
+      discussion: '진행 점검',
+      decisions: '다음 주 재검토',
+      nextSteps: '견적 수집',
+    };
+    await previewService.saveSummary('kim', 'strategy', summary, false, 0);
+    expect(
+      (await previewService.snapshot('kim')).meetings.find((m) => m.id === 'strategy')?.completed,
+    ).toBe(false);
+    expect(await previewService.adminLogs('ops')).toHaveLength(0);
+    await expect(previewService.saveSummary('choi', 'strategy', summary, true, 1)).rejects.toThrow(
+      '생성자',
+    );
+    await expect(
+      previewService.saveSummary(
+        'kim',
+        'strategy',
+        { discussion: '', decisions: '', nextSteps: '' },
+        true,
+        1,
+      ),
+    ).rejects.toThrow('빈 요약');
+    await previewService.saveSummary('kim', 'strategy', summary, true, 1);
+    expect(
+      (await previewService.snapshot('kim')).meetings.find((m) => m.id === 'strategy')?.completed,
+    ).toBe(true);
+    expect(
+      (await previewService.adminLogs('ops')).every(
+        (l) => l.event === 'summary' && l.result === 'not-connected',
+      ),
+    ).toBe(true);
+  });
+  it('stores real local file blobs, enforces file permissions and rejects stale replacement', async () => {
+    const id = await previewService.createMeeting('kim', input(), 'a');
+    const file = {
+      id: 'attachment',
+      name: '자료.txt',
+      type: 'text/plain',
+      size: 4,
+      blob: new Blob(['test']),
+      authorId: '',
+      updatedAt: '',
+    };
+    await previewService.addFiles('kim', id, [file], 0);
+    const downloaded = await previewService.download('park', id, file.id);
+    expect(await downloaded.blob?.text()).toBe('test');
+    await expect(previewService.addFiles('park', id, [file], 1)).rejects.toThrow('생성자');
+    await previewService.replaceFile(
+      'kim',
+      id,
+      file.id,
+      { ...file, id: 'replacement', name: '새자료.txt' },
+      1,
+    );
+    await expect(previewService.replaceFile('kim', id, 'replacement', file, 1)).rejects.toThrow(
+      '변경되었습니다',
+    );
+  });
+  it('locks required notifications in the service and keeps personal preferences separate', async () => {
+    await previewService.savePreferences('park', {
+      materials: false,
+      summary: false,
+      reminders: [],
+    });
+    const id = await previewService.createMeeting('kim', input(), 'a');
+    expect(
+      (await previewService.adminLogs('ops')).filter(
+        (l) => l.meetingId === id && l.recipientId === 'park' && l.event === 'created',
+      ),
+    ).toHaveLength(1);
+    const saved = await previewService.preferences('park');
+    expect(saved.materials).toBe(false);
+    expect(await previewService.preferences('kim')).toEqual(defaultPreferences);
+    await expect(previewService.adminLogs('kim')).rejects.toThrow('운영 관리자');
+    await expect(
+      previewService.savePreferences('park', { ...saved, reminders: ['임의'] }),
+    ).rejects.toThrow('리마인드');
+  });
+});

@@ -52,6 +52,8 @@ test('search autofocus, safe text, filters, result navigation and history restor
 test('modal traps focus and restores it after closing', async ({ page }) => {
   await home(page);
   await page.locator('.search-trigger').click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByRole('textbox', { name: '검색어' })).toBeFocused();
   for (let i = 0; i < 10; i++) {
     await page.keyboard.press('Tab');
     expect(await page.evaluate(() => Boolean(document.activeElement?.closest('dialog')))).toBe(
@@ -111,7 +113,8 @@ test('normal users have no admin menu or fake unread count; required notificatio
   await expect(page.locator('.notification-link')).not.toContainText(/\d/);
   await page.getByRole('link', { name: '알림 설정', exact: true }).last().click();
   await expect(page.getByText('필수 · 항상 켜짐')).toHaveCount(3);
-  await expect(page.getByRole('switch')).toHaveCount(0);
+  await expect(page.getByRole('switch')).toHaveCount(2);
+  await expect(page.getByRole('switch', { name: /회의 생성|일시|회의 취소/ })).toHaveCount(0);
 });
 
 test('switching example users recalculates visibility and does not grant roles from attendance', async ({
@@ -146,6 +149,6 @@ test('menu and navigation work on each screen size', async ({ page }) => {
       .click();
   }
   await expect(page).toHaveURL(/\/topics$/);
-  await expect(page.getByRole('heading', { name: '나의 Topic', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Topic', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

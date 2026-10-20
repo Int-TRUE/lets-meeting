@@ -1,6 +1,6 @@
 import {
   forwardRef,
-  useEffect,
+  useLayoutEffect,
   useId,
   useRef,
   type ButtonHTMLAttributes,
@@ -188,7 +188,7 @@ export function Modal({
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const descriptionId = useId();
-  useEffect(() => {
+  useLayoutEffect(() => {
     const dialog = ref.current;
     const trigger =
       returnFocusRef?.current ??

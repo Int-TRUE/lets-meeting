@@ -1,25 +1,45 @@
 import { useEffect, useRef, useState } from 'react';
-import { Route, Routes, useSearchParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useSearchParams } from 'react-router-dom';
 import type { PreviewState, Workspace } from '../domain/models';
-import { createPreviewRepository, WorkspaceError } from '../data/workspace';
+import { createPreviewRepository, people, WorkspaceError } from '../data/workspace';
 import { ErrorState, LoadingState } from '../components/ui';
 import { HomePage } from '../features/home/HomePage';
 import { PreviewTools } from '../features/home/PreviewTools';
 import { SearchDialog } from '../features/search/SearchDialog';
 import { AppShell } from './AppShell';
-import { LinkedPages } from './LinkedPages';
+import { NotFoundPage } from './LinkedPages';
+import { previewService } from '../data/previewService';
+import { WorkspaceContext } from './WorkspaceContext';
+import { TopicsPage, TopicDetail, TopicForm } from '../features/topics/TopicsPage';
+import { MeetingWizard } from '../features/meetings/MeetingWizard';
+import { MeetingDetail, SummaryEditor } from '../features/meetings/MeetingDetail';
+import { MeetingsPage } from '../features/meetings/MeetingsPage';
+import { NotificationSettingsPage } from '../features/settings/NotificationSettingsPage';
+import { AdminNotificationsPage, RoomsPage } from '../features/admin/AdminPages';
 export function App() {
   const [params, setParams] = useSearchParams();
   const searchTriggerRef = useRef<HTMLButtonElement>(null);
   const [previewState, setPreviewState] = useState<PreviewState>('normal');
-  const [userId, setUserId] = useState('kim');
+  const [userId, setUserId] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem('robot-butler:preview-user:v1');
+      return people.some((p) => p.id === stored) ? stored! : 'kim';
+    } catch {
+      return 'kim';
+    }
+  });
   const [attempt, setAttempt] = useState(0);
+  const currentActor = useRef(userId);
+  currentActor.current = userId;
   const [result, setResult] = useState<{ data?: Workspace; error?: WorkspaceError }>({});
   useEffect(() => {
     const controller = new AbortController();
     createPreviewRepository(previewState, userId)
       .load(controller.signal)
-      .then((data) => setResult({ data }))
+      .then(async (initial) => {
+        const data = previewState === 'normal' ? await previewService.snapshot(userId) : initial;
+        if (!controller.signal.aborted) setResult({ data });
+      })
       .catch((error: unknown) => {
         if (!controller.signal.aborted)
           setResult({
@@ -32,6 +52,11 @@ export function App() {
     setResult({});
     setPreviewState(state);
     setUserId(user);
+    try {
+      sessionStorage.setItem('robot-butler:preview-user:v1', user);
+    } catch {
+      /* Session persistence is optional. */
+    }
   }
   function retry() {
     setResult({});
@@ -41,6 +66,13 @@ export function App() {
     const next = new URLSearchParams(params);
     next.delete('search');
     setParams(next, { replace: true });
+  }
+  async function run<T>(operation: () => Promise<T>): Promise<T> {
+    if (previewState !== 'normal') throw new Error('정상 미리보기 상태에서 저장해주세요.');
+    const value = await operation();
+    const data = await previewService.snapshot(userId);
+    if (currentActor.current === userId) setResult({ data });
+    return value;
   }
   const error = result.error;
   return (
@@ -69,12 +101,40 @@ export function App() {
         />
       ) : result.data ? (
         <>
-          <Routes>
-            <Route path="/" element={<HomePage workspace={result.data} />} />
-            <Route path="/topics/:id" element={<LinkedPages data={result.data} />} />
-            <Route path="/meetings/:id" element={<LinkedPages data={result.data} />} />
-            <Route path="*" element={<LinkedPages data={result.data} />} />
-          </Routes>
+          <WorkspaceContext key={userId} value={{ data: result.data, directory: people, run }}>
+            <Routes>
+              <Route path="/" element={<HomePage workspace={result.data} />} />
+              <Route path="/topics" element={<TopicsPage />} />
+              <Route
+                path="/topics/new"
+                element={
+                  <>
+                    <TopicsPage />
+                    <TopicForm />
+                  </>
+                }
+              />
+              <Route path="/topics/:id" element={<TopicDetail />} />
+              <Route path="/topics/:id/settings" element={<TopicForm editing />} />
+              <Route
+                path="/topics/:id/meetings/new"
+                element={<MeetingWizard key={`new-${userId}`} />}
+              />
+              <Route path="/meetings" element={<MeetingsPage />} />
+              <Route path="/meetings/:id" element={<MeetingDetail />} />
+              <Route
+                path="/meetings/:id/edit"
+                element={<MeetingWizard editing key={`edit-${userId}`} />}
+              />
+              <Route path="/meetings/:id/summary" element={<SummaryEditor />} />
+              <Route path="/rooms" element={<RoomsPage />} />
+              <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
+              <Route path="/admin" element={<Navigate to="/admin/notifications" replace />} />
+              <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
+              <Route path="/admin/rooms" element={<RoomsPage admin />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </WorkspaceContext>
           {params.get('search') === '1' ? (
             <SearchDialog
               returnFocusRef={searchTriggerRef}

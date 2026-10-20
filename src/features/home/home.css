@@ -39,7 +39,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 72px;
+  min-height: 100px;
 }
 .home-page .greeting-mascot {
   display: block;
@@ -47,42 +47,24 @@
   background: transparent;
   border-radius: 0;
   flex: 0 0 164px;
-  height: 80px;
+  height: 100px;
   margin-right: 8px;
 }
 .home-page .greeting-mascot .mascot {
   border-radius: 0;
 }
 .mascot-home {
-  width: 150px;
-  height: 80px;
-  clip-path: inset(0 0 18px 0);
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 .mascot-home img {
-  width: 2304px;
-  left: -1665px;
-  top: -126px;
-}
-.greeting-rays {
-  position: absolute;
-  right: 0;
-  top: 47px;
-  width: 18px;
-  height: 5px;
-  border-radius: 4px;
-  background: #ffbc24;
-  transform: rotate(-25deg);
-}
-.greeting-rays:after {
-  content: '';
-  position: absolute;
-  width: 17px;
-  height: 5px;
-  border-radius: 4px;
-  background: #ffbc24;
-  top: 19px;
-  left: -6px;
-  transform: rotate(48deg);
+  position: static;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
 }
 .greeting-question {
   display: block;

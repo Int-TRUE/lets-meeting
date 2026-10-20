@@ -1,5 +1,5 @@
-import type { Person, PreviewState, Workspace } from '../domain/models';
-import { visibleWorkspace } from '../domain/selectors';
+import type { Person, PreviewState, Workspace } from '../domain/models.js';
+import { visibleWorkspace } from '../domain/selectors.js';
 export const people: Person[] = [
   { id: 'kim', name: '김하늘', team: '디지털기획팀' },
   { id: 'lee', name: '이서준', team: '개발팀' },

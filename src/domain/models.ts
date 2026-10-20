@@ -60,6 +60,7 @@ export interface Attachment {
   authorId: string;
   updatedAt: string;
   blob?: Blob;
+  downloadable?: boolean;
 }
 export interface Room {
   id: string;

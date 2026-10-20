@@ -9,6 +9,19 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: butler
+          POSTGRES_PASSWORD: test-only-password
+          POSTGRES_DB: butler_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U butler -d butler_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      POSTGRES_TEST_URL: postgresql://butler:test-only-password@127.0.0.1:5432/butler_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

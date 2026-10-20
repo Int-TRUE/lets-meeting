@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/demo.ts": {
+      "includeFiles": "server/fixtures/*.pdf",
+      "maxDuration": 60
+    }
+  },
+  "regions": ["sin1"],
+  "routes": [
+    { "src": "/api/demo/(.*)", "dest": "/api/demo?method=$1" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}

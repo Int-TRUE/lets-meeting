@@ -1,22 +1,34 @@
 # 배포 운영 지침
 
-## 작업 완료 기준
-
-사용자 승인 범위에 따라 커밋·push·PR·CI 확인·병합·Vercel 배포 확인을 연속으로 진행한다. 기존 Vercel 프로젝트를 재사용하며 Git 연동으로 작업 브랜치 Preview, `master` Production을 배포한다. PR의 CI가 통과한 변경만 병합한다. 배포 READY와 커밋 일치를 확인한 후 화면·API·DB를 실제 주소에서 확인한다.
-
-## 현재 연결 상태
+## 배포 대상과 완료 기준
 
 - GitHub: `Int-TRUE/lets-meeting`, 기본 브랜치 `master`.
-- GitHub Actions: `.github/workflows/check.yml`에서 빌드·단위/DB·브라우저 검사를 실행한다.
-- 사용자 지정 대상: [kftcstudy-7531 / robot-butler](https://vercel.com/kftcstudy-7531/robot-butler). 이 프로젝트를 재사용한다.
-- 프로젝트 ID: `prj_XOLCtuKhMZozNq4Xoj91Sgaibdrx`, 계정 ID: `team_MVjL0k7VQYNBQTTHgIdchurd`. 프로젝트 조회 응답의 이름·계정과 사용자 지정 주소가 일치한다. 확인 당시 배포는 없었다.
-- 연결된 Vercel 도구에서 해당 팀 범위를 명시하면 `403 forbidden`이 반환된다. 저장소 연결 시에는 GitHub Login Connection 필요 오류가 발생했다. 같은 팀에 대한 CLI 대체 조회도 로그인 정보가 없어 진행하지 못했다. 팀 접근 권한과 GitHub 연결을 확인해야 한다.
-- 초기에는 새 프로젝트 생성 승인을 받아 위 ID의 프로젝트를 생성했다. 사용자가 같은 주소를 지정했으므로 추가 프로젝트를 만들지 않는다. 아직 Git 연결과 배포는 완료되지 않았다.
+- Vercel: [kftcstudy-7531 / robot-butler](https://vercel.com/kftcstudy-7531/robot-butler).
+- 프로젝트 ID: `prj_XOLCtuKhMZozNq4Xoj91Sgaibdrx`, 팀 ID: `team_MVjL0k7VQYNBQTTHgIdchurd`.
+- 정식 주소: https://robot-butler.vercel.app/
 
-## 배포 전 필요한 구성
+검증·push·PR·CI 통과 확인·병합·Vercel 배포 확인을 별도 승인 없이 연속 진행한다. Git 연동이 활성화되어 작업 브랜치는 Preview, `master`는 Production에 자동 배포된다. 같은 커밋을 CLI로 중복 배포하지 않는다. 배포 READY와 커밋 일치, 실제 화면·API·DB 확인까지 완료 기준으로 삼는다. Vercel의 기존 배포 보호는 유지한다.
 
-현재 SQLite API는 Vite 개발 서버에만 연결되어 있다. Vercel 정적 배포에는 API가 포함되지 않는다. 실제 배포에는 서버 API와 영속 DB 연결을 구성하고, 회의 생성·재조회·파일 다운로드를 확인해야 한다. 브라우저별 임시 저장소로 조용히 대체하거나 Vercel 임시 파일시스템을 영속 DB로 사용하지 않는다.
+초기 계정 연결 오류는 해결됐다. GitHub Actions의 `verify`는 빌드·단위/SQLite/PostgreSQL·브라우저 검사를 수행한다. PostgreSQL 검사는 CI의 별도 PostgreSQL 서비스에서 실행해 운영 DB를 건드리지 않는다. 검사 통과를 확인하고 병합하는 규칙이며, Vercel의 추가 Deployment Checks를 구성했다고 주장하지 않는다.
 
-Vercel 프로젝트의 Git 설정에서 `Int-TRUE/lets-meeting` 연결과 Production Branch `master`를 확인한다. GitHub Actions 검사 통과 후 병합하는 흐름을 유지하고, 추가적인 강제 배포 차단 기능을 구성했다면 실제 적용 여부까지 확인한다. 문서에 규칙을 쓰는 것과 배포 연동을 활성화하는 것은 별개이며, 연결 전에는 CI/CD 구축 완료라고 보고하지 않는다.
+## 서버와 영속 DB
 
-Git 연동이 활성화되면 일반 배포에 별도 GitHub Actions용 Vercel 토큰을 추가하지 않는다. 운영 비밀값은 Vercel의 해당 환경에 저장하며 저장소에 커밋하지 않는다.
+`api/demo.ts`는 Vercel Node Function이다. `vercel.json`에서 `/api/demo/*`를 함수로 전달하고, 실제 정적 파일 이후 나머지 경로를 SPA로 전달한다. 하위 화면 새로고침도 동작한다.
+
+`robot-butler-db`는 Vercel Marketplace로 연결한 Neon Free 플랜이며 리전은 Singapore다. 함수도 `sin1`에서 실행한다. API는 풀 연결 `DATABASE_URL`, 초기 스키마 생성은 직접 연결 `DATABASE_URL_UNPOOLED`를 사용한다. 변수는 Marketplace가 Production/Preview/Development에 주입한다. `.env.local`, `.vercel/` 및 비밀값은 커밋하지 않는다.
+
+환경별 스키마는 `butler_production`, `butler_development`, `butler_preview_<브랜치 해시>`다. 미리보기 브랜치 간에도 데이터가 분리된다. Preview에서 브랜치 정보가 없으면 운영 데이터로 대체하지 않고 오류를 반환한다. 같은 PostgreSQL 리소스 안의 논리적 분리이며 별도 DB 계정에 의한 보안 경계는 아니다.
+
+최초 요청에서 버전 관리된 스키마를 트랜잭션으로 준비하고 사례 seed를 한 번만 넣는다. 재배포 시 기존 내용을 보존한다. DB 잠금은 권한·revision·중복 요청·예약 충돌 검사부터 자료 저장까지 감싸므로 함수 인스턴스가 달라도 일관성을 유지한다. 첨부는 메타데이터와 BYTEA로 보관한다. 현재 데모 규모에 맞춰 변경 시 전체 상태를 한 트랜잭션에서 갱신하며, 대용량 운영 서비스에서는 개별 행 갱신과 별도 파일 저장소로 확장해야 한다.
+
+## 실행·확인
+
+로컬 `npm run dev`는 SQLite를 유지하며 Vercel 환경변수를 읽어도 운영 DB로 자동 전환하지 않는다. 정적 `vite preview`에는 API가 없다. Vercel 함수 검증에는 `vercel build`와 Git Preview 배포를 사용한다.
+
+실제 PostgreSQL 검사는 `POSTGRES_TEST_URL`을 지정하고 `npx vitest run server/postgres.test.ts`로 실행한다. 테스트는 `butler_test_<임의 값>` 스키마만 만들고 종료 시 제거한다. CI에서는 테스트 전용 연결만 사용한다. 배포 후 `/api/demo/directory`, Topic·회의 생성/재조회, 권한, PDF 다운로드를 확인한다.
+
+요청 본문은 인코딩한 첨부를 포함해 3MiB로 제한한다. 약 2MiB 이하의 파일을 사용하는 데모 범위다. API 응답은 캐시하지 않으며 다른 Origin 요청을 거절한다. SQL 오류와 접속 비밀값은 브라우저에 반환하지 않는다.
+
+## 서비스 범위
+
+이 배포도 사용자 전환을 제공하는 더미 데이터 데모다. Vercel 배포 보호는 앱의 직원 인증을 대신하지 않는다. 실제 직원 SSO·원텔 예약·Mattermost 발송은 미연결이며, 실제 업무 자료를 저장하는 운영 서비스 전환 전 별도 인증·권한 설계가 필요하다. 데모 사용자 선택을 실사용 인증으로 간주하지 않는다.

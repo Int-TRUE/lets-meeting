@@ -18,7 +18,6 @@ export function HomePage({ workspace }: { workspace: Workspace }) {
                 <span>{data.user.name}님,</span>
                 <span className="greeting-mascot">
                   <Mascot pose="home" />
-                  <span className="greeting-rays" />
                 </span>
               </span>
               <span className="greeting-question">오늘도 좋은 대화를 만들어볼까요</span>

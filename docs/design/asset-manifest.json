@@ -51,6 +51,13 @@
       "generation": "user-provided",
       "sha256": "f384daa0bbddfd4e009978cdd1a1ee7b6c7301e4f81904a7d4e6abd1a26314e2",
       "bytes": 790672
+    },
+    {
+      "path": "../../src/assets/home-mascot.png",
+      "role": "홈 캐릭터 투명 복원 에셋 — 전체 표시",
+      "generation": "imagegen restoration",
+      "sha256": "9f4ca3af677b59238580f89450f275c37ed7b5d6a0bc742649e73d4a7f5a87c9",
+      "bytes": 1403458
     }
   ]
 }

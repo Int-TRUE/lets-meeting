@@ -8,9 +8,10 @@
 
 - GitHub: `Int-TRUE/lets-meeting`, 기본 브랜치 `master`.
 - GitHub Actions: `.github/workflows/check.yml`에서 빌드·단위/DB·브라우저 검사를 실행한다.
-- 사용할 기존 Vercel 프로젝트: 사용자에게 주소 확인 중. 프로젝트 확인 전 임의로 배포 대상을 확정하지 않는다.
-- 연결된 Vercel 도구에서는 기존 프로젝트가 조회되지 않았으며, 저장소 연결 시 GitHub Login Connection 필요 오류가 발생했다. CLI에는 로그인 정보가 없었다.
-- 사용자에게 새 프로젝트 생성 승인을 받은 시점에 `robot-butler` (`prj_XOLCtuKhMZozNq4Xoj91Sgaibdrx`)를 생성했다. 이후 기존 프로젝트가 있다는 정정에 따라 새 프로젝트에는 배포하지 않았다. 기존 프로젝트 연결과 혼동하지 않는다.
+- 사용자 지정 대상: [kftcstudy-7531 / robot-butler](https://vercel.com/kftcstudy-7531/robot-butler). 이 프로젝트를 재사용한다.
+- 프로젝트 ID: `prj_XOLCtuKhMZozNq4Xoj91Sgaibdrx`, 계정 ID: `team_MVjL0k7VQYNBQTTHgIdchurd`. 프로젝트 조회 응답의 이름·계정과 사용자 지정 주소가 일치한다. 확인 당시 배포는 없었다.
+- 연결된 Vercel 도구에서 해당 팀 범위를 명시하면 `403 forbidden`이 반환된다. 저장소 연결 시에는 GitHub Login Connection 필요 오류가 발생했다. 같은 팀에 대한 CLI 대체 조회도 로그인 정보가 없어 진행하지 못했다. 팀 접근 권한과 GitHub 연결을 확인해야 한다.
+- 초기에는 새 프로젝트 생성 승인을 받아 위 ID의 프로젝트를 생성했다. 사용자가 같은 주소를 지정했으므로 추가 프로젝트를 만들지 않는다. 아직 Git 연결과 배포는 완료되지 않았다.
 
 ## 배포 전 필요한 구성
 

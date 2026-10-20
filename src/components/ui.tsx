@@ -273,7 +273,11 @@ export function Stepper({ steps, current }: { steps: string[]; current: number }
           className={index <= current ? 'active' : ''}
         >
           <span>{index < current ? <Check size={16} /> : index + 1}</span>
-          {step}
+          <span className="step-label">
+            {step.split(' / ').map((label) => (
+              <b key={label}>{label}</b>
+            ))}
+          </span>
         </li>
       ))}
     </ol>

@@ -8,9 +8,17 @@ export const people: Person[] = [
   { id: 'jung', name: '정수아', team: '마케팅팀' },
   { id: 'yoon', name: '윤도현', team: '개발팀' },
   { id: 'ops', name: '운영관리자', team: '서비스운영팀', isAdmin: true },
+  { id: 'kang', name: '강경희', team: 'IT운영팀', position: '팀장' },
+  { id: 'jin', name: '진상현', team: 'IT운영팀', position: '팀장' },
+  { id: 'yoseop', name: '김요섭', team: 'IT운영팀', position: '대리' },
+  { id: 'seungho', name: '최승호', team: 'IT운영팀', position: '차장' },
+  { id: 'juhyung', name: '김주형', team: 'IT운영팀', position: '과장' },
+  { id: 'seungyeop', name: '이승엽', team: 'IT운영팀', position: '과장' },
+  { id: 'nahyung', name: '박나형', team: 'IT운영팀', position: '계장' },
+  { id: 'me', name: '나(데모)', team: 'IT운영팀', position: '담당자' },
 ];
 export const fixture: Workspace = {
-  user: people[0],
+  user: people.find((p) => p.id === 'kim')!,
   people,
   now: '2026-10-20T13:30:00+09:00',
   topics: [

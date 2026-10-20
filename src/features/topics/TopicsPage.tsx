@@ -5,7 +5,15 @@ import { useUnsavedChanges, useWorkspace } from '../../app/WorkspaceContext';
 import { previewService } from '../../data/previewService';
 import { canCreateMeeting } from '../../domain/workflows';
 import { fullDate, meetingStatus, time } from '../../domain/selectors';
-import { Button, Card, EmptyState, Field, Modal, StatusBadge } from '../../components/ui';
+import {
+  AvatarGroup,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  Modal,
+  StatusBadge,
+} from '../../components/ui';
 import { TopicCard } from '../../components/TopicCard';
 import {
   ConfirmDialog,
@@ -300,6 +308,24 @@ export function TopicDetail() {
                   {time(m.start)} – {time(m.end)}
                 </p>
                 <p>{m.room}</p>
+                <div className="flow-participants">
+                  <AvatarGroup
+                    people={data.people.filter((p) => m.participantIds.includes(p.id))}
+                    max={5}
+                  />
+                  <span>참가자 {m.participantIds.length}명</span>
+                </div>
+                <p className="flow-host">
+                  주최자 · {m.hostAtTime ?? data.people.find((p) => p.id === m.creatorId)?.name}
+                </p>
+                <div className="flow-summary">
+                  <strong>회의 요약</strong>
+                  <p>
+                    {m.summary?.decisions ||
+                      m.summary?.discussion ||
+                      '회의 후 요약이 등록되면 이곳에서 확인할 수 있어요.'}
+                  </p>
+                </div>
                 <span className="text-link">
                   회의 상세 보기
                   <ChevronRight size={16} />

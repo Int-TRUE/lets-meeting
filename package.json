@@ -9,11 +9,12 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "check": "npm run tokens:check && npm run format:check && npm run build && npm test && npm run test:e2e",
+    "check": "npm run tokens:check && npm run format:check && npm run build && npm test && npm run test:e2e && npm run test:db",
     "tokens": "node scripts/generate-tokens.mjs",
     "tokens:check": "node scripts/generate-tokens.mjs --check",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:db": "playwright test --config playwright.database.config.ts"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

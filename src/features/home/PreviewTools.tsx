@@ -1,11 +1,13 @@
 import { SlidersHorizontal } from 'lucide-react';
-import type { PreviewState } from '../../domain/models';
+import type { Person, PreviewState } from '../../domain/models';
 export function PreviewTools({
   state,
+  directory,
   userId,
   onChange,
 }: {
   state: PreviewState;
+  directory: Person[];
   userId: string;
   onChange: (state: PreviewState, userId: string) => void;
 }) {
@@ -35,12 +37,11 @@ export function PreviewTools({
         </select>
         <label htmlFor="preview-user">예시 사용자</label>
         <select id="preview-user" value={userId} onChange={(e) => onChange(state, e.target.value)}>
-          <option value="kim">김하늘 · Owner / Master / Attendee</option>
-          <option value="lee">이서준 · Master</option>
-          <option value="ops">운영관리자 · 운영 전용</option>
-          <option value="choi">최민준 · 브랜드 Owner</option>
-          <option value="jung">정수아 · 조직 Owner</option>
-          <option value="park">박지우 · Topic 권한 없음</option>
+          {directory.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name} · {p.position ?? p.team}
+            </option>
+          ))}
         </select>
       </div>
     </details>

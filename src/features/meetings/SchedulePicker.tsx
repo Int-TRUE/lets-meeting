@@ -1,6 +1,7 @@
 import { Check, Clock3, MapPin } from 'lucide-react';
 import type { Room } from '../../domain/models';
-import { previewPolicy, rooms } from '../../domain/workflows';
+import { previewPolicy } from '../../domain/workflows';
+import { useWorkspace } from '../../app/WorkspaceContext';
 import { Card } from '../../components/ui';
 export interface ScheduleValue {
   roomId: string;
@@ -20,6 +21,7 @@ export function SchedulePicker({
   unavailable: string[];
   now: string;
 }) {
+  const { rooms } = useWorkspace();
   const selectedRoom = rooms.find((r) => r.id === value.roomId);
   const location = selectedRoom?.location ?? '명동';
   const slots = Array.from(

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, MapPin, Users } from 'lucide-react';
 import type { DeliveryLog } from '../../domain/models';
-import { rooms } from '../../domain/workflows';
 import { dateKey, fullDate, time } from '../../domain/selectors';
 import { previewService } from '../../data/previewService';
 import { useWorkspace } from '../../app/WorkspaceContext';
@@ -181,7 +180,7 @@ export function AdminNotificationsPage() {
   );
 }
 export function RoomsPage({ admin = false }: { admin?: boolean }) {
-  const { data } = useWorkspace();
+  const { data, rooms } = useWorkspace();
   const [location, setLocation] = useState('all');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(rooms[0]);

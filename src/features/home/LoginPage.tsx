@@ -36,7 +36,7 @@ export function LoginPage() {
           <div>
             <MessageSquare />
             <p>
-              회의가 준비부터
+              회의 준비부터
               <br />
               요약까지 한 곳에
             </p>

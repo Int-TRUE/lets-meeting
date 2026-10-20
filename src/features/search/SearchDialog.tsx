@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { CalendarDays, ChevronRight, Search } from 'lucide-react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import type { Workspace } from '../../domain/models';
-import { fullDate, searchWorkspace, time } from '../../domain/selectors';
-import { Modal } from '../../components/ui';
+import { fullDate, searchWorkspace, time, topicMeetings } from '../../domain/selectors';
+import { AvatarGroup, Modal } from '../../components/ui';
 import { TopicIcon } from '../../components/TopicCard';
 function Highlight({ text, query }: { text: string; query: string }) {
   const needle = query.trim();
@@ -82,7 +82,7 @@ export function SearchDialog({
           <button
             key={id}
             aria-pressed={filter === id}
-            className={filter === id ? 'selected' : ''}
+            className={`filter-${id} ${filter === id ? 'selected' : ''}`}
             onClick={() => updateSearch(query, String(id))}
           >
             {label}
@@ -118,6 +118,16 @@ export function SearchDialog({
                       <small>
                         <Highlight text={t.description} query={query} />
                       </small>
+                      <small className="search-result-meta">
+                        회의 {topicMeetings(t, data).length} · 멤버{' '}
+                        {new Set(topicMeetings(t, data).flatMap((m) => m.participantIds)).size} ·
+                        업데이트{' '}
+                        {topicMeetings(t, data)
+                          .map((m) => m.updatedAt ?? m.summary?.savedAt ?? m.start)
+                          .sort()
+                          .at(-1)
+                          ?.slice(0, 10) ?? '아직 없음'}
+                      </small>
                     </span>
                     <ChevronRight size={18} />
                   </button>
@@ -147,6 +157,10 @@ export function SearchDialog({
                         <Highlight text={m.room} query={query} />
                       </small>
                     </span>
+                    <AvatarGroup
+                      people={data.people.filter((p) => m.participantIds.includes(p.id))}
+                      max={4}
+                    />
                     <ChevronRight size={18} />
                   </button>
                 ))}

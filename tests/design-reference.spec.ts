@@ -92,7 +92,7 @@ test('desktop reference captures across the approved screen flow', async ({
   await page.getByRole('button', { name: '다음', exact: true }).click();
   await capture('11-participants');
   await page.getByRole('button', { name: '회의 생성', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '미리보기에 회의를 저장했어요' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '회의 생성이 완료되었어요!' })).toBeVisible();
   await capture('12-created');
   await open('/meetings/equipment');
   await capture('13-meeting-detail');

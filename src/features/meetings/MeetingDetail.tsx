@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
+  TriangleAlert,
   CalendarDays,
   Download,
   FilePenLine,
@@ -15,7 +16,7 @@ import { fullDate, meetingStatus, time } from '../../domain/selectors';
 import { canEditMeeting } from '../../domain/workflows';
 import { previewService } from '../../data/previewService';
 import { useUnsavedChanges, useWorkspace } from '../../app/WorkspaceContext';
-import { AvatarGroup, Button, Card, EmptyState, StatusBadge } from '../../components/ui';
+import { AvatarGroup, Button, Card, EmptyState, Modal, StatusBadge } from '../../components/ui';
 import {
   ConfirmDialog,
   Denied,
@@ -34,6 +35,7 @@ export function MeetingDetail() {
   const topic = data.topics.find((t) => t.id === meeting?.topicId);
   const tab = params.get('tab') ?? 'info';
   const [cancel, setCancel] = useState(false);
+  const [cancelAcknowledged, setCancelAcknowledged] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [files, setFiles] = useState<Attachment[]>([]);
@@ -373,16 +375,44 @@ export function MeetingDetail() {
         </Card>
       )}
       {cancel ? (
-        <ConfirmDialog
-          title="예정 회의를 취소할까요?"
-          description={`“${meeting.title}”의 미리보기 예약이 해제됩니다. 실제 Mattermost 알림은 전송되지 않으며, 취소는 영구 삭제와 다릅니다.`}
-          actionLabel="회의 취소 확정"
-          danger
-          onClose={() => setCancel(false)}
-          onConfirm={() => void cancelMeeting()}
-          busy={busy}
-          error={error}
-        />
+        <Modal
+          className="cancel-confirm-modal"
+          title="예정 회의 취소 확인"
+          onClose={() => {
+            if (!busy) setCancel(false);
+          }}
+        >
+          <h3>
+            <TriangleAlert /> 이 회의를 취소하시겠습니까?
+          </h3>
+          <ul className="cancel-consequences">
+            <li>모든 참가자의 취소 알림 이력이 기록됩니다. 데모에서는 실제 발송되지 않습니다.</li>
+            <li>이 회의의 데모 예약이 해제됩니다.</li>
+            <li>첨부된 자료와 회의 정보는 보관됩니다.</li>
+          </ul>
+          <label className="cancel-acknowledgement">
+            <input
+              type="checkbox"
+              checked={cancelAcknowledged}
+              onChange={(e) => setCancelAcknowledged(e.target.checked)}
+            />
+            위 내용을 확인했으며, 회의를 취소합니다.
+          </label>
+          <FormMessage error={error} />
+          <div className="form-actions">
+            <Button variant="secondary" onClick={() => setCancel(false)} disabled={busy}>
+              돌아가기
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => void cancelMeeting()}
+              loading={busy}
+              disabled={!cancelAcknowledged}
+            >
+              회의 취소 확정
+            </Button>
+          </div>
+        </Modal>
       ) : null}
     </div>
   );
@@ -447,7 +477,27 @@ export function SummaryEditor() {
           { label: '회의 상세', to: `/meetings/${id}` },
         ]}
       />
-      <StatusBadge status="summary-needed" />
+      <div className="summary-meeting-meta">
+        <StatusBadge status="summary-needed" />
+        <span>
+          <CalendarDays size={18} />
+          {fullDate(meeting.start)} · {time(meeting.start)}–{time(meeting.end)}
+        </span>
+        <span>
+          <MapPin size={18} />
+          {meeting.room}
+        </span>
+      </div>
+      <div className="summary-participants">
+        <AvatarGroup
+          people={data.people.filter((p) => meeting.participantIds.includes(p.id))}
+          max={6}
+        />
+        <span>
+          주최자 · {meeting.hostAtTime ?? data.people.find((p) => p.id === meeting.creatorId)?.name}{' '}
+          · 참가자 {meeting.participantIds.length}명
+        </span>
+      </div>
       <Card className="summary-editor">
         <p className="info-notice">
           임시 저장만으로 회의가 완료되지 않습니다. 내용을 확인한 뒤 명시적으로 완료해주세요.

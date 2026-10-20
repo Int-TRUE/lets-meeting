@@ -9,7 +9,7 @@ import { AvatarGroup, Card, EmptyState } from '../../components/ui';
 export function HomePage({ workspace }: { workspace: Workspace }) {
   const data = homeData(workspace);
   return (
-    <div className="home-page">
+    <div className={`home-page ${data.next ? '' : 'home-page-empty'}`}>
       <div className="home-grid">
         <section className="upcoming-section" aria-labelledby="upcoming-heading">
           <div className="page-intro">

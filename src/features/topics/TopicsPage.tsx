@@ -27,7 +27,7 @@ export function TopicsPage() {
         : t.roles[data.user.id] === 'Attendee'),
   );
   return (
-    <div className="workflow-page">
+    <div className="workflow-page topics-page">
       <PageHeading
         title="Topic"
         description="우리 팀의 이야기를 관리하고, 관련 회의를 이어가세요."
@@ -179,7 +179,7 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
   return (
     <>
       {editing ? (
-        <div className="workflow-page">
+        <div className="workflow-page topic-settings-page">
           <PageHeading
             title="Topic 설정"
             description="주제 정보와 회의 관리자를 관리하세요."
@@ -210,6 +210,7 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
         </div>
       ) : (
         <Modal
+          className="topic-form-modal"
           title="새로운 Topic 만들기"
           description="한 가지 주제로 회의를 이어가는 우리 팀의 공간입니다."
           onClose={close}
@@ -242,7 +243,7 @@ export function TopicDetail() {
     .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
   const manager = canCreateMeeting(topic, data.user.id);
   return (
-    <div className="workflow-page">
+    <div className="workflow-page topic-detail-page">
       <PageHeading
         title={topic.title}
         description={topic.description}

@@ -4,6 +4,7 @@ import type { PreviewState, Workspace } from '../domain/models';
 import { createPreviewRepository, people, WorkspaceError } from '../data/workspace';
 import { ErrorState, LoadingState } from '../components/ui';
 import { HomePage } from '../features/home/HomePage';
+import { LoginPage } from '../features/home/LoginPage';
 import { PreviewTools } from '../features/home/PreviewTools';
 import { SearchDialog } from '../features/search/SearchDialog';
 import { AppShell } from './AppShell';
@@ -103,6 +104,7 @@ export function App() {
         <>
           <WorkspaceContext key={userId} value={{ data: result.data, directory: people, run }}>
             <Routes>
+              <Route path="/login" element={<LoginPage />} />
               <Route path="/" element={<HomePage workspace={result.data} />} />
               <Route path="/topics" element={<TopicsPage />} />
               <Route

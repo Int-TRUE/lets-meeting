@@ -54,7 +54,7 @@ export function AdminNotificationsPage() {
     )
     .toReversed();
   return (
-    <div className="workflow-page">
+    <div className="workflow-page admin-notifications-page">
       <PageHeading
         title="관리자 발송 이력"
         description="알림 이벤트와 전달 결과를 확인하세요. 미리보기 기록은 실제 발송 성공이 아닙니다."
@@ -192,7 +192,7 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
       `${room.location} ${room.name}`.includes(query),
   );
   return (
-    <div className="workflow-page">
+    <div className="workflow-page rooms-page">
       <PageHeading
         title={admin ? '관리자 회의실 관리' : '회의실'}
         description="예시 회의실의 위치와 수용 인원을 확인하세요."

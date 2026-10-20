@@ -10,7 +10,7 @@ import {
   Search,
   X,
 } from 'lucide-react';
-import { Link, NavLink, useSearchParams } from 'react-router-dom';
+import { Link, NavLink, useLocation, useSearchParams } from 'react-router-dom';
 import { Brand } from '../components/Brand';
 import { Button, Modal } from '../components/ui';
 import type { Person } from '../domain/models';
@@ -37,23 +37,24 @@ export function AppShell({
   const [params, setParams] = useSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const location = useLocation();
   function openSearch() {
     const next = new URLSearchParams(params);
     next.set('search', '1');
     setParams(next);
+  }
+  if (location.pathname === '/login') {
+    return (
+      <main id="main-content" className="login-root">
+        {children}
+      </main>
+    );
   }
   return (
     <>
       <a href="#main-content" className="skip-link">
         본문으로 바로가기
       </a>
-      <div className="preview-banner">
-        <span>
-          <span className="preview-dot" />
-          디자인 미리보기
-        </span>
-        <p>예시 데이터로 둘러보는 로봇집사입니다. 실제 계정·예약과 연결되지 않습니다.</p>
-      </div>
       <div className="app-frame">
         <aside className="sidebar">
           <Link to="/" className="brand-link" aria-label="로봇집사 홈">
@@ -73,14 +74,6 @@ export function AppShell({
               </NavLink>
             ))}
           </nav>
-          <div className="sidebar-bottom">
-            <span className="sidebar-message">
-              좋은 대화의 시작,
-              <br />
-              <strong>로봇집사와 함께.</strong>
-            </span>
-            <span className="version">DESIGN PREVIEW · V1.0</span>
-          </div>
         </aside>
         <div className="app-content">
           <header className="topbar">
@@ -98,7 +91,6 @@ export function AppShell({
             <button ref={searchTriggerRef} className="search-trigger" onClick={openSearch}>
               <Search size={20} />
               <span>회의, 주제, 사람을 검색해보세요.</span>
-              <span className="search-trigger-hint">검색</span>
             </button>
             <div className="topbar-right">
               <Link

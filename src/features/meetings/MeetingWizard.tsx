@@ -189,20 +189,35 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
           <CheckCircle2 size={56} />
           <h2>{editing ? '변경 내용을 저장했어요' : '미리보기에 회의를 저장했어요'}</h2>
           <p>예시 일정이 저장되었습니다. 실제 회의실 예약과 알림 전송은 연결되지 않았습니다.</p>
-          <dl>
-            <dt>회의명</dt>
-            <dd>{draft.title}</dd>
-            <dt>일시</dt>
-            <dd>
-              {draft.schedule.date} {draft.schedule.startTime} – {draft.schedule.endTime}
-            </dd>
-            <dt>장소</dt>
-            <dd>
-              {selectedRoom.location} · {selectedRoom.name}
-            </dd>
-            <dt>알림</dt>
-            <dd>미전송 · 외부 채널 미연결</dd>
-          </dl>
+          <div className="creation-result-grid">
+            <dl>
+              <dt>회의명</dt>
+              <dd>{draft.title}</dd>
+              <dt>일시</dt>
+              <dd>
+                {draft.schedule.date} {draft.schedule.startTime} – {draft.schedule.endTime}
+              </dd>
+              <dt>장소</dt>
+              <dd>
+                {selectedRoom.location} · {selectedRoom.name}
+              </dd>
+            </dl>
+            <div className="creation-delivery">
+              <Card>
+                <h3>미리보기 일정 저장</h3>
+                <p>
+                  {selectedRoom.location} · {selectedRoom.name}
+                </p>
+                <p>
+                  {draft.schedule.date} {draft.schedule.startTime} – {draft.schedule.endTime}
+                </p>
+              </Card>
+              <Card>
+                <h3>참가자 알림</h3>
+                <p>미전송 · 외부 채널 미연결</p>
+              </Card>
+            </div>
+          </div>
           <div className="form-actions">
             <Link className="button button-secondary" to={`/topics/${topic.id}`}>
               Topic으로 이동
@@ -216,7 +231,9 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
       </div>
     );
   return (
-    <div className="workflow-page">
+    <div
+      className={`workflow-page wizard-page wizard-step-${draft.step}${editing ? ' wizard-editing' : ''}`}
+    >
       <PageHeading
         title={editing ? '회의 수정' : '회의 만들기'}
         description="필요한 정보를 차근차근 정리하고 좋은 대화를 준비하세요."

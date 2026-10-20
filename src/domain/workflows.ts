@@ -13,6 +13,22 @@ export const rooms: Room[] = [
   { id: 'md-9', name: '9층 대회의실', location: '명동', floor: '9층', capacity: 8, active: true },
   { id: 'md-3', name: '3층 회의실 A', location: '명동', floor: '3층', capacity: 6, active: true },
   { id: 'bd-3', name: '3층 회의실', location: '분당', floor: '3층', capacity: 10, active: true },
+  {
+    id: 'it-room',
+    name: 'IT운영팀 회의실',
+    location: '명동',
+    floor: '11층',
+    capacity: 12,
+    active: true,
+  },
+  {
+    id: 'floor-12',
+    name: '12층 회의실',
+    location: '명동',
+    floor: '12층',
+    capacity: 16,
+    active: true,
+  },
 ];
 // Preview configuration, not a decision about the external reservation service.
 export const previewPolicy = { slotMinutes: 30, startHour: 9, endHour: 18 };

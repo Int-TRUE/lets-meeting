@@ -22,7 +22,7 @@ async function createMeeting(page: Page, title = '테스트 협업 회의', uplo
     });
   }
   await page.getByRole('button', { name: '회의 생성', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '미리보기에 회의를 저장했어요' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '회의 생성이 완료되었어요!' })).toBeVisible();
   await expect(page.getByText('미전송 · 외부 채널 미연결', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '회의 상세 보기', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
@@ -85,7 +85,9 @@ test('three-step meeting creation, attachment download, cancellation and persist
     fullPage: true,
   });
   await page.getByRole('button', { name: '회의 취소', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: '예정 회의를 취소할까요?' });
+  const dialog = page.getByRole('dialog', { name: '예정 회의 취소 확인' });
+  await expect(dialog.getByRole('button', { name: '회의 취소 확정' })).toBeDisabled();
+  await dialog.getByRole('checkbox').check();
   await dialog.getByRole('button', { name: '회의 취소 확정' }).click();
   await expect(page.getByText('취소된 회의입니다.', { exact: false })).toBeVisible();
   await expect(page.locator('.meeting-header-meta .status-cancelled')).toContainText('취소');

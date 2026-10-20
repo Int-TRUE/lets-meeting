@@ -5,6 +5,7 @@ export interface Person {
   name: string;
   team: string;
   isAdmin?: boolean;
+  position?: string;
 }
 export interface Topic {
   id: string;
@@ -29,6 +30,8 @@ export interface Meeting {
   completed: boolean;
   cancelled: boolean;
   revision?: number;
+  hostAtTime?: string;
+  updatedAt?: string;
   roomId?: string;
   summary?: Summary;
   attachments?: Attachment[];

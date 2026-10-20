@@ -1,8 +1,9 @@
+import successArt from '../../assets/meeting-success.png';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { Attachment, Meeting } from '../../domain/models';
-import { canCreateMeeting, canEditMeeting, rooms } from '../../domain/workflows';
+import { canCreateMeeting, canEditMeeting } from '../../domain/workflows';
 import { previewService, type MeetingInput } from '../../data/previewService';
 import { useUnsavedChanges, useWorkspace } from '../../app/WorkspaceContext';
 import { Button, Card, Field, Stepper } from '../../components/ui';
@@ -26,7 +27,7 @@ interface Draft {
   requestId: string;
 }
 export function MeetingWizard({ editing = false }: { editing?: boolean }) {
-  const { data, directory, run } = useWorkspace();
+  const { data, directory, rooms, run } = useWorkspace();
   const { id } = useParams();
   const navigate = useNavigate();
   const existing = editing ? data.meetings.find((m) => m.id === id) : undefined;
@@ -186,11 +187,13 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
       <div className="workflow-page">
         <PageHeading title={editing ? '회의 변경 결과' : '회의 생성 결과'} />
         <Card className="creation-result">
-          <CheckCircle2 size={56} />
-          <h2>{editing ? '변경 내용을 저장했어요' : '미리보기에 회의를 저장했어요'}</h2>
+          <img className="success-illustration" src={successArt} alt="" />
+          <h2>{editing ? '변경 내용을 저장했어요' : '회의 생성이 완료되었어요!'}</h2>
           <p>예시 일정이 저장되었습니다. 실제 회의실 예약과 알림 전송은 연결되지 않았습니다.</p>
           <div className="creation-result-grid">
             <dl>
+              <dt className="result-section-title">회의 정보</dt>
+              <dd />
               <dt>회의명</dt>
               <dd>{draft.title}</dd>
               <dt>일시</dt>
@@ -201,10 +204,28 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
               <dd>
                 {selectedRoom.location} · {selectedRoom.name}
               </dd>
+              <dt>참가자</dt>
+              <dd>
+                {draft.participantIds.length}명 ·{' '}
+                {directory
+                  .filter((p) => draft.participantIds.includes(p.id))
+                  .map((p) => p.name)
+                  .join(', ')}
+              </dd>
+              <dt>자료</dt>
+              <dd>
+                {draft.material === 'uploaded'
+                  ? `${attachments.length}개 첨부`
+                  : draft.material === 'pending'
+                    ? '등록 예정'
+                    : '자료 없음'}
+              </dd>
             </dl>
             <div className="creation-delivery">
               <Card>
-                <h3>미리보기 일정 저장</h3>
+                <h3>
+                  회의실 예약 완료 <span className="badge status-completed">데모</span>
+                </h3>
                 <p>
                   {selectedRoom.location} · {selectedRoom.name}
                 </p>
@@ -213,7 +234,9 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
                 </p>
               </Card>
               <Card>
-                <h3>참가자 알림</h3>
+                <h3>
+                  참가자 Mattermost 초대 알림 <span className="badge status-scheduled">미전송</span>
+                </h3>
                 <p>미전송 · 외부 채널 미연결</p>
               </Card>
             </div>
@@ -242,11 +265,11 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
           { label: topic.title, to: `/topics/${topic.id}` },
         ]}
       />
-      <Stepper steps={['기본 정보', '장소·시간', '참가자·자료']} current={draft.step} />
+      <Stepper steps={['기본 정보', '장소·시간', '참가자 / 자료']} current={draft.step} />
       <div className="wizard-grid">
         <Card>
           <h2 ref={heading} tabIndex={-1} className="step-heading">
-            {draft.step + 1}. {['기본 정보', '장소·시간', '참가자·자료'][draft.step]}
+            {draft.step + 1}. {['기본 정보', '장소·시간', '참가자 / 자료'][draft.step]}
           </h2>
           {draft.step === 0 ? (
             <div className="stack-form">
@@ -342,10 +365,8 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
           </div>
         </Card>
         <Card className="wizard-summary">
-          <h2>회의 미리보기</h2>
+          <h2>미리보기</h2>
           <dl>
-            <dt>Topic</dt>
-            <dd>{topic.title}</dd>
             <dt>회의명</dt>
             <dd>{draft.title || '아직 입력하지 않았어요'}</dd>
             <dt>회의 내용</dt>

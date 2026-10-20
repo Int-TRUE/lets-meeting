@@ -1,4 +1,5 @@
 import { fixture, people } from './workspace';
+import { encodeWire, decodeWire } from './wire';
 import type {
   Attachment,
   Meeting,
@@ -56,6 +57,15 @@ export function initialDatabase(): PreviewDatabase {
     requests: {},
   });
 }
+export type TransactionAdapter = <T>(
+  userId: string,
+  mutate: (data: PreviewDatabase) => T,
+  write: boolean,
+) => Promise<T>;
+let transactionAdapter: TransactionAdapter | undefined;
+export function configureTransactionAdapter(adapter: TransactionAdapter) {
+  transactionAdapter = adapter;
+}
 // A readwrite IndexedDB transaction serializes competing preview reservations across tabs.
 // All checks happen in this adapter too; production must replace it with an authenticated API.
 async function transact<T>(
@@ -63,7 +73,8 @@ async function transact<T>(
   mutate: (data: PreviewDatabase) => T,
   write = true,
 ): Promise<T> {
-  if (write && import.meta.env.PROD && import.meta.env.VITE_ENABLE_PREVIEW !== 'true') {
+  if (transactionAdapter) return transactionAdapter(userId, mutate, write);
+  if (write && import.meta.env?.PROD && import.meta.env.VITE_ENABLE_PREVIEW !== 'true') {
     throw new RuleError('미리보기 저장은 개발 환경에서만 사용할 수 있어요.');
   }
   const db = await openDatabase();
@@ -101,7 +112,7 @@ async function transact<T>(
   });
 }
 const now = () => fixture.now;
-export const previewService = {
+export const localService = {
   availability(userId: string, roomId: string, date: string, exceptId?: string) {
     return transact(
       userId,
@@ -414,3 +425,24 @@ function validateAttachment(file: Attachment) {
   if (!file.name.trim() || !file.id || !(file.blob instanceof Blob) || file.size !== file.blob.size)
     throw new RuleError('파일을 읽지 못했어요. 다시 선택해주세요.');
 }
+
+// Tests retain an isolated browser DB. The application uses the shared SQLite API.
+export const fixtureMode =
+  import.meta.env?.MODE === 'test' || import.meta.env?.VITE_DATA_MODE === 'fixture';
+export const previewService: typeof localService =
+  typeof window === 'undefined' || fixtureMode
+    ? localService
+    : new Proxy(localService, {
+        get(_target, method: string) {
+          return async (...args: unknown[]) => {
+            const response = await fetch('/api/demo/' + method, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(await encodeWire(args)),
+            });
+            const body = await response.json();
+            if (!response.ok) throw new RuleError(body.error ?? 'DB 요청을 처리하지 못했어요.');
+            return decodeWire(body.result);
+          };
+        },
+      });

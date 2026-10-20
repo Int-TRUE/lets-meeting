@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, Route, Routes, useSearchParams } from 'react-router-dom';
-import type { PreviewState, Workspace } from '../domain/models';
+import type { Person, Room, PreviewState, Workspace } from '../domain/models';
 import { createPreviewRepository, people, WorkspaceError } from '../data/workspace';
+import { rooms as fixtureRooms } from '../domain/workflows';
 import { ErrorState, LoadingState } from '../components/ui';
 import { HomePage } from '../features/home/HomePage';
 import { LoginPage } from '../features/home/LoginPage';
@@ -9,7 +10,7 @@ import { PreviewTools } from '../features/home/PreviewTools';
 import { SearchDialog } from '../features/search/SearchDialog';
 import { AppShell } from './AppShell';
 import { NotFoundPage } from './LinkedPages';
-import { previewService } from '../data/previewService';
+import { fixtureMode, previewService } from '../data/previewService';
 import { WorkspaceContext } from './WorkspaceContext';
 import { TopicsPage, TopicDetail, TopicForm } from '../features/topics/TopicsPage';
 import { MeetingWizard } from '../features/meetings/MeetingWizard';
@@ -24,11 +25,13 @@ export function App() {
   const [userId, setUserId] = useState(() => {
     try {
       const stored = sessionStorage.getItem('robot-butler:preview-user:v1');
-      return people.some((p) => p.id === stored) ? stored! : 'kim';
+      return people.some((p) => p.id === stored) ? stored! : fixtureMode ? 'kim' : 'me';
     } catch {
-      return 'kim';
+      return fixtureMode ? 'kim' : 'me';
     }
   });
+  const [directory, setDirectory] = useState<Person[]>(people);
+  const [rooms, setRooms] = useState<Room[]>(fixtureRooms);
   const [attempt, setAttempt] = useState(0);
   const currentActor = useRef(userId);
   currentActor.current = userId;
@@ -38,8 +41,28 @@ export function App() {
     createPreviewRepository(previewState, userId)
       .load(controller.signal)
       .then(async (initial) => {
-        const data = previewState === 'normal' ? await previewService.snapshot(userId) : initial;
-        if (!controller.signal.aborted) setResult({ data });
+        if (fixtureMode) {
+          const data = previewState === 'normal' ? await previewService.snapshot(userId) : initial;
+          if (!controller.signal.aborted) setResult({ data });
+        } else {
+          const [snapshot, catalog] = await Promise.all([
+            previewService.snapshot(userId),
+            fetch('/api/demo/directory', { signal: controller.signal }).then((r) => {
+              if (!r.ok) throw Error('directory');
+              return r.json();
+            }),
+          ]);
+          const data = {
+            ...snapshot,
+            topics: previewState === 'empty' ? [] : snapshot.topics,
+            meetings: ['empty', 'empty-meetings'].includes(previewState) ? [] : snapshot.meetings,
+          };
+          if (!controller.signal.aborted) {
+            setDirectory(catalog.people);
+            setRooms(catalog.rooms);
+            setResult({ data });
+          }
+        }
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted)
@@ -80,7 +103,14 @@ export function App() {
     <AppShell
       searchTriggerRef={searchTriggerRef}
       user={result.data?.user}
-      tools={<PreviewTools state={previewState} userId={userId} onChange={changePreview} />}
+      tools={
+        <PreviewTools
+          state={previewState}
+          userId={userId}
+          directory={directory}
+          onChange={changePreview}
+        />
+      }
     >
       {error ? (
         <ErrorState
@@ -102,7 +132,7 @@ export function App() {
         />
       ) : result.data ? (
         <>
-          <WorkspaceContext key={userId} value={{ data: result.data, directory: people, run }}>
+          <WorkspaceContext key={userId} value={{ data: result.data, directory, rooms, run }}>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/" element={<HomePage workspace={result.data} />} />

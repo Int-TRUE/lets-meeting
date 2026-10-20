@@ -1,9 +1,10 @@
 import { useBlocker } from 'react-router-dom';
 import { createContext, useContext, useEffect, useRef } from 'react';
-import type { Person, Workspace } from '../domain/models';
+import type { Person, Room, Workspace } from '../domain/models';
 export interface WorkspaceContextValue {
   data: Workspace;
   directory: Person[];
+  rooms: Room[];
   run: <T>(operation: () => Promise<T>) => Promise<T>;
 }
 export const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);

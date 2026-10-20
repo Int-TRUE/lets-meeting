@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bell, LockKeyhole } from 'lucide-react';
+import { LockKeyhole, MessageCircle, Power } from 'lucide-react';
 import type { NotificationSettings } from '../../domain/models';
 import { defaultPreferences, reminderChoices } from '../../domain/workflows';
 import { previewService } from '../../data/previewService';
@@ -48,7 +48,7 @@ export function NotificationSettingsPage() {
     try {
       await run(() => previewService.savePreferences(data.user.id, settings));
       setSaved(JSON.stringify(settings));
-      setSuccess('이 브라우저에 알림 설정을 저장했어요. 외부 메시지는 전송되지 않습니다.');
+      setSuccess('알림 설정을 저장했어요. 외부 메시지는 전송되지 않습니다.');
     } catch (e) {
       setError(e instanceof Error ? e.message : '저장하지 못했어요.');
     } finally {
@@ -61,15 +61,35 @@ export function NotificationSettingsPage() {
         title="개인 알림 설정"
         description="회의와 관련된 중요한 소식을 원하는 방식으로 받아보세요."
       />
-      <Card className="notification-channel">
-        <span className="topic-icon tone-blue">
-          <Bell size={26} />
-        </span>
+      <Card className="notification-channels">
         <div>
-          <h2>Mattermost</h2>
-          <p className="muted">기본 알림 채널 · 미리보기에서는 실제 메시지가 전송되지 않습니다.</p>
+          <h2>알림 수신 채널</h2>
+          <p className="muted">알림을 받을 채널을 선택하세요.</p>
         </div>
-        <span className="badge status-scheduled">기본</span>
+        <div className="channel-choice selected">
+          <Power />
+          <div>
+            <h3>
+              Mattermost <span className="badge status-completed">기본</span>
+            </h3>
+            <p>
+              업무용 협업 채널로
+              <br />
+              알림을 받아보세요.
+            </p>
+          </div>
+          <input type="radio" checked readOnly aria-label="Mattermost 기본 채널" />
+        </div>
+        <div className="channel-choice upcoming">
+          <MessageCircle />
+          <div>
+            <h3>
+              카카오톡 <span className="badge">추후 지원 예정</span>
+            </h3>
+            <p>추후 지원 예정입니다.</p>
+          </div>
+          <input type="radio" disabled aria-label="카카오톡 추후 지원 예정" />
+        </div>
       </Card>
       <div className="settings-grid notification-settings-grid">
         <Card className="notification-preview">
@@ -128,11 +148,6 @@ export function NotificationSettingsPage() {
               </label>
             ))}
           </fieldset>
-        </Card>
-        <Card className="quiet-hours-card">
-          <h2>방해 금지 시간</h2>
-          <p className="muted">추후 제공</p>
-          <p className="detail-note">현재는 방해 금지 시간을 설정할 수 없습니다.</p>
         </Card>
       </div>
       <FormMessage error={error} success={success} />

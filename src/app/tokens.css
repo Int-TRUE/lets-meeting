@@ -19,6 +19,22 @@
   --completed-text: #56627A;
   --danger-soft: #FFF0F0;
   --danger-text: #B42335;
+  --home-primary: #0866FF;
+  --home-primary-hover: #0055DC;
+  --home-text: #0B1045;
+  --home-muted: #626D88;
+  --home-border: #EBEDF3;
+  --home-card-from: #EDF3FF;
+  --home-card-to: #E5EEFF;
+  --home-schedule-active: #F4F8FF;
+  --home-orange: #B9411C;
+  --home-orange-soft: #FFF5EE;
+  --home-orange-border: #FFD6C4;
+  --home-purple: #6536D9;
+  --home-purple-soft: #F3EEFF;
+  --home-peach: #D34A20;
+  --home-peach-soft: #FFF0E7;
+  --home-icon-blue-soft: #EDF7FF;
   --shadow-card: 0 4px 20px rgba(23,33,61,0.06);
   --font-family: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }

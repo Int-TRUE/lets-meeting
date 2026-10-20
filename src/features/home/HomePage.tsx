@@ -1,46 +1,35 @@
-import {
-  ArrowRight,
-  CalendarDays,
-  ChevronRight,
-  FilePenLine,
-  MapPin,
-  Plus,
-  Sparkles,
-} from 'lucide-react';
+import { ChevronRight, MapPin, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Workspace } from '../../domain/models';
-import { dateKey, fullDate, homeData, meetingStatus, time } from '../../domain/selectors';
+import { dateKey, homeData, time } from '../../domain/selectors';
 import { Mascot } from '../../components/Brand';
 import { MeetingCard } from '../../components/MeetingCard';
 import { TopicCard } from '../../components/TopicCard';
-import { Card, EmptyState } from '../../components/ui';
+import { AvatarGroup, Card, EmptyState } from '../../components/ui';
 export function HomePage({ workspace }: { workspace: Workspace }) {
   const data = homeData(workspace);
   return (
     <div className="home-page">
-      <div className="page-intro">
-        <div>
-          <p className="eyebrow">좋은 대화가 좋은 일을 만듭니다</p>
-          <h1>
-            {data.user.name}님,
-            <br />
-            오늘도 좋은 대화를 만들어볼까요<span className="greeting-dot">.</span>
-          </h1>
-          <p className="intro-description">회의의 시작부터 끝까지, 로봇집사가 함께할게요.</p>
-        </div>
-        <div className="greeting-mascot">
-          <Mascot />
-          <Sparkles className="mascot-spark" size={24} />
-        </div>
-      </div>
       <div className="home-grid">
         <section className="upcoming-section" aria-labelledby="upcoming-heading">
-          <div className="section-heading">
-            <h2 id="upcoming-heading">
-              임박한 회의<span className="section-note">다음 대화를 준비해요</span>
-            </h2>
-            <CalendarDays size={20} className="muted" />
+          <div className="page-intro">
+            <h1>
+              <span className="greeting-name-row">
+                <span>{data.user.name}님,</span>
+                <span className="greeting-mascot">
+                  <Mascot pose="home" />
+                  <span className="greeting-rays" />
+                </span>
+              </span>
+              <span className="greeting-question">오늘도 좋은 대화를 만들어볼까요</span>
+            </h1>
+            <p className="intro-description">
+              회의는 준비가 전부가 아니라, 좋은 대화가 전부입니다.
+            </p>
           </div>
+          <h2 className="sr-only" id="upcoming-heading">
+            임박한 회의
+          </h2>
           {data.next ? (
             <MeetingCard meeting={data.next} data={data} />
           ) : (
@@ -62,11 +51,27 @@ export function HomePage({ workspace }: { workspace: Workspace }) {
           )}
         </section>
         <Card className="schedule" aria-labelledby="schedule-heading">
-          <div className="section-heading">
-            <h2 id="schedule-heading">오늘의 일정</h2>
-            <span className="schedule-count">{data.today.length}개</span>
+          <div className="schedule-header">
+            <div>
+              <h2 id="schedule-heading">오늘의 일정</h2>
+              <p className="schedule-date">
+                {data.today.length
+                  ? `${data.today.length}개의 회의가 예정되어 있어요.`
+                  : '오늘 예정된 회의가 없어요.'}
+              </p>
+            </div>
+            {data.summaries.length ? (
+              <Link
+                to="/meetings?filter=summary"
+                className="summary-notice"
+                aria-label={`작성할 회의 요약 ${data.summaries.length}개`}
+              >
+                <span>요약 대기</span>
+                <strong>{data.summaries.length}</strong>
+                <ChevronRight size={18} />
+              </Link>
+            ) : null}
           </div>
-          <p className="schedule-date">{fullDate(data.now)}</p>
           {data.today.length ? (
             <ol className="timeline">
               {data.today.map((m) => {
@@ -81,19 +86,18 @@ export function HomePage({ workspace }: { workspace: Workspace }) {
                       </span>
                       <span className="timeline-copy">
                         <strong>{m.title}</strong>
-                        <span>
-                          <MapPin size={13} />
+                        <AvatarGroup
+                          max={4}
+                          people={m.participantIds.flatMap(
+                            (id) => data.people.find((p) => p.id === id) ?? [],
+                          )}
+                        />
+                        <span className="timeline-room">
+                          <MapPin size={14} />
                           {m.room}
                         </span>
-                        <small>
-                          {meetingStatus(m, data.now) === 'summary-needed'
-                            ? '요약 작성 필요'
-                            : meetingStatus(m, data.now) === 'completed'
-                              ? '완료'
-                              : `참석자 ${m.participantIds.length}명`}
-                        </small>
                       </span>
-                      <ChevronRight size={16} />
+                      <ChevronRight size={18} />
                     </Link>
                   </li>
                 );
@@ -106,31 +110,22 @@ export function HomePage({ workspace }: { workspace: Workspace }) {
               description="다음 대화를 위한 여유를 가져보세요."
             />
           )}
-          {data.summaries.length ? (
-            <Link to="/meetings?filter=summary" className="summary-notice">
-              <span>
-                <FilePenLine size={18} />
-                작성할 회의 요약 <strong>{data.summaries.length}개</strong>
-              </span>
-              <ChevronRight size={16} />
-            </Link>
-          ) : null}
         </Card>
       </div>
       <section className="topics-section" aria-labelledby="topics-heading">
         <div className="section-heading">
           <h2 id="topics-heading">
-            나의 Topic<span className="section-note">함께 나누는 이야기, 하나의 흐름으로</span>
+            나의 Topic<span className="section-note">진행 중인 주제에서 이어보세요.</span>
           </h2>
           <Link to="/topics" className="text-link">
             전체 보기
-            <ChevronRight size={16} />
+            <ChevronRight size={17} />
           </Link>
         </div>
         {data.topics.length ? (
           <div className="topic-grid">
             {data.topics.map((t) => (
-              <TopicCard key={t.id} topic={t} data={data} />
+              <TopicCard key={t.id} topic={t} data={data} compact />
             ))}
             <Link to="/topics/new" className="create-topic-card">
               <span className="create-topic-icon">
@@ -140,9 +135,8 @@ export function HomePage({ workspace }: { workspace: Workspace }) {
               <p>
                 새로운 주제로
                 <br />
-                대화를 이어가보세요.
+                회의를 시작해보세요.
               </p>
-              <ArrowRight size={20} />
             </Link>
           </div>
         ) : (
@@ -160,10 +154,6 @@ export function HomePage({ workspace }: { workspace: Workspace }) {
           </Card>
         )}
       </section>
-      <footer className="home-footer">
-        <span>ROBOT BUTLER</span>
-        <span>회의는 준비가 전부가 아니라, 좋은 대화가 전부입니다.</span>
-      </footer>
     </div>
   );
 }

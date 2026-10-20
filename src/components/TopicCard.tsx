@@ -12,20 +12,38 @@ export function TopicIcon({ topic }: { topic: Topic }) {
     </span>
   );
 }
-export function TopicCard({ topic, data }: { topic: Topic; data: Workspace }) {
+export function TopicCard({
+  topic,
+  data,
+  compact = false,
+}: {
+  topic: Topic;
+  data: Workspace;
+  compact?: boolean;
+}) {
   const role = topic.roles[data.user.id];
   return (
-    <Link className="card topic-card" to={`/topics/${topic.id}`}>
+    <Link
+      className={`card topic-card ${compact ? 'topic-card-home' : ''}`}
+      to={`/topics/${topic.id}`}
+    >
       <div className="topic-card-top">
         <TopicIcon topic={topic} />
-        <span className={`role-badge ${role === 'Attendee' ? '' : 'role-manager'}`}>
+        {compact ? <h3>{topic.title}</h3> : null}
+        <span
+          className={
+            compact ? 'sr-only' : `role-badge ${role === 'Attendee' ? '' : 'role-manager'}`
+          }
+        >
           {roles[role]}
         </span>
       </div>
-      <h3>
-        {topic.title}
-        <ArrowUpRight size={17} />
-      </h3>
+      {!compact ? (
+        <h3>
+          {topic.title}
+          <ArrowUpRight size={17} />
+        </h3>
+      ) : null}
       <p className="muted">{topic.description}</p>
       <div className="topic-footer">
         <CalendarDays size={15} />

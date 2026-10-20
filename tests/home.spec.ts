@@ -12,10 +12,11 @@ test('home layout, data counts and responsive screenshots', async ({ page }, inf
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await home(page);
-  await expect(page.getByRole('heading', { name: /^임박한 회의/ })).toBeVisible();
-  await expect(page.getByText('30분 후 시작')).toBeVisible();
-  await expect(page.getByText('자료 2개 등록됨')).toBeVisible();
-  await expect(page.locator('.avatar-more')).toHaveText('+2');
+  await expect(page.getByRole('heading', { name: /^임박한 회의/ })).toHaveText('임박한 회의');
+  await expect(page.getByText('30분 후', { exact: true })).toBeVisible();
+  await expect(page.locator('.meeting-material')).toContainText('자료 2개 등록됨');
+  await expect(page.locator('.meeting-card .avatar-more')).toHaveText('+1');
+  await expect(page.locator('.meeting-calendar')).toBeVisible();
   await expect(page.locator('.timeline>li')).toHaveCount(3);
   await expect(page.locator('.topic-card')).toHaveCount(3);
   await expect(page.locator('.topic-card').last()).toContainText('회의 1개');

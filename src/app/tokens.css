@@ -1,0 +1,24 @@
+/* Generated from docs/design/tokens.json. */
+:root {
+  --background: #F7F8FA;
+  --surface: #FFFFFF;
+  --primary: #3659E3;
+  --primary-hover: #2947C5;
+  --primary-soft: #EDF2FF;
+  --mint-soft: #E4F5ED;
+  --mint-text: #17674C;
+  --text: #17213D;
+  --text-secondary: #56627A;
+  --border: #DCE2EC;
+  --control-border: #77839A;
+  --warning-soft: #FFF4D9;
+  --warning-text: #875300;
+  --success-soft: #E4F5ED;
+  --success-text: #17674C;
+  --completed-soft: #EEF0F4;
+  --completed-text: #56627A;
+  --danger-soft: #FFF0F0;
+  --danger-text: #B42335;
+  --shadow-card: 0 4px 20px rgba(23,33,61,0.06);
+  --font-family: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}

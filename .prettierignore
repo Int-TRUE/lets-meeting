@@ -1,0 +1,7 @@
+node_modules
+dist
+test-results
+playwright-report
+docs/design
+src/app/tokens.css
+package-lock.json

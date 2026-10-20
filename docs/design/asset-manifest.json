@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "approvedDirectionDate": "2026-10-20",
+  "notes": "보드는 디자인 참고이며 투명 배경 개별 캐릭터 에셋은 포함하지 않음",
+  "assets": [
+    {
+      "path": "assets/01-brand-and-entry.png",
+      "role": "최신 브랜드·01–04",
+      "generation": "imagegen",
+      "sha256": "43d4e99b5f3c09a2aa0f2cc982fb41a4eff8958e1611dd2fa80dd5d54de41c17",
+      "bytes": 1647160
+    },
+    {
+      "path": "assets/02-topic-and-permissions.png",
+      "role": "05–08 구조, 브랜드 교체 필요",
+      "generation": "imagegen",
+      "sha256": "0bd7c96736aa364e9f1dca91b8e96e5e86a6adef4022c13cbbebaa3fe0cb8d2e",
+      "bytes": 1539639
+    },
+    {
+      "path": "assets/03-meeting-creation.png",
+      "role": "09–12 구조, 3단계 교정 필요",
+      "generation": "imagegen",
+      "sha256": "1a1299b67b1bf65b99f8ead31bb4ad0f5b5657543fe46fb4b772396ad37020af",
+      "bytes": 1608008
+    },
+    {
+      "path": "assets/04-meeting-lifecycle.png",
+      "role": "13–16 구조, 취소 상태 분리",
+      "generation": "imagegen",
+      "sha256": "35e9bb36150615b310154c19cce012404405f9a8b521193598d8ac23135f474e",
+      "bytes": 1628099
+    },
+    {
+      "path": "assets/05-notifications-and-admin.png",
+      "role": "17–20 구조, 필수 알림 잠금",
+      "generation": "imagegen",
+      "sha256": "e4a7975a5c4d4e36e3db009eb87210d5c2478d4901037503f48f96d3cfb4e989",
+      "bytes": 1660289
+    },
+    {
+      "path": "assets/reference-home-v2-blue.png",
+      "role": "과거 홈 배치 참고만",
+      "generation": "imagegen",
+      "sha256": "9611dbfce677caddb33fc89cbd03401ad6efe1872c3a8efd18a8a413bafa6e01",
+      "bytes": 1653361
+    }
+  ]
+}

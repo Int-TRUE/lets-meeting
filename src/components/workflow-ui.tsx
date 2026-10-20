@@ -16,17 +16,19 @@ export function PageHeading({
 }) {
   return (
     <>
-      <nav className="breadcrumbs" aria-label="현재 위치">
-        <Link to="/">홈</Link>
-        {crumbs.map((c) => (
-          <span key={c.to}>
-            <ChevronRight size={14} />
-            <Link to={c.to}>{c.label}</Link>
-          </span>
-        ))}
-        <ChevronRight size={14} />
-        <span aria-current="page">{title}</span>
-      </nav>
+      {crumbs.length ? (
+        <nav className="breadcrumbs" aria-label="현재 위치">
+          <Link to="/">홈</Link>
+          {crumbs.map((c) => (
+            <span key={c.to}>
+              <ChevronRight size={14} />
+              <Link to={c.to}>{c.label}</Link>
+            </span>
+          ))}
+          <ChevronRight size={14} />
+          <span aria-current="page">{title}</span>
+        </nav>
+      ) : null}
       <div className="workflow-heading">
         <div>
           <h1>{title}</h1>

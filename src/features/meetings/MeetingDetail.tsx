@@ -117,7 +117,7 @@ export function MeetingDetail() {
     }
   }
   return (
-    <div className="workflow-page">
+    <div className="workflow-page meeting-detail-page">
       {location.state?.fromSearch ? (
         <button
           className="back-link"
@@ -438,7 +438,7 @@ export function SummaryEditor() {
   }
   const topic = data.topics.find((t) => t.id === meeting.topicId);
   return (
-    <div className="workflow-page">
+    <div className="workflow-page summary-page">
       <PageHeading
         title="회의 후 요약 작성"
         description={meeting.title}

@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="ko">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>로봇집사 데스크톱 시안 비교</title
+  ><style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 28px;
+      font:
+        16px/1.6 system-ui,
+        sans-serif;
+      color: #17213d;
+      background: #f5f6fa;
+    }
+    header {
+      max-width: 1200px;
+      margin: 0 auto 32px;
+    }
+    h1 {
+      font-size: 28px;
+    }
+    h2 {
+      font-size: 20px;
+      margin: 0;
+    }
+    small {
+      font-weight: 400;
+      color: #626d88;
+    }
+    section {
+      background: white;
+      border: 1px solid #dce2ec;
+      padding: 20px;
+      margin-bottom: 28px;
+      border-radius: 12px;
+    }
+    section > p {
+      font-size: 14px;
+      color: #56627a;
+    }
+    .pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    figure {
+      margin: 0;
+      min-width: 0;
+    }
+    figcaption {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .frame {
+      position: relative;
+      aspect-ratio: var(--ratio);
+      overflow: hidden;
+      outline: 1px solid #dce2ec;
+      background: white;
+    }
+    .frame img {
+      position: absolute;
+      max-width: none;
+      display: block;
+    }
+    .actual {
+      width: 100%;
+      height: 100%;
+    }
+    nav {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    a {
+      color: #0866ff;
+    }
+    button {
+      padding: 10px 18px;
+      cursor: pointer;
+    }
+    body.overlay .pair {
+      display: block;
+      position: relative;
+    }
+    body.overlay figure:nth-child(2) {
+      position: absolute;
+      inset: 0;
+      opacity: 0.5;
+    }
+    body.overlay figure:nth-child(2) figcaption {
+      visibility: hidden;
+    }
+    @media (max-width: 800px) {
+      .pair {
+        grid-template-columns: 1fr;
+      }
+      body {
+        padding: 12px;
+      }
+    }
+  </style>
+  <header>
+    <h1>로봇집사 데스크톱 시안 비교</h1>
+    <p>
+      같은 앱 영역 크기의 원본과 실제 캡처입니다. 원본은 합성 PNG를 2배로 펼친 것으로 원래 Figma
+      화면 크기는 제공되지 않았습니다. 글꼴·개별 이미지가 없어 픽셀 단위 완전 일치는 아직 아닙니다.
+    </p>
+    <p>18 서비스 알림함은 패키지의 선택 제안으로 이번 구현에 포함하지 않았습니다.</p>
+    <button id="overlay">반투명 겹쳐 보기 / 나란히 보기</button>
+    <nav>
+      <a href="#01-login">01-login</a><a href="#02-home">02-home</a
+      ><a href="#03-search">03-search</a><a href="#04-empty">04-empty</a
+      ><a href="#05-topics">05-topics</a><a href="#06-topic-create">06-topic-create</a
+      ><a href="#07-topic-detail">07-topic-detail</a
+      ><a href="#08-topic-settings">08-topic-settings</a
+      ><a href="#09-meeting-info">09-meeting-info</a><a href="#10-reservation">10-reservation</a
+      ><a href="#11-participants">11-participants</a><a href="#12-created">12-created</a
+      ><a href="#13-meeting-detail">13-meeting-detail</a><a href="#14-materials">14-materials</a
+      ><a href="#15-summary">15-summary</a><a href="#16-cancel">16-cancel</a
+      ><a href="#17-notifications">17-notifications</a><a href="#19-admin">19-admin</a
+      ><a href="#20-rooms">20-rooms</a>
+    </nav>
+  </header>
+  <section id="01-login">
+    <h2>01-login <small>1480 × 992</small></h2>
+    <p>
+      원본 캐릭터 부분을 사용하지만 배경이 포함되어 있습니다. 투명 원본, 정확한 글꼴·기능 아이콘이
+      필요합니다. 실제 회사 로그인은 미연결입니다.
+    </p>
+    <div class="pair" style="--ratio: 740/496">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/01-brand-and-entry.png"
+            style="width: 207.56756756756758%; left: -2.7027027027027026%; top: -6.854838709677419%"
+            alt="01-login 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame"><img class="actual" src="01-login.png" alt="01-login 실제 구현" /></div>
+      </figure>
+    </div>
+  </section>
+  <section id="02-home">
+    <h2>02-home <small>1484 × 992</small></h2>
+    <p>
+      캐릭터는 기존 복원본, 달력은 기존 SVG, 프로필은 이니셜입니다. 원본 에셋과 글꼴이 없으므로
+      동일한 픽셀 재현은 아닙니다. 숫자·날짜는 현재 데이터입니다.
+    </p>
+    <div class="pair" style="--ratio: 742/496">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/01-brand-and-entry.png"
+            style="width: 207.00808625336927%; left: -104.5822102425876%; top: -6.854838709677419%"
+            alt="02-home 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame"><img class="actual" src="02-home.png" alt="02-home 실제 구현" /></div>
+      </figure>
+    </div>
+  </section>
+  <section id="03-search">
+    <h2>03-search <small>1480 × 876</small></h2>
+    <p>원본보다 결과 수가 적습니다. 검색 결과와 자료 수는 접근 가능한 데이터에 따릅니다.</p>
+    <div class="pair" style="--ratio: 740/438">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/01-brand-and-entry.png"
+            style="
+              width: 207.56756756756758%;
+              left: -2.7027027027027026%;
+              top: -130.13698630136986%;
+            "
+            alt="03-search 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame">
+          <img class="actual" src="03-search.png" alt="03-search 실제 구현" />
+        </div>
+      </figure>
+    </div>
+  </section>
+  <section id="04-empty">
+    <h2>04-empty <small>1484 × 880</small></h2>
+    <p>
+      회의가 없는 중앙 안내와 기존 Topic만 표시합니다. 원본 빈 화면의 예시 Topic 숫자는 복사하지
+      않습니다.
+    </p>
+    <div class="pair" style="--ratio: 742/440">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/01-brand-and-entry.png"
+            style="width: 207.00808625336927%; left: -104.5822102425876%; top: -129.0909090909091%"
+            alt="04-empty 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame"><img class="actual" src="04-empty.png" alt="04-empty 실제 구현" /></div>
+      </figure>
+    </div>
+  </section>
+  <section id="05-topics">
+    <h2>05-topics <small>1460 × 960</small></h2>
+    <p>
+      원본 4개 대신 실제 3개 Topic입니다. 관리자만 표시하며 멤버 공개 범위는 미정입니다.
+      사진·아이콘·글꼴이 다릅니다.
+    </p>
+    <div class="pair" style="--ratio: 730/480">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/02-topic-and-permissions.png"
+            style="width: 210.41095890410958%; left: -3.0136986301369864%; top: -8.333333333333332%"
+            alt="05-topics 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame">
+          <img class="actual" src="05-topics.png" alt="05-topics 실제 구현" />
+        </div>
+      </figure>
+    </div>
+  </section>
+  <section id="06-topic-create">
+    <h2>06-topic-create <small>1448 × 960</small></h2>
+    <p>
+      직원 사진과 정확한 아이콘이 없습니다. 실제 검색·선택 목록으로 구성하며 임의 글자 수·관리자
+      최대 5명 제한을 복사하지 않습니다.
+    </p>
+    <div class="pair" style="--ratio: 724/480">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/02-topic-and-permissions.png"
+            style="width: 212.15469613259668%; left: -109.1160220994475%; top: -8.333333333333332%"
+            alt="06-topic-create 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame">
+          <img class="actual" src="06-topic-create.png" alt="06-topic-create 실제 구현" />
+        </div>
+      </figure>
+    </div>
+  </section>
+  <section id="07-topic-detail">
+    <h2>07-topic-detail <small>1460 × 880</small></h2>
+    <p>
+      실제 접근 가능한 회의 2개입니다. 관련 자료/멤버/주제 정보 탭은 미정 범위입니다. 사진과 원본
+      아이콘이 필요합니다.
+    </p>
+    <div class="pair" style="--ratio: 730/440">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/02-topic-and-permissions.png"
+            style="
+              width: 210.41095890410958%;
+              left: -3.0136986301369864%;
+              top: -128.63636363636363%;
+            "
+            alt="07-topic-detail 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame">
+          <img class="actual" src="07-topic-detail.png" alt="07-topic-detail 실제 구현" />
+        </div>
+      </figure>
+    </div>
+  </section>
+  <section id="08-topic-settings">
+    <h2>08-topic-settings <small>1448 × 876</small></h2>
+    <p>
+      정보 수정·관리자 추가 폼을 유지합니다. 멤버 목록 공개·위임·삭제가 미정이므로 원본과 구조
+      차이가 큽니다.
+    </p>
+    <div class="pair" style="--ratio: 724/438">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/02-topic-and-permissions.png"
+            style="width: 212.15469613259668%; left: -109.1160220994475%; top: -129.68036529680364%"
+            alt="08-topic-settings 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame">
+          <img class="actual" src="08-topic-settings.png" alt="08-topic-settings 실제 구현" />
+        </div>
+      </figure>
+    </div>
+  </section>
+  <section id="09-meeting-info">
+    <h2>09-meeting-info <small>1484 × 968</small></h2>
+    <p>
+      패키지가 허용한 하나의 회의 내용·안건 입력입니다. 원본의 별도 드래그 안건 목록은 구현되지
+      않았습니다. 입력 단계는 3개입니다.
+    </p>
+    <div class="pair" style="--ratio: 742/484">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/03-meeting-creation.png"
+            style="width: 207.00808625336927%; left: -2.6954177897574128%; top: -4.132231404958678%"
+            alt="09-meeting-info 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame">
+          <img class="actual" src="09-meeting-info.png" alt="09-meeting-info 실제 구현" />
+        </div>
+      </figure>
+    </div>
+  </section>
+  <section id="10-reservation">
+    <h2>10-reservation <small>1484 × 968</small></h2>
+    <p>
+      원본 회의실 사진이 없어 기존 위치 안내를 유지합니다. 하루 시간대를 가로 스크롤로 선택합니다.
+      실제 충돌이 없을 때 빨간 경고를 표시하지 않습니다.
+    </p>
+    <div class="pair" style="--ratio: 742/484">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/03-meeting-creation.png"
+            style="width: 207.00808625336927%; left: -104.5822102425876%; top: -4.132231404958678%"
+            alt="10-reservation 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame">
+          <img class="actual" src="10-reservation.png" alt="10-reservation 실제 구현" />
+        </div>
+      </figure>
+    </div>
+  </section>
+  <section id="11-participants">
+    <h2>11-participants <small>1484 × 964</small></h2>
+    <p>
+      사진 카드 대신 기존 이름·부서 선택 UI입니다. 자료와 역할은 실제 미리보기 데이터 기준입니다.
+    </p>
+    <div class="pair" style="--ratio: 742/482">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/03-meeting-creation.png"
+            style="
+              width: 207.00808625336927%;
+              left: -2.6954177897574128%;
+              top: -107.88381742738589%;
+            "
+            alt="11-participants 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame">
+          <img class="actual" src="11-participants.png" alt="11-participants 실제 구현" />
+        </div>
+      </figure>
+    </div>
+  </section>
+  <section id="12-created">
+    <h2>12-created <small>1484 × 964</small></h2>
+    <p>실제 예약·메시지 성공으로 표시하지 않습니다. 성공 배경 일러스트 원본이 없습니다.</p>
+    <div class="pair" style="--ratio: 742/482">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/03-meeting-creation.png"
+            style="width: 207.00808625336927%; left: -104.5822102425876%; top: -107.88381742738589%"
+            alt="12-created 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame">
+          <img class="actual" src="12-created.png" alt="12-created 실제 구현" />
+        </div>
+      </figure>
+    </div>
+  </section>
+  <section id="13-meeting-detail">
+    <h2>13-meeting-detail <small>1484 × 988</small></h2>
+    <p>
+      실제 길찾기 원본이 없어 안내 영역으로 남아 있습니다. 안건은 텍스트이며 사진은 이니셜입니다.
+    </p>
+    <div class="pair" style="--ratio: 742/494">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/04-meeting-lifecycle.png"
+            style="
+              width: 207.00808625336927%;
+              left: -2.6954177897574128%;
+              top: -2.0242914979757085%;
+            "
+            alt="13-meeting-detail 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame">
+          <img class="actual" src="13-meeting-detail.png" alt="13-meeting-detail 실제 구현" />
+        </div>
+      </figure>
+    </div>
+  </section>
+  <section id="14-materials">
+    <h2>14-materials <small>1484 × 988</small></h2>
+    <p>
+      자료 목록만 캡처했습니다. 원본의 옆 수정 패널 대신 기존 3단계 수정 화면을 유지하며, 자료 변경
+      권한은 생성자에게만 있습니다.
+    </p>
+    <div class="pair" style="--ratio: 742/494">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/04-meeting-lifecycle.png"
+            style="width: 207.00808625336927%; left: -104.5822102425876%; top: -2.0242914979757085%"
+            alt="14-materials 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame">
+          <img class="actual" src="14-materials.png" alt="14-materials 실제 구현" />
+        </div>
+      </figure>
+    </div>
+  </section>
+  <section id="15-summary">
+    <h2>15-summary <small>1484 × 968</small></h2>
+    <p>
+      본문 입력 3영역이며 원본의 할 일별 체크 항목과 다릅니다. 필드와 완료 버튼은 실제 저장 흐름에
+      연결됩니다.
+    </p>
+    <div class="pair" style="--ratio: 742/484">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/04-meeting-lifecycle.png"
+            style="
+              width: 207.00808625336927%;
+              left: -2.6954177897574128%;
+              top: -107.02479338842976%;
+            "
+            alt="15-summary 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame">
+          <img class="actual" src="15-summary.png" alt="15-summary 실제 구현" />
+        </div>
+      </figure>
+    </div>
+  </section>
+  <section id="16-cancel">
+    <h2>16-cancel <small>1484 × 968</small></h2>
+    <p>
+      명세에 따라 예정 회의에서 취소창을 엽니다. 원본의 완료 화면 위 취소창 혼합은 복제하지
+      않습니다.
+    </p>
+    <div class="pair" style="--ratio: 742/484">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/04-meeting-lifecycle.png"
+            style="width: 207.00808625336927%; left: -104.5822102425876%; top: -107.02479338842976%"
+            alt="16-cancel 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame">
+          <img class="actual" src="16-cancel.png" alt="16-cancel 실제 구현" />
+        </div>
+      </figure>
+    </div>
+  </section>
+  <section id="17-notifications">
+    <h2>17-notifications <small>1496 × 1016</small></h2>
+    <p>
+      원본 장식 아이콘이 없습니다. 필수 알림은 3개 잠금 행이며 선택 알림은 스위치입니다. 방해금지는
+      미지원 안내입니다.
+    </p>
+    <div class="pair" style="--ratio: 748/508">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/05-notifications-and-admin.png"
+            style="width: 205.34759358288773%; left: -2.13903743315508%; top: -1.968503937007874%"
+            alt="17-notifications 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame">
+          <img class="actual" src="17-notifications.png" alt="17-notifications 실제 구현" />
+        </div>
+      </figure>
+    </div>
+  </section>
+  <section id="19-admin">
+    <h2>19-admin <small>1496 × 968</small></h2>
+    <p>
+      실제로 저장된 미전송 기록만 표시합니다. 원본의 발송 성공/실패·재시도 예시를 만들지 않습니다.
+    </p>
+    <div class="pair" style="--ratio: 748/484">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/05-notifications-and-admin.png"
+            style="width: 205.34759358288773%; left: -2.13903743315508%; top: -109.09090909090908%"
+            alt="19-admin 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame"><img class="actual" src="19-admin.png" alt="19-admin 실제 구현" /></div>
+      </figure>
+    </div>
+  </section>
+  <section id="20-rooms">
+    <h2>20-rooms <small>1492 × 968</small></h2>
+    <p>
+      조회·선택은 가능하며 실제 회의실 변경은 미정입니다. 원본과 달리 수정 폼 대신 읽기 전용
+      정보입니다.
+    </p>
+    <div class="pair" style="--ratio: 746/484">
+      <figure>
+        <figcaption>ZIP 원본 · 앱 영역 2배</figcaption>
+        <div class="frame">
+          <img
+            class="board"
+            src="../../design/assets/05-notifications-and-admin.png"
+            style="
+              width: 205.89812332439678%;
+              left: -104.02144772117963%;
+              top: -109.09090909090908%;
+            "
+            alt="20-rooms 원본 시안"
+          />
+        </div>
+      </figure>
+      <figure>
+        <figcaption>실제 브라우저 캡처</figcaption>
+        <div class="frame"><img class="actual" src="20-rooms.png" alt="20-rooms 실제 구현" /></div>
+      </figure>
+    </div>
+  </section>
+  <script>
+    document.querySelector('#overlay').onclick = () => document.body.classList.toggle('overlay');
+  </script>
+</html>

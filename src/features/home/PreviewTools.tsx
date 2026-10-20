@@ -16,6 +16,9 @@ export function PreviewTools({
         미리보기 상태
       </summary>
       <div>
+        <p className="preview-disclosure">
+          예시 데이터 미리보기 · 실제 계정·예약·알림과 연결되지 않습니다.
+        </p>
         <label htmlFor="preview-state">화면 상태</label>
         <select
           id="preview-state"

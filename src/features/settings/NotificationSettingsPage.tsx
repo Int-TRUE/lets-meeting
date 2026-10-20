@@ -56,7 +56,7 @@ export function NotificationSettingsPage() {
     }
   }
   return (
-    <div className="workflow-page">
+    <div className="workflow-page notification-settings-page">
       <PageHeading
         title="개인 알림 설정"
         description="회의와 관련된 중요한 소식을 원하는 방식으로 받아보세요."
@@ -71,7 +71,7 @@ export function NotificationSettingsPage() {
         </div>
         <span className="badge status-scheduled">기본</span>
       </Card>
-      <div className="settings-grid">
+      <div className="settings-grid notification-settings-grid">
         <Card className="notification-preview">
           <h2>알림 대상 이벤트</h2>
           <p className="muted">회의 생성·변경·취소 알림은 항상 켜져 있습니다.</p>
@@ -128,7 +128,11 @@ export function NotificationSettingsPage() {
               </label>
             ))}
           </fieldset>
-          <p className="detail-note">방해금지·카카오톡·이메일은 추후 제공 범위입니다.</p>
+        </Card>
+        <Card className="quiet-hours-card">
+          <h2>방해 금지 시간</h2>
+          <p className="muted">추후 제공</p>
+          <p className="detail-note">현재는 방해 금지 시간을 설정할 수 없습니다.</p>
         </Card>
       </div>
       <FormMessage error={error} success={success} />

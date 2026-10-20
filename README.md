@@ -48,5 +48,6 @@ npm run check
 - [디자인 기준](docs/design/README.md)
 - [아키텍처](docs/ARCHITECTURE.md)
 - [구현·검증 기록](docs/IMPLEMENTATION.md)
+- [CI/CD·배포 운영 지침](docs/DEPLOYMENT.md)
 
-작업은 `task/*` 브랜치와 `master` 대상 PR로 진행합니다. 검증 후 커밋·게시·PR·머지는 사용자 지시에 따라 별도 확인 없이 수행합니다.
+작업은 `task/*` 브랜치와 `master` 대상 PR로 진행합니다. 검증 후 커밋·게시·PR·CI 통과 확인·머지·Vercel 배포 확인을 사용자 지시에 따라 별도 확인 없이 이어서 수행합니다. 현재 Vercel 연결 상태와 실제 배포 전 필요한 구성은 배포 운영 지침에서 확인합니다.

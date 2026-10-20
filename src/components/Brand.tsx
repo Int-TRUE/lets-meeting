@@ -5,7 +5,7 @@ export function Mascot({
   pose = 'guide',
 }: {
   small?: boolean;
-  pose?: 'guide' | 'tablet';
+  pose?: 'guide' | 'tablet' | 'home';
 }) {
   return (
     <span className={small ? 'mascot mascot-logo' : `mascot mascot-${pose}`} aria-hidden="true">

@@ -44,6 +44,13 @@
       "generation": "imagegen",
       "sha256": "9611dbfce677caddb33fc89cbd03401ad6efe1872c3a8efd18a8a413bafa6e01",
       "bytes": 1653361
+    },
+    {
+      "path": "assets/reference-home-user-2026-10-20.png",
+      "role": "사용자가 추가 제공한 홈 배치·색상·달력 장식 기준",
+      "generation": "user-provided",
+      "sha256": "f384daa0bbddfd4e009978cdd1a1ee7b6c7301e4f81904a7d4e6abd1a26314e2",
+      "bytes": 790672
     }
   ]
 }

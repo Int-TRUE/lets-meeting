@@ -36,6 +36,11 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole('navigation', { name: '주 메뉴' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: '테스트 계정 선택' })).toBeVisible();
+    await page.getByRole('button', { name: `${name}으로 시작` }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(name);
+    await page.getByRole('button', { name: '내 프로필', exact: true }).click();
+    await page.getByRole('button', { name: '테스트 계정 변경', exact: true }).click();
+    await expect(page).toHaveURL(/\/login$/);
   }
   await page.getByRole('button', { name: '정수진으로 시작' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('정수진');

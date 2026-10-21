@@ -1399,3 +1399,91 @@
   top: auto;
   object-fit: contain;
 }
+
+/* Shared, uncropped 3D room guidance; labels remain selectable and accessible. */
+.room-directions {
+  text-align: left;
+  min-width: 0;
+}
+.room-directions-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.room-directions-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 52px;
+  height: 56px;
+  border-radius: 14px;
+  color: var(--home-primary);
+  background: var(--home-icon-blue-soft);
+}
+.room-directions-heading h2 {
+  margin: 0 0 2px;
+  font-size: 22px;
+  line-height: 1.4;
+}
+.room-directions-heading strong {
+  font-size: 17px;
+  color: var(--text-secondary);
+}
+.room-directions .room-directions-heading p {
+  display: block;
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.room-directions-map {
+  position: relative;
+  container-type: inline-size;
+}
+.room-directions-map img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+.room-directions-destination {
+  position: absolute;
+  left: 75.3%;
+  top: 18%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #0866ff;
+  color: white;
+  font-weight: 700;
+  font-size: clamp(10px, 3.2cqi, 20px);
+  line-height: 1.3;
+  max-width: 44%;
+  text-align: center;
+  white-space: nowrap;
+}
+.room-directions-destination::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: calc(50% - 7px);
+  border: 7px solid transparent;
+  border-top-color: #0866ff;
+}
+.room-directions-elevator {
+  position: absolute;
+  left: 19%;
+  top: 55%;
+  transform: translateX(-50%);
+  color: #17213d;
+  font-weight: 700;
+  font-size: clamp(10px, 3.2cqi, 20px);
+}
+.room-directions-note {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.room-details > .room-directions {
+  margin-bottom: 24px;
+}

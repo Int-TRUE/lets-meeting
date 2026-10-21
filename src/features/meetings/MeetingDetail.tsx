@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { RoomDirections } from '../../components/RoomDirections';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -26,7 +27,7 @@ import {
   TextareaField,
 } from '../../components/workflow-ui';
 export function MeetingDetail() {
-  const { data, run } = useWorkspace();
+  const { data, run, rooms } = useWorkspace();
   const { id } = useParams();
   const [params, setParams] = useSearchParams();
   const location = useLocation();
@@ -224,12 +225,13 @@ export function MeetingDetail() {
           </Card>
           {status === 'scheduled' ? (
             <Card>
-              <h2>회의실 가는 길</h2>
-              <div className="route-placeholder">
-                <MapPin size={36} />
-                <strong>{meeting.room}</strong>
-                <p>실제 회의실의 안내 경로가 등록되면 여기에서 확인할 수 있어요.</p>
-              </div>
+              <RoomDirections
+                room={rooms.find(
+                  (room) =>
+                    room.id === meeting.roomId ||
+                    `${room.location} · ${room.name}` === meeting.room,
+                )}
+              />
             </Card>
           ) : (
             <Card>

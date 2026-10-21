@@ -93,6 +93,7 @@ export function App() {
   }, [previewState, userId, attempt]);
   function changePreview(state: PreviewState, user: string) {
     setResult({});
+    setAttempt((a) => a + 1);
     setPreviewState(state);
     setUserId(user);
     try {

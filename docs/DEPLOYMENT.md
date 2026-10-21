@@ -9,6 +9,8 @@
 
 검증·push·PR·CI 통과 확인·병합·Vercel 배포 확인을 별도 승인 없이 연속 진행한다. Git 연동이 활성화되어 작업 브랜치는 Preview, `master`는 Production에 자동 배포된다. 같은 커밋을 CLI로 중복 배포하지 않는다. 배포 READY와 커밋 일치, 실제 화면·API·DB 확인까지 완료 기준으로 삼는다. Vercel의 기존 배포 보호는 유지한다.
 
+2026-10-22 확인 시 Git 연결의 배포 생성(`gitProviderOptions.createDeployments`)이 꺼져 있어 `enabled`로 복구했다. 후속 push와 병합에서 Preview·Production 자동 배포 생성을 확인한다.
+
 초기 계정 연결 오류는 해결됐다. GitHub Actions의 `verify`는 빌드·단위/SQLite/PostgreSQL·브라우저 검사를 수행한다. PostgreSQL 검사는 CI의 별도 PostgreSQL 서비스에서 실행해 운영 DB를 건드리지 않는다. 검사 통과를 확인하고 병합하는 규칙이며, Vercel의 추가 Deployment Checks를 구성했다고 주장하지 않는다.
 
 ## 서버와 영속 DB

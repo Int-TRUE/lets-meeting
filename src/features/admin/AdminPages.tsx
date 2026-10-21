@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { RoomDirections } from '../../components/RoomDirections';
 import { Link } from 'react-router-dom';
 import { CalendarDays, MapPin, Users } from 'lucide-react';
 import type { DeliveryLog } from '../../domain/models';
@@ -253,9 +254,7 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
           </div>
         </Card>
         <Card className="room-details">
-          <span className="room-illustration">
-            <MapPin size={42} />
-          </span>
+          <RoomDirections room={selected} />
           <h2>
             {selected.location} · {selected.name}
           </h2>

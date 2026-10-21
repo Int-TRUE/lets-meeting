@@ -2,10 +2,18 @@ import { Building2, CalendarDays, MessageSquare, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Mascot } from '../../components/Brand';
 import { Button } from '../../components/ui';
+import type { Person } from '../../domain/models';
+import { AccountChooser } from './AccountChooser';
 
-export function LoginPage() {
+export function LoginPage({
+  accounts,
+  onSelect,
+}: {
+  accounts?: Person[];
+  onSelect?: (id: string) => void;
+}) {
   return (
-    <div className="login-page">
+    <div className={`login-page ${onSelect ? 'login-page-test' : ''}`}>
       <section className="login-brand-panel" aria-label="로봇집사 소개">
         <Mascot pose="welcome" />
         <strong>로봇집사</strong>
@@ -32,6 +40,7 @@ export function LoginPage() {
           회사 계정으로 로그인하기
         </Button>
         <p className="detail-note">회사 계정 로그인은 아직 연결되지 않았습니다.</p>
+        {accounts && onSelect ? <AccountChooser accounts={accounts} onSelect={onSelect} /> : null}
         <div className="login-features">
           <div>
             <MessageSquare />
@@ -57,9 +66,11 @@ export function LoginPage() {
             </p>
           </div>
         </div>
-        <Link className="text-link" to="/">
-          예시 데이터로 미리보기
-        </Link>
+        {!onSelect ? (
+          <Link className="text-link" to="/">
+            예시 데이터로 미리보기
+          </Link>
+        ) : null}
       </section>
     </div>
   );

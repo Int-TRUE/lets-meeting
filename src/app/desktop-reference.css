@@ -1289,27 +1289,23 @@
   margin: 0 auto;
 }
 .account-chooser {
-  max-width: 1120px;
-  margin: 48px auto;
+  margin-top: 28px;
 }
 .account-chooser header {
-  margin-bottom: 32px;
+  margin-bottom: 16px;
 }
-.account-chooser h1 {
-  font-size: 32px;
-  font-weight: 800;
-  margin: 8px 0 12px;
-}
-.account-eyebrow {
-  color: var(--primary);
-  font-size: 13px;
-  letter-spacing: 0.12em;
+.account-chooser h2 {
+  font-size: 20px;
   font-weight: 700;
+  margin-bottom: 8px;
+}
+.account-chooser header p {
+  font-size: 14px;
 }
 .account-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 .account-card {
   padding: 0;
@@ -1319,65 +1315,65 @@
   background: transparent;
   color: inherit;
   width: 100%;
-  padding: 32px 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 16px;
+  gap: 8px;
   text-align: left;
   border-radius: inherit;
   cursor: pointer;
-  min-height: 260px;
+  font: inherit;
 }
 .account-card button:hover {
   background: var(--primary-soft);
 }
+.account-card .avatar-large {
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+}
 .account-card strong {
-  font-size: 22px;
+  font-size: 16px;
 }
 .account-card button > span:not(.avatar) {
-  font-size: 14px;
+  font-size: 13px;
 }
 .account-card .account-enter {
   display: flex;
   align-items: center;
   gap: 8px;
   color: var(--primary);
-  margin-top: auto;
   font-weight: 600;
 }
-.test-session-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 24px;
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-.test-session-bar .button {
-  min-height: 40px;
-  font-size: 14px;
-}
-@media (max-width: 1199px) {
-  .account-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
 @media (max-width: 600px) {
-  .account-chooser {
-    margin: 16px 0;
-  }
   .account-grid {
     grid-template-columns: 1fr;
-    gap: 12px;
   }
-  .account-card button {
-    min-height: 210px;
-    padding: 24px;
+}
+
+.login-page-test .account-card button {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 4px 12px;
+}
+.login-page-test .account-card .avatar {
+  grid-row: 1 / 4;
+}
+.login-page-test .account-card strong,
+.login-page-test .account-card button > span:not(.avatar) {
+  grid-column: 2;
+}
+@media (min-width: 1200px) {
+  .login-page-test {
+    padding-top: 24px;
+    padding-bottom: 24px;
   }
-  .test-session-bar {
-    align-items: flex-start;
-    flex-direction: column;
+  .login-page-test .login-form-panel {
+    min-height: 836px;
+    padding: 32px 40px;
+  }
+  .login-page-test .login-features {
+    margin-top: 24px;
   }
 }

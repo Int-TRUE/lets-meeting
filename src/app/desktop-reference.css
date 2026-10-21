@@ -156,10 +156,17 @@
   height: 310px;
   max-width: 100%;
 }
+.mascot-welcome {
+  overflow: visible;
+}
 .mascot-welcome img {
-  width: 3072px;
-  left: -140px;
-  top: -194px;
+  position: absolute;
+  width: 128%;
+  height: 128%;
+  max-width: none;
+  left: -14%;
+  top: -14%;
+  object-fit: contain;
 }
 .login-form-panel {
   background: white;

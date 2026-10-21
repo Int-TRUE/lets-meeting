@@ -58,6 +58,13 @@
       "generation": "imagegen restoration",
       "sha256": "9f4ca3af677b59238580f89450f275c37ed7b5d6a0bc742649e73d4a7f5a87c9",
       "bytes": 1403458
+    },
+    {
+      "path": "../../src/assets/mascot-welcome-hq.png",
+      "role": "로그인 3D 환영 포즈 — 개별 고해상도 투명 복원본",
+      "generation": "imagegen restoration from approved login board; raster, not vector",
+      "sha256": "61a7df7d7afcc1e64174e048b33ecf047b992043341a4d3393a2e3d4400049b4",
+      "bytes": 1413210
     }
   ]
 }

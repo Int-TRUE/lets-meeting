@@ -56,8 +56,8 @@ export function canReadMeeting(topic: Topic, meeting: Meeting, userId: string) {
     (topic.roles[userId] === 'Attendee' && meeting.participantIds.includes(userId))
   );
 }
-export function roomLabel(id: string) {
-  const room = rooms.find((r) => r.id === id);
+export function roomLabel(id: string, catalog = rooms) {
+  const room = catalog.find((r) => r.id === id);
   if (!room) throw new RuleError('회의실을 다시 선택해주세요.');
   return `${room.location} · ${room.name}`;
 }
@@ -65,7 +65,7 @@ export function overlaps(start: string, end: string, otherStart: string, otherEn
   return Date.parse(start) < Date.parse(otherEnd) && Date.parse(otherStart) < Date.parse(end);
 }
 export function roomConflicts(
-  db: Pick<PreviewDatabase, 'meetings'>,
+  db: Pick<PreviewDatabase, 'meetings' | 'rooms'>,
   roomId: string,
   start: string,
   end: string,
@@ -75,7 +75,7 @@ export function roomConflicts(
     (m) =>
       m.id !== exceptId &&
       !m.cancelled &&
-      (m.roomId === roomId || m.room === roomLabel(roomId)) &&
+      (m.roomId === roomId || m.room === roomLabel(roomId, db.rooms)) &&
       overlaps(start, end, m.start, m.end),
   );
 }
@@ -87,7 +87,7 @@ export function validateSchedule(
   now: string,
   exceptId?: string,
 ) {
-  if (!rooms.some((r) => r.id === roomId && r.active))
+  if (!(db.rooms ?? rooms).some((r) => r.id === roomId && r.active))
     throw new RuleError('선택할 수 없는 회의실입니다.');
   const canonical = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00\+09:00$/;
   if (!canonical.test(start) || !canonical.test(end))

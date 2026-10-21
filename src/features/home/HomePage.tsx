@@ -5,11 +5,27 @@ import { dateKey, homeData, time } from '../../domain/selectors';
 import { Mascot } from '../../components/Brand';
 import { MeetingCard } from '../../components/MeetingCard';
 import { TopicCard } from '../../components/TopicCard';
-import { AvatarGroup, Card, EmptyState } from '../../components/ui';
-export function HomePage({ workspace }: { workspace: Workspace }) {
+import { AvatarGroup, Button, Card, EmptyState } from '../../components/ui';
+export function HomePage({
+  workspace,
+  onChooseAccount,
+}: {
+  workspace: Workspace;
+  onChooseAccount?: () => void;
+}) {
   const data = homeData(workspace);
   return (
     <div className={`home-page ${data.next ? '' : 'home-page-empty'}`}>
+      {onChooseAccount ? (
+        <div className="test-session-bar">
+          <span>
+            {workspace.user.team} · {workspace.user.position} <strong>{workspace.user.name}</strong>
+          </span>
+          <Button variant="secondary" onClick={onChooseAccount}>
+            테스트 계정 변경
+          </Button>
+        </div>
+      ) : null}
       <div className="home-grid">
         <section className="upcoming-section" aria-labelledby="upcoming-heading">
           <div className="page-intro">

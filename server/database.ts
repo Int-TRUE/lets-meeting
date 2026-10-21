@@ -3,11 +3,12 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { people } from '../src/data/workspace';
 import { rooms, RuleError } from '../src/domain/workflows';
-import { demoSeed } from './seed';
+import { demoSeed, referenceSeed, seoulNow, TEST_SEED_VERSION, type SeedProfile } from './seed';
+import { testDirectory } from '../src/data/testDirectory';
 import type { PreviewDatabase } from '../src/domain/models';
 import type { TransactionAdapter } from '../src/data/previewService';
 
-export function openDemoDatabase(path: string) {
+export function openDemoDatabase(path: string, profile: SeedProfile = 'clean') {
   if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
   const sql = new DatabaseSync(path);
   sql.exec(`PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;
@@ -53,6 +54,9 @@ export function openDemoDatabase(path: string) {
     });
     return {
       version: 1,
+      people: rows('people').map((r) => JSON.parse(r.data)),
+      rooms: rows('rooms').map((r) => JSON.parse(r.data)),
+      now: profile === 'reference' ? undefined : seoulNow(),
       topics,
       meetings,
       preferences: Object.fromEntries(
@@ -111,7 +115,8 @@ export function openDemoDatabase(path: string) {
   let queue: Promise<unknown> = Promise.resolve();
   const transaction: TransactionAdapter = (actor, mutate, write) => {
     const operation = queue.then(async () => {
-      if (!sql.prepare('SELECT id FROM people WHERE id=?').get(actor))
+      const account = sql.prepare('SELECT data FROM people WHERE id=?').get(actor);
+      if (!account || (profile !== 'reference' && !JSON.parse(String(account.data)).isTestAccount))
         throw new RuleError('데모 사용자를 다시 선택해주세요.');
       // Serializing operations covers Blob conversion as well as SQL writes.
       if (write) sql.exec('BEGIN IMMEDIATE');
@@ -133,39 +138,32 @@ export function openDemoDatabase(path: string) {
     return operation;
   };
   async function seed() {
-    const version = sql.prepare("SELECT value FROM metadata WHERE key='seed-version'").get();
-    if (version) {
-      if (version.value === '1') {
-        await transaction(
-          'yoseop',
-          (state) => {
-            for (const sample of demoSeed().meetings.filter((m) =>
-              m.id.startsWith('autopay-prov'),
-            )) {
-              const current = state.meetings.find((m) => m.id === sample.id);
-              if (current && !current.attachments?.length) {
-                current.attachments = sample.attachments;
-                current.files = sample.files;
-                current.material = sample.material;
-              }
-            }
-          },
-          true,
-        );
-        sql.prepare("UPDATE metadata SET value='2' WHERE key='seed-version'").run();
-      }
-      return;
-    }
-    const data = demoSeed();
-    const save = await persist(data);
+    const expected = profile === 'reference' ? '2' : TEST_SEED_VERSION;
+    const save = await persist(profile === 'reference' ? referenceSeed() : demoSeed());
     sql.exec('BEGIN IMMEDIATE');
     try {
-      for (const p of people)
+      const version = sql.prepare("SELECT value FROM metadata WHERE key='seed-version'").get();
+      if (version?.value === expected) {
+        sql.exec('COMMIT');
+        return;
+      }
+      if (profile === 'reference' && version)
+        throw new Error('Reference fixtures require a separate test database.');
+      // Clear dependent account/activity rows, then replace people. Rooms are untouched.
+      if (profile !== 'reference') save();
+      sql.exec('DELETE FROM people');
+      for (const p of profile === 'reference' ? people : testDirectory)
         sql.prepare('INSERT INTO people VALUES (?,?)').run(p.id, JSON.stringify(p));
-      for (const r of rooms)
-        sql.prepare('INSERT INTO rooms VALUES (?,?)').run(r.id, JSON.stringify(r));
-      save();
-      sql.prepare('INSERT INTO metadata VALUES (?,?)').run('seed-version', '2');
+      if (!version)
+        for (const r of rooms)
+          sql.prepare('INSERT INTO rooms VALUES (?,?)').run(r.id, JSON.stringify(r));
+      // Reference records have foreign keys, so seed them after the catalog exists.
+      if (profile === 'reference') save();
+      sql
+        .prepare(
+          "INSERT INTO metadata VALUES ('seed-version',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+        )
+        .run(expected);
       sql.exec('COMMIT');
     } catch (e) {
       sql.exec('ROLLBACK');

@@ -111,13 +111,18 @@ async function transact<T>(
     };
   });
 }
-const now = () => fixture.now;
+const now = (data: PreviewDatabase) => data.now ?? fixture.now;
+const directory = (data: PreviewDatabase) => data.people ?? people;
 export const localService = {
   availability(userId: string, roomId: string, date: string, exceptId?: string) {
     return transact(
       userId,
       (data) => {
-        if (!rooms.some((r) => r.id === roomId) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return [];
+        if (
+          !(data.rooms ?? rooms).some((r) => r.id === roomId) ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(date)
+        )
+          return [];
         const blocked: string[] = [];
         for (
           let m = previewPolicy.startHour * 60;
@@ -131,6 +136,7 @@ export const localService = {
           const start = format(m),
             end = format(m + previewPolicy.slotMinutes);
           if (
+            (data.now && Date.parse(`${date}T${start}:00+09:00`) < Date.parse(data.now)) ||
             roomConflicts(
               data,
               roomId,
@@ -162,10 +168,10 @@ export const localService = {
       if (index < 0 || !meeting.attachments)
         throw new RuleError('최신 자료 목록을 다시 확인해주세요.');
       validateAttachment(file);
-      meeting.attachments[index] = { ...file, authorId: userId, updatedAt: now() };
+      meeting.attachments[index] = { ...file, authorId: userId, updatedAt: now(data) };
       meeting.files = meeting.attachments.map((a) => a.name);
       meeting.revision = revision + 1;
-      recordEvent(data, meeting, 'materials', now());
+      recordEvent(data, meeting, 'materials', now(data));
       return id;
     });
   },
@@ -175,7 +181,9 @@ export const localService = {
       (data) =>
         visibleWorkspace({
           ...fixture,
-          user: people.find((p) => p.id === userId)!,
+          user: directory(data).find((p) => p.id === userId)!,
+          people: directory(data),
+          now: now(data),
           topics: data.topics,
           meetings: data.meetings,
         }),
@@ -191,7 +199,7 @@ export const localService = {
       if (data.requests[`${userId}:${requestId}`]) return data.requests[`${userId}:${requestId}`];
       if (!input.title.trim() || !input.description.trim())
         throw new RuleError('주제명과 한줄 설명을 입력해주세요.');
-      if (input.managerIds.some((id) => !people.some((p) => p.id === id)))
+      if (input.managerIds.some((id) => !directory(data).some((p) => p.id === id)))
         throw new RuleError('관리자를 다시 선택해주세요.');
       const id = crypto.randomUUID();
       const roles: Record<string, 'Owner' | 'Master'> = { [userId]: 'Owner' };
@@ -229,7 +237,8 @@ export const localService = {
       topic.title = input.title.trim();
       topic.description = input.description.trim();
       input.managerIds.forEach((id) => {
-        if (!people.some((p) => p.id === id)) throw new RuleError('직원을 다시 선택해주세요.');
+        if (!directory(data).some((p) => p.id === id))
+          throw new RuleError('직원을 다시 선택해주세요.');
         if (id !== userId) topic.roles[id] = 'Master';
       });
       return id;
@@ -241,14 +250,14 @@ export const localService = {
       const topic = requireTopic(data, input.topicId, userId);
       if (!canCreateMeeting(topic, userId))
         throw new RuleError('회의 관리자만 회의를 만들 수 있어요.');
-      validateInput(input);
-      validateSchedule(data, input.roomId, input.start, input.end, now());
+      validateInput(input, data);
+      validateSchedule(data, input.roomId, input.start, input.end, now(data));
       input.attachments.forEach(validateAttachment);
       const id = crypto.randomUUID();
       const attachments = input.attachments.map((a) => ({
         ...a,
         authorId: userId,
-        updatedAt: now(),
+        updatedAt: now(data),
       }));
       const meeting: Meeting = {
         id,
@@ -257,7 +266,7 @@ export const localService = {
         description: input.description,
         start: input.start,
         end: input.end,
-        room: roomLabel(input.roomId),
+        room: roomLabel(input.roomId, data.rooms),
         roomId: input.roomId,
         creatorId: userId,
         participantIds: [...new Set([userId, ...input.participantIds])],
@@ -270,7 +279,7 @@ export const localService = {
       };
       for (const id of meeting.participantIds) if (!topic.roles[id]) topic.roles[id] = 'Attendee';
       data.meetings.push(meeting);
-      recordEvent(data, meeting, 'created', now());
+      recordEvent(data, meeting, 'created', now(data));
       data.requests[`${userId}:${requestId}`] = id;
       return id;
     });
@@ -283,24 +292,24 @@ export const localService = {
         !canEditMeeting(topic, meeting, userId) ||
         meeting.completed ||
         meeting.cancelled ||
-        Date.parse(meeting.end) <= Date.parse(now())
+        Date.parse(meeting.end) <= Date.parse(now(data))
       )
         throw new RuleError('이 회의를 수정할 수 없어요.');
-      validateInput(input);
-      validateSchedule(data, input.roomId, input.start, input.end, now(), id);
+      validateInput(input, data);
+      validateSchedule(data, input.roomId, input.start, input.end, now(data), id);
       const previous = meeting.participantIds;
       Object.assign(meeting, {
         title: input.title.trim(),
         description: input.description,
         start: input.start,
         end: input.end,
-        room: roomLabel(input.roomId),
+        room: roomLabel(input.roomId, data.rooms),
         roomId: input.roomId,
         participantIds: [...new Set([meeting.creatorId, ...input.participantIds])],
         revision: revision + 1,
       });
       for (const id of meeting.participantIds) if (!topic.roles[id]) topic.roles[id] = 'Attendee';
-      recordEvent(data, meeting, 'changed', now(), previous);
+      recordEvent(data, meeting, 'changed', now(data), previous);
       return id;
     });
   },
@@ -312,12 +321,12 @@ export const localService = {
         !canEditMeeting(topic, meeting, userId) ||
         meeting.completed ||
         meeting.cancelled ||
-        Date.parse(meeting.end) <= Date.parse(now())
+        Date.parse(meeting.end) <= Date.parse(now(data))
       )
         throw new RuleError('취소할 수 없는 회의입니다.');
       meeting.cancelled = true;
       meeting.revision = revision + 1;
-      recordEvent(data, meeting, 'cancelled', now());
+      recordEvent(data, meeting, 'cancelled', now(data));
       return id;
     });
   },
@@ -329,7 +338,7 @@ export const localService = {
     revision: number,
   ) {
     return transact(userId, (data) =>
-      saveSummary(data, id, userId, summary, complete, now(), revision),
+      saveSummary(data, id, userId, summary, complete, now(data), revision),
     );
   },
   addFiles(userId: string, id: string, files: Attachment[], revision: number) {
@@ -346,12 +355,12 @@ export const localService = {
         throw new RuleError('이미 등록한 자료입니다.');
       meeting.attachments = [
         ...(meeting.attachments ?? []),
-        ...files.map((f) => ({ ...f, authorId: userId, updatedAt: now() })),
+        ...files.map((f) => ({ ...f, authorId: userId, updatedAt: now(data) })),
       ];
       meeting.files = meeting.attachments.map((a) => a.name);
       meeting.material = 'uploaded';
       meeting.revision = revision + 1;
-      recordEvent(data, meeting, 'materials', now());
+      recordEvent(data, meeting, 'materials', now(data));
       return id;
     });
   },
@@ -391,7 +400,7 @@ export const localService = {
     return transact(
       userId,
       (data) => {
-        if (!people.find((p) => p.id === userId)?.isAdmin)
+        if (!directory(data).find((p) => p.id === userId)?.isAdmin)
           throw new RuleError('운영 관리자만 접근할 수 있어요.');
         return data.logs;
       },
@@ -410,10 +419,10 @@ export interface MeetingInput {
   material: Meeting['material'];
   attachments: Attachment[];
 }
-function validateInput(input: MeetingInput) {
+function validateInput(input: MeetingInput, data: PreviewDatabase) {
   if (!input.title.trim() || !input.description.trim())
     throw new RuleError('회의명과 회의 내용을 입력해주세요.');
-  if (input.participantIds.some((id) => !people.some((p) => p.id === id)))
+  if (input.participantIds.some((id) => !directory(data).some((p) => p.id === id)))
     throw new RuleError('참가자를 다시 선택해주세요.');
   if (input.material === 'uploaded' && !input.attachments.length)
     throw new RuleError('첨부할 자료를 선택해주세요.');

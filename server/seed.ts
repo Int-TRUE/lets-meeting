@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { initialDatabase } from '../src/data/previewService.js';
 import type { Meeting, PreviewDatabase, Topic } from '../src/domain/models.js';
 
-export function demoSeed(): PreviewDatabase {
+export function referenceSeed(): PreviewDatabase {
   const db = initialDatabase();
   const topics: Topic[] = [
     {
@@ -234,4 +234,14 @@ export function demoSeed(): PreviewDatabase {
   db.topics.push(...topics);
   db.meetings.push(...meetings);
   return db;
+}
+
+// A versioned, one-time reset was explicitly requested for hands-on testing.
+export const TEST_SEED_VERSION = '3';
+export type SeedProfile = 'clean' | 'reference';
+export function demoSeed(): PreviewDatabase {
+  return { version: 1, topics: [], meetings: [], preferences: {}, logs: [], requests: {} };
+}
+export function seoulNow() {
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00');
 }

@@ -3,7 +3,7 @@ import { openDemoDatabase } from './database';
 import { handleDemoRequest, MAX_API_BYTES } from './http';
 let db: ReturnType<typeof openDemoDatabase>;
 beforeEach(async () => {
-  db = openDemoDatabase(':memory:');
+  db = openDemoDatabase(':memory:', 'reference');
   await db.seed();
 });
 afterEach(() => db.close());

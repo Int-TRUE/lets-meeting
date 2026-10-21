@@ -1384,3 +1384,18 @@
     margin-top: 24px;
   }
 }
+
+/* Empty home uses the complete 3D tablet illustration, including both clouds. */
+.mascot.mascot-tablet {
+  overflow: visible;
+}
+.mascot.mascot-tablet img {
+  position: static;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  left: auto;
+  top: auto;
+  object-fit: contain;
+}

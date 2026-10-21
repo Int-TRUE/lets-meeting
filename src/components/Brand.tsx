@@ -2,6 +2,7 @@ import board from '../../docs/design/assets/01-brand-and-entry.png';
 import headMascot from '../assets/mascot-head-v2.png';
 import homeMascot from '../assets/home-mascot.png';
 import welcomeMascot from '../assets/mascot-welcome-hq.png';
+import tabletMascot from '../assets/mascot-tablet-hq.png';
 import { useId } from 'react';
 // Keep the approved 3D artwork. The alpha filter only removes faint outer haze.
 export function Mascot({
@@ -12,7 +13,7 @@ export function Mascot({
   pose?: 'guide' | 'tablet' | 'home' | 'welcome';
 }) {
   const filterId = `mascot-alpha-${useId()}`;
-  const cleanAlpha = !small && (pose === 'welcome' || pose === 'home');
+  const cleanAlpha = !small && (pose === 'welcome' || pose === 'home' || pose === 'tablet');
   return (
     <span className={small ? 'mascot mascot-logo' : `mascot mascot-${pose}`} aria-hidden="true">
       {cleanAlpha ? (
@@ -39,7 +40,9 @@ export function Mascot({
               ? homeMascot
               : pose === 'welcome'
                 ? welcomeMascot
-                : board
+                : pose === 'tablet'
+                  ? tabletMascot
+                  : board
         }
         alt=""
         draggable="false"

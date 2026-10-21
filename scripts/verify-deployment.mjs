@@ -53,11 +53,12 @@ try {
   const page = await context.newPage();
   page.setDefaultTimeout(30_000);
   await page.goto('/');
+  await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole('heading', { name: '테스트 계정 선택' })).toBeVisible();
   await page.screenshot({ path: output + '/accounts.png', fullPage: true });
   await page.getByRole('button', { name: '정수진으로 시작' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('정수진');
-  await page.locator('.greeting-mascot img').evaluate((img) => img.decode());
+  await page.locator('img').evaluateAll((images) => Promise.all(images.map((img) => img.decode())));
   await page.screenshot({ path: output + '/home.png', fullPage: true });
   if (process.env.DEPLOYMENT_WRITE_TEST === 'true') {
     // The caller must verify this is a Preview deployment before enabling writes.

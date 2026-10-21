@@ -11,11 +11,10 @@ export function AccountChooser({
   onSelect: (id: string) => void;
 }) {
   return (
-    <div className="account-chooser">
+    <section className="account-chooser" aria-labelledby="test-accounts-heading">
       <header>
-        <p className="account-eyebrow">ROBOT BUTLER</p>
-        <h1>테스트 계정 선택</h1>
-        <p className="muted">사용할 계정을 선택하고 Topic 만들기부터 시작해보세요.</p>
+        <h2 id="test-accounts-heading">테스트 계정 선택</h2>
+        <p className="muted">테스트할 계정을 선택해 로그인하세요.</p>
       </header>
       <div className="account-grid">
         {accounts.map((person) => (
@@ -33,6 +32,6 @@ export function AccountChooser({
           </Card>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

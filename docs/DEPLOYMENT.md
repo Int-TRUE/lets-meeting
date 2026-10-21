@@ -7,7 +7,7 @@
 - 프로젝트 ID: `prj_XOLCtuKhMZozNq4Xoj91Sgaibdrx`, 팀 ID: `team_MVjL0k7VQYNBQTTHgIdchurd`.
 - 정식 주소: https://robot-butler.vercel.app/
 
-검증·push·PR·CI 통과 확인·병합·Vercel 배포 확인을 별도 승인 없이 연속 진행한다. Git 연동이 활성화되어 작업 브랜치는 Preview, `master`는 Production에 자동 배포된다. 같은 커밋을 CLI로 중복 배포하지 않는다. 배포 READY와 커밋 일치, 실제 화면·API·DB 확인까지 완료 기준으로 삼는다. Vercel의 기존 배포 보호는 유지한다.
+검증·push·PR·CI 통과 확인·병합·Vercel 배포 확인을 별도 승인 없이 연속 진행한다. Git 연동의 목표는 작업 브랜치 Preview, `master` Production 자동 배포다. 2026-10-22 설정을 활성화했지만 Git 이벤트 배포가 실제 생성되지 않아, 이번 릴리스는 CI 통과 후 기존 프로젝트에 CLI 배포했다. 후속 작업은 자동 배포 생성 여부부터 확인하고, 생성되지 않은 커밋만 직접 배포한다. 같은 커밋을 CLI로 중복 배포하지 않는다. 배포 READY와 커밋 일치, 실제 화면·API·DB 확인까지 완료 기준으로 삼는다. Vercel의 기존 배포 보호는 유지한다.
 
 2026-10-22 확인 시 Git 연결의 배포 생성(`gitProviderOptions.createDeployments`)이 꺼져 있어 `enabled`로 복구했다. 후속 push와 병합에서 Preview·Production 자동 배포 생성을 확인한다.
 
@@ -33,4 +33,4 @@
 
 ## 서비스 범위
 
-이 배포도 홈의 테스트 계정 선택을 제공하는 더미 데이터 데모다. Vercel 배포 보호는 앱의 직원 인증을 대신하지 않는다. 실제 직원 SSO·원텔 예약·Mattermost 발송은 미연결이며, 실제 업무 자료를 저장하는 운영 서비스 전환 전 별도 인증·권한 설계가 필요하다. 데모 사용자 선택을 실사용 인증으로 간주하지 않는다.
+이 배포도 로그인 화면의 테스트 계정 선택을 제공하는 더미 데이터 데모다. Vercel 배포 보호는 앱의 직원 인증을 대신하지 않는다. 실제 직원 SSO·원텔 예약·Mattermost 발송은 미연결이며, 실제 업무 자료를 저장하는 운영 서비스 전환 전 별도 인증·권한 설계가 필요하다. 데모 사용자 선택을 실사용 인증으로 간주하지 않는다.

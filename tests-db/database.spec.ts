@@ -17,6 +17,7 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
   );
   expect(catalog.rooms).toHaveLength(5);
   await page.goto('/');
+  await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole('heading', { name: '테스트 계정 선택' })).toBeVisible();
   await mkdir('test-results/clean-workspace', { recursive: true });
   await page.screenshot({ path: 'test-results/clean-workspace/accounts.png', fullPage: true });
@@ -28,7 +29,12 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
     await expect(page.getByRole('link', { name: '관리자 관리', exact: true })).toHaveCount(
       name === '김태헌' ? 1 : 0,
     );
+    await expect(page.locator('.account-chooser')).toHaveCount(0);
+    await expect(page.locator('.test-session-bar')).toHaveCount(0);
+    await page.getByRole('button', { name: '내 프로필', exact: true }).click();
     await page.getByRole('button', { name: '테스트 계정 변경', exact: true }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole('navigation', { name: '주 메뉴' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: '테스트 계정 선택' })).toBeVisible();
   }
   await page.getByRole('button', { name: '정수진으로 시작' }).click();

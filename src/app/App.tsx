@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Navigate, Route, Routes, useSearchParams, useNavigate } from 'react-router-dom';
+import {
+  Navigate,
+  Route,
+  Routes,
+  useSearchParams,
+  useNavigate,
+  useLocation,
+} from 'react-router-dom';
 import type { Person, Room, PreviewState, Workspace } from '../domain/models';
 import { createPreviewRepository, people, WorkspaceError } from '../data/workspace';
 import { rooms as fixtureRooms } from '../domain/workflows';
 import { ErrorState, LoadingState } from '../components/ui';
 import { HomePage } from '../features/home/HomePage';
-import { AccountChooser } from '../features/home/AccountChooser';
 import { LoginPage } from '../features/home/LoginPage';
 import { PreviewTools } from '../features/home/PreviewTools';
 import { SearchDialog } from '../features/search/SearchDialog';
@@ -22,6 +28,7 @@ import { AdminNotificationsPage, RoomsPage } from '../features/admin/AdminPages'
 export function App() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const searchTriggerRef = useRef<HTMLButtonElement>(null);
   const [previewState, setPreviewState] = useState<PreviewState>('normal');
   const [userId, setUserId] = useState(() => {
@@ -116,11 +123,29 @@ export function App() {
     !fixtureMode &&
     catalogLoaded &&
     (params.get('accounts') === '1' || !accounts.some((person) => person.id === userId));
-  const chooseAccount = () => navigate('/?accounts=1');
+  const chooseAccount = () => navigate('/login');
   function selectAccount(id: string) {
     changePreview('normal', id);
     navigate('/', { replace: true });
   }
+  if (!fixtureMode && location.pathname !== '/login' && showAccounts)
+    return <Navigate to="/login" replace />;
+  if (!fixtureMode && location.pathname === '/login')
+    return (
+      <main id="main-content" className="login-root">
+        {error ? (
+          <ErrorState
+            title="로그인 정보를 불러오지 못했어요"
+            description="연결 상태를 확인하고 다시 시도해주세요."
+            onRetry={retry}
+          />
+        ) : catalogLoaded ? (
+          <LoginPage accounts={accounts} onSelect={selectAccount} />
+        ) : (
+          <LoadingState />
+        )}
+      </main>
+    );
   return (
     <AppShell
       searchTriggerRef={searchTriggerRef}
@@ -135,9 +160,7 @@ export function App() {
         />
       }
     >
-      {showAccounts ? (
-        <AccountChooser accounts={accounts} onSelect={selectAccount} />
-      ) : error ? (
+      {error ? (
         <ErrorState
           title={
             error.kind === 'forbidden'
@@ -160,15 +183,7 @@ export function App() {
           <WorkspaceContext key={userId} value={{ data: result.data, directory, rooms, run }}>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
-              <Route
-                path="/"
-                element={
-                  <HomePage
-                    workspace={result.data}
-                    onChooseAccount={fixtureMode ? undefined : chooseAccount}
-                  />
-                }
-              />
+              <Route path="/" element={<HomePage workspace={result.data} />} />
               <Route path="/topics" element={<TopicsPage />} />
               <Route
                 path="/topics/new"

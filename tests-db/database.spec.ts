@@ -1,87 +1,94 @@
 import { test, expect } from '@playwright/test';
-import { mkdir } from 'node:fs/promises';
-test('shared SQLite history, permissions, PDFs and cross-browser persistence', async ({
+import { mkdir, readFile } from 'node:fs/promises';
+
+test('clean workspace: four accounts, staff directory, first meeting and shared files', async ({
   page,
   browser,
   request,
 }) => {
-  await page.goto('/topics');
-  await expect(page.getByRole('heading', { name: 'Topic', exact: true })).toBeVisible();
-  await page.getByRole('link').filter({ hasText: '2026년 IT운영팀 팀 회의' }).click();
-  await expect(page.getByText('강경희 팀장 · IT운영팀', { exact: false })).toBeVisible();
-  await expect(page.getByText('3명씩 업무분장을 묶기로 함.')).toBeVisible();
-  await page.goto('/topics/autopay');
-  await expect(page.getByText('/prov2를 만들자.')).toBeVisible();
-  await expect(page.getByText('/prov3를 만들자.')).toBeVisible();
-  await page.goto('/meetings/autopay-prov2?tab=files');
-  const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: /자동이체_동의자료_보관_2023.pdf/ }).click();
-  expect((await download).suggestedFilename()).toBe('자동이체_동의자료_보관_2023.pdf');
-  await page.goto('/meetings/equipment-vendor');
-  await expect(page.getByText('이 정보에 접근할 수 없어요')).toBeVisible();
-  await mkdir('docs/qa/database-refinement', { recursive: true });
-  for (const [name, path] of [
-    ['home', '/'],
-    ['history', '/topics/it-2026'],
-    ['autopay', '/topics/autopay'],
-    ['notifications', '/settings/notifications'],
-  ]) {
-    await page.goto(path);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await page.screenshot({ path: `docs/qa/database-refinement/${name}.png`, fullPage: true });
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem('robot-butler:preview-user:v1'))
+      sessionStorage.setItem('robot-butler:preview-user:v1', 'me');
+  });
+  const catalog = await (await request.get('/api/demo/directory')).json();
+  expect(catalog.people).toHaveLength(24);
+  expect(catalog.people.filter((p: { isTestAccount?: boolean }) => p.isTestAccount)).toHaveLength(
+    4,
+  );
+  expect(catalog.rooms).toHaveLength(5);
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: '테스트 계정 선택' })).toBeVisible();
+  await mkdir('test-results/clean-workspace', { recursive: true });
+  await page.screenshot({ path: 'test-results/clean-workspace/accounts.png', fullPage: true });
+  for (const name of ['김태헌', '정수진', '장우석', '김주영']) {
+    await page.getByRole('button', { name: `${name}으로 시작` }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(name);
+    await expect(page.getByText('아직 예정된 회의가 없어요')).toBeVisible();
+    await expect(page.getByText('아직 참여 중인 Topic이 없어요')).toBeVisible();
+    await expect(page.getByRole('link', { name: '관리자 관리', exact: true })).toHaveCount(
+      name === '김태헌' ? 1 : 0,
+    );
+    await page.getByRole('button', { name: '테스트 계정 변경', exact: true }).click();
+    await expect(page.getByRole('heading', { name: '테스트 계정 선택' })).toBeVisible();
   }
+  await page.getByRole('button', { name: '정수진으로 시작' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('정수진');
+  await page.screenshot({ path: 'test-results/clean-workspace/empty-home.png', fullPage: true });
+  await page.getByRole('link', { name: 'Topic 만들기', exact: true }).first().click();
+  await page.getByLabel(/^주제명/).fill('첫 회의 테스트');
+  await page.getByLabel(/^한줄 설명/).fill('빈 상태에서 시작하는 회의 생성');
+  await page.getByRole('checkbox', { name: /장우석/ }).check();
+  await page.getByRole('button', { name: 'Topic 만들기', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '첫 회의 테스트' })).toBeVisible();
+  await page.getByRole('link', { name: '회의 만들기', exact: true }).click();
+  await page.getByLabel(/^회의명/).fill('처음 만드는 회의');
+  await page.getByLabel(/^회의 내용·안건/).fill('직원 선택과 자료 저장 확인');
+  await page.getByRole('button', { name: '다음', exact: true }).click();
+  const date = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+  await page.getByLabel('회의 일자 *').fill(date);
+  await page.getByRole('button', { name: '14:00 예약 가능', exact: true }).click();
+  await page.getByRole('button', { name: '다음', exact: true }).click();
+  const picker = page.locator('.people-picker');
+  await expect(picker.getByRole('checkbox')).toHaveCount(24);
+  await picker.getByRole('searchbox').fill('CMS개발팀');
+  await expect(picker.getByRole('checkbox')).toHaveCount(5);
+  await picker.getByRole('checkbox', { name: /김주영/ }).check();
+  await picker.getByRole('searchbox').fill('박성민');
+  await expect(picker.getByRole('checkbox')).toHaveCount(1);
+  await expect(picker.locator('.person-option .person-avatar')).toHaveText('박');
+  await expect(picker.getByText('시스템관리팀 · 팀장')).toBeVisible();
+  await picker.getByRole('checkbox', { name: /박성민/ }).check();
+  await picker.getByRole('searchbox').fill('');
+  await page.screenshot({ path: 'test-results/clean-workspace/staff-picker.png', fullPage: true });
+  await page.getByRole('radio', { name: '자료 첨부', exact: true }).check();
+  await page.getByLabel('회의 자료 선택', { exact: true }).setInputFiles({
+    name: '첫회의.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('첫 회의 자료'),
+  });
+  await page.getByRole('button', { name: '회의 생성', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '회의 생성이 완료되었어요!' })).toBeVisible();
+  await page.getByRole('link', { name: '회의 상세 보기', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '처음 만드는 회의', exact: true })).toBeVisible();
+  const url = page.url();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: '처음 만드는 회의', exact: true })).toBeVisible();
   const second = await browser.newContext({ baseURL: 'http://127.0.0.1:4175' });
   await second.addInitScript(() =>
-    sessionStorage.setItem('robot-butler:preview-user:v1', 'juhyung'),
+    sessionStorage.setItem('robot-butler:preview-user:v1', 'jooyoung'),
   );
   const other = await second.newPage();
-  await other.goto('/topics/equipment-2026');
-  await expect(other.getByRole('heading', { name: '공급사 일정·예산 검토' })).toBeVisible();
-  const res = await request.post('/api/demo/createTopic', {
-    data: [
-      'juhyung',
-      {
-        title: 'DB 공동 저장 확인',
-        description: '다른 브라우저에서도 같은 자료를 읽습니다.',
-        managerIds: ['me'],
-      },
-      'browser-shared-topic',
-    ],
+  await other.goto(url);
+  await expect(other.getByRole('heading', { name: '처음 만드는 회의', exact: true })).toBeVisible();
+  await other.getByRole('button', { name: '자료 1', exact: true }).click();
+  const download = other.waitForEvent('download');
+  await other.getByRole('button', { name: '첫회의.txt 다운로드' }).click();
+  expect((await readFile((await (await download).path())!)).toString()).toBe('첫 회의 자료');
+  await other.screenshot({
+    path: 'test-results/clean-workspace/shared-meeting.png',
+    fullPage: true,
   });
-  expect(res.ok()).toBe(true);
-  const { result: id } = await res.json();
-  await page.goto(`/topics/${id}`);
-  await expect(page.getByRole('heading', { name: 'DB 공동 저장 확인' })).toBeVisible();
-  await other.goto(`/topics/${id}`);
-  await expect(other.getByRole('heading', { name: 'DB 공동 저장 확인' })).toBeVisible();
-  const forbidden = await request.post('/api/demo/download', {
-    data: ['juhyung', 'autopay-prov2', 'file-autopay-prov2'],
-  });
+  const forbidden = await request.post('/api/demo/snapshot', { data: ['employee-01'] });
   expect(forbidden.status()).toBe(400);
-  await other.goto('/topics/equipment-2026/meetings/new');
-  await other.getByLabel(/^회의명/).fill('DB 브라우저 생성 회의');
-  await other.getByLabel(/^회의 내용·안건/).fill('SQLite 저장 및 파일 재조회 검증');
-  await other.getByRole('button', { name: '다음', exact: true }).click();
-  await other.getByLabel('회의 일자 *').fill('2026-10-24');
-  await other.getByRole('button', { name: '14:00 예약 가능', exact: true }).click();
-  await other.getByRole('button', { name: '다음', exact: true }).click();
-  await other.getByRole('checkbox', { name: /나\(데모\)/ }).check();
-  await other.getByRole('radio', { name: '자료 첨부', exact: true }).check();
-  await other.getByLabel('회의 자료 선택', { exact: true }).setInputFiles({
-    name: '공유자료.txt',
-    mimeType: 'text/plain',
-    buffer: Buffer.from('DB에 저장한 자료'),
-  });
-  await other.getByRole('button', { name: '회의 생성', exact: true }).click();
-  await expect(other.getByRole('heading', { name: '회의 생성이 완료되었어요!' })).toBeVisible();
-  await other.getByRole('link', { name: '회의 상세 보기', exact: true }).click();
-  await page.goto(other.url());
-  await expect(
-    page.getByRole('heading', { name: 'DB 브라우저 생성 회의', exact: true }),
-  ).toBeVisible();
-  await page.getByRole('button', { name: '자료 1', exact: true }).click();
-  const sharedFile = page.waitForEvent('download');
-  await page.getByRole('button', { name: '공유자료.txt 다운로드' }).click();
-  expect((await sharedFile).suggestedFilename()).toBe('공유자료.txt');
   await second.close();
 });

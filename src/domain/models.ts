@@ -6,6 +6,8 @@ export interface Person {
   team: string;
   isAdmin?: boolean;
   position?: string;
+  isTestAccount?: boolean;
+  avatarUrl?: string;
 }
 export interface Topic {
   id: string;
@@ -87,6 +89,9 @@ export interface DeliveryLog {
 }
 export interface PreviewDatabase {
   version: 1;
+  people?: Person[];
+  rooms?: Room[];
+  now?: string;
   topics: Topic[];
   meetings: Meeting[];
   preferences: Record<string, NotificationSettings>;

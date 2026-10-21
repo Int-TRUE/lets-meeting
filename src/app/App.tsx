@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Navigate, Route, Routes, useSearchParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useSearchParams, useNavigate } from 'react-router-dom';
 import type { Person, Room, PreviewState, Workspace } from '../domain/models';
 import { createPreviewRepository, people, WorkspaceError } from '../data/workspace';
 import { rooms as fixtureRooms } from '../domain/workflows';
 import { ErrorState, LoadingState } from '../components/ui';
 import { HomePage } from '../features/home/HomePage';
+import { AccountChooser } from '../features/home/AccountChooser';
 import { LoginPage } from '../features/home/LoginPage';
 import { PreviewTools } from '../features/home/PreviewTools';
 import { SearchDialog } from '../features/search/SearchDialog';
@@ -20,56 +21,67 @@ import { NotificationSettingsPage } from '../features/settings/NotificationSetti
 import { AdminNotificationsPage, RoomsPage } from '../features/admin/AdminPages';
 export function App() {
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
   const searchTriggerRef = useRef<HTMLButtonElement>(null);
   const [previewState, setPreviewState] = useState<PreviewState>('normal');
   const [userId, setUserId] = useState(() => {
     try {
       const stored = sessionStorage.getItem('robot-butler:preview-user:v1');
-      return people.some((p) => p.id === stored) ? stored! : fixtureMode ? 'kim' : 'me';
+      return fixtureMode ? (people.some((p) => p.id === stored) ? stored! : 'kim') : (stored ?? '');
     } catch {
-      return fixtureMode ? 'kim' : 'me';
+      return fixtureMode ? 'kim' : '';
     }
   });
-  const [directory, setDirectory] = useState<Person[]>(people);
-  const [rooms, setRooms] = useState<Room[]>(fixtureRooms);
+  const [directory, setDirectory] = useState<Person[]>(fixtureMode ? people : []);
+  const [rooms, setRooms] = useState<Room[]>(fixtureMode ? fixtureRooms : []);
+  const [catalogLoaded, setCatalogLoaded] = useState(fixtureMode);
   const [attempt, setAttempt] = useState(0);
   const currentActor = useRef(userId);
   currentActor.current = userId;
   const [result, setResult] = useState<{ data?: Workspace; error?: WorkspaceError }>({});
   useEffect(() => {
     const controller = new AbortController();
-    createPreviewRepository(previewState, userId)
-      .load(controller.signal)
-      .then(async (initial) => {
-        if (fixtureMode) {
-          const data = previewState === 'normal' ? await previewService.snapshot(userId) : initial;
-          if (!controller.signal.aborted) setResult({ data });
-        } else {
-          const [snapshot, catalog] = await Promise.all([
-            previewService.snapshot(userId),
-            fetch('/api/demo/directory', { signal: controller.signal }).then((r) => {
-              if (!r.ok) throw Error('directory');
-              return r.json();
-            }),
-          ]);
-          const data = {
+    async function load() {
+      if (fixtureMode) {
+        const initial = await createPreviewRepository(previewState, userId).load(controller.signal);
+        const data = previewState === 'normal' ? await previewService.snapshot(userId) : initial;
+        if (!controller.signal.aborted) setResult({ data });
+        return;
+      }
+      const response = await fetch('/api/demo/directory', { signal: controller.signal });
+      if (!response.ok) throw new Error('directory');
+      const catalog: { people: Person[]; rooms: Room[] } = await response.json();
+      if (controller.signal.aborted) return;
+      setDirectory(catalog.people);
+      setRooms(catalog.rooms);
+      setCatalogLoaded(true);
+      if (!catalog.people.some((person) => person.id === userId && person.isTestAccount)) {
+        setResult({});
+        // Old account drafts must not reappear in the clean test workspace.
+        try {
+          for (const key of Object.keys(sessionStorage))
+            if (key.startsWith('robot-butler:draft:v1:')) sessionStorage.removeItem(key);
+        } catch {
+          /* The chooser also works with browser storage disabled. */
+        }
+        return;
+      }
+      if (previewState !== 'normal')
+        await createPreviewRepository(previewState, userId).load(controller.signal);
+      const snapshot = await previewService.snapshot(userId);
+      if (!controller.signal.aborted)
+        setResult({
+          data: {
             ...snapshot,
             topics: previewState === 'empty' ? [] : snapshot.topics,
             meetings: ['empty', 'empty-meetings'].includes(previewState) ? [] : snapshot.meetings,
-          };
-          if (!controller.signal.aborted) {
-            setDirectory(catalog.people);
-            setRooms(catalog.rooms);
-            setResult({ data });
-          }
-        }
-      })
-      .catch((error: unknown) => {
-        if (!controller.signal.aborted)
-          setResult({
-            error: error instanceof WorkspaceError ? error : new WorkspaceError('error'),
-          });
-      });
+          },
+        });
+    }
+    load().catch((error: unknown) => {
+      if (!controller.signal.aborted)
+        setResult({ error: error instanceof WorkspaceError ? error : new WorkspaceError('error') });
+    });
     return () => controller.abort();
   }, [previewState, userId, attempt]);
   function changePreview(state: PreviewState, user: string) {
@@ -99,20 +111,33 @@ export function App() {
     return value;
   }
   const error = result.error;
+  const accounts = directory.filter((person) => person.isTestAccount);
+  const showAccounts =
+    !fixtureMode &&
+    catalogLoaded &&
+    (params.get('accounts') === '1' || !accounts.some((person) => person.id === userId));
+  const chooseAccount = () => navigate('/?accounts=1');
+  function selectAccount(id: string) {
+    changePreview('normal', id);
+    navigate('/', { replace: true });
+  }
   return (
     <AppShell
       searchTriggerRef={searchTriggerRef}
       user={result.data?.user}
+      onChooseAccount={fixtureMode ? undefined : chooseAccount}
       tools={
         <PreviewTools
           state={previewState}
           userId={userId}
-          directory={directory}
+          directory={fixtureMode ? directory : accounts}
           onChange={changePreview}
         />
       }
     >
-      {error ? (
+      {showAccounts ? (
+        <AccountChooser accounts={accounts} onSelect={selectAccount} />
+      ) : error ? (
         <ErrorState
           title={
             error.kind === 'forbidden'
@@ -135,7 +160,15 @@ export function App() {
           <WorkspaceContext key={userId} value={{ data: result.data, directory, rooms, run }}>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/" element={<HomePage workspace={result.data} />} />
+              <Route
+                path="/"
+                element={
+                  <HomePage
+                    workspace={result.data}
+                    onChooseAccount={fixtureMode ? undefined : chooseAccount}
+                  />
+                }
+              />
               <Route path="/topics" element={<TopicsPage />} />
               <Route
                 path="/topics/new"

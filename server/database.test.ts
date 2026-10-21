@@ -8,7 +8,7 @@ let folder: string;
 let db: ReturnType<typeof openDemoDatabase>;
 beforeEach(async () => {
   folder = mkdtempSync(join(tmpdir(), 'butler-db-'));
-  db = openDemoDatabase(join(folder, 'test.sqlite'));
+  db = openDemoDatabase(join(folder, 'test.sqlite'), 'reference');
   await db.seed();
   configureTransactionAdapter(db.transaction);
 });
@@ -25,7 +25,7 @@ describe('SQLite case history', () => {
       managerIds: ['jin', 'yoseop'],
     });
     db.close();
-    db = openDemoDatabase(join(folder, 'test.sqlite'));
+    db = openDemoDatabase(join(folder, 'test.sqlite'), 'reference');
     await db.seed();
     expect(db.load().meetings).toHaveLength(count);
     expect(db.load().topics.find((t) => t.id === 'it-2026')?.title).toBe('팀 회의 수정');

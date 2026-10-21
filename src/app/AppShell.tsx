@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { Link, NavLink, useLocation, useSearchParams } from 'react-router-dom';
+import { PersonAvatar } from '../components/PersonAvatar';
 import { Brand } from '../components/Brand';
 import { Button, Modal } from '../components/ui';
 import type { Person } from '../domain/models';
@@ -25,9 +26,11 @@ export function AppShell({
   user,
   tools,
   searchTriggerRef,
+  onChooseAccount,
 }: {
   children: ReactNode;
   user?: Person;
+  onChooseAccount?: () => void;
   tools: ReactNode;
   searchTriggerRef: RefObject<HTMLButtonElement | null>;
 }) {
@@ -107,7 +110,10 @@ export function AppShell({
                 onClick={() => setProfileOpen(true)}
                 aria-label="내 프로필"
               >
-                <span className="profile-avatar">{user?.name.slice(0, 1) ?? '나'}</span>
+                <PersonAvatar
+                  person={user ?? { id: 'unknown', name: '나', team: '' }}
+                  className="profile-avatar"
+                />
                 <strong>{user?.name ?? '미리보기'}</strong>
                 <ChevronDown size={15} />
               </Button>
@@ -139,10 +145,27 @@ export function AppShell({
       {profileOpen ? (
         <Modal title="내 프로필" onClose={() => setProfileOpen(false)}>
           <div className="profile-details">
-            <span className="profile-avatar">{user?.name.slice(0, 1) ?? '나'}</span>
+            <PersonAvatar
+              person={user ?? { id: 'unknown', name: '나', team: '' }}
+              className="profile-avatar"
+            />
             <h3>{user?.name ?? '미리보기'}</h3>
-            <p>{user?.team ?? '예시 계정'}</p>
+            <p>
+              {user?.team ?? '예시 계정'}
+              {user?.position ? ` · ${user.position}` : ''}
+            </p>
             <p className="muted">미리보기용 예시 프로필입니다.</p>
+            {onChooseAccount ? (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setProfileOpen(false);
+                  onChooseAccount();
+                }}
+              >
+                테스트 계정 변경
+              </Button>
+            ) : null}
           </div>
         </Modal>
       ) : null}

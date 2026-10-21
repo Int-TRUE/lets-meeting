@@ -5,7 +5,15 @@ import { people } from '../src/data/workspace.js';
 import { rooms, RuleError } from '../src/domain/workflows.js';
 import type { Attachment, Meeting, PreviewDatabase, Topic, Role } from '../src/domain/models.js';
 import type { TransactionAdapter } from '../src/data/previewService.js';
-import { demoSeed } from './seed.js';
+import { demoSeed, referenceSeed, seoulNow, TEST_SEED_VERSION, type SeedProfile } from './seed.js';
+import { testDirectory } from '../src/data/testDirectory.js';
+
+function verifiedConnection(value: string) {
+  const url = new URL(value);
+  if (['require', 'prefer', 'verify-ca'].includes(url.searchParams.get('sslmode') ?? ''))
+    url.searchParams.set('sslmode', 'verify-full');
+  return url.toString();
+}
 
 export function deploymentSchema(env = process.env): string {
   if (env.VERCEL_ENV === 'production') return 'butler_production';
@@ -21,10 +29,11 @@ export function openPostgresDatabase(
   connectionString: string,
   schema = deploymentSchema(),
   directConnectionString = process.env.DATABASE_URL_UNPOOLED ?? connectionString,
+  profile: SeedProfile = 'clean',
 ) {
   if (!/^butler_[a-z0-9_]{1,48}$/.test(schema)) throw new Error('Invalid database namespace.');
   const pool = new Pool({
-    connectionString,
+    connectionString: verifiedConnection(connectionString),
     max: 3,
     idleTimeoutMillis: 10_000,
     connectionTimeoutMillis: 15_000,
@@ -128,7 +137,7 @@ export function openPostgresDatabase(
   async function initialize() {
     // DDL uses the direct connection, never transaction-pooled session state.
     const migrationPool = new Pool({
-      connectionString: directConnectionString,
+      connectionString: verifiedConnection(directConnectionString),
       max: 1,
       connectionTimeoutMillis: 15_000,
     });
@@ -151,21 +160,32 @@ export function openPostgresDatabase(
       const version = await client.query(
         `SELECT value FROM ${table('metadata')} WHERE key='seed-version'`,
       );
-      if (!version.rowCount) {
+      const expected = profile === 'reference' ? '2' : TEST_SEED_VERSION;
+      if (version.rows[0]?.value !== expected) {
+        if (profile === 'reference' && version.rowCount)
+          throw new Error('Reference fixtures require an isolated test schema.');
+        // Version 3 is a one-time, user-authorized account/activity reset.
+        // Preserve room rows (including custom rooms and edits) exactly as they are.
+        await persist(client, demoSeed());
+        await client.query(`DELETE FROM ${table('people')}`);
         await batch(
           client,
           'people',
           ['id', 'data'],
-          people.map((p) => [p.id, JSON.stringify(p)]),
+          (profile === 'reference' ? people : testDirectory).map((p) => [p.id, JSON.stringify(p)]),
         );
-        await batch(
-          client,
-          'rooms',
-          ['id', 'data'],
-          rooms.map((r) => [r.id, JSON.stringify(r)]),
+        if (!version.rowCount)
+          await batch(
+            client,
+            'rooms',
+            ['id', 'data'],
+            rooms.map((r) => [r.id, JSON.stringify(r)]),
+          );
+        if (profile === 'reference') await persist(client, referenceSeed());
+        await client.query(
+          `INSERT INTO ${table('metadata')} VALUES ('seed-version',$1) ON CONFLICT(key) DO UPDATE SET value=excluded.value`,
+          [expected],
         );
-        await persist(client, demoSeed());
-        await client.query(`INSERT INTO ${table('metadata')} VALUES ('seed-version','2')`);
       }
       await client.query('COMMIT');
     } catch (error) {
@@ -215,6 +235,13 @@ export function openPostgresDatabase(
     const requests = (await client.query(`SELECT * FROM ${table('requests')}`)).rows;
     return {
       version: 1,
+      people: (await client.query(`SELECT data FROM ${table('people')} ORDER BY id`)).rows.map(
+        (r) => r.data,
+      ),
+      rooms: (await client.query(`SELECT data FROM ${table('rooms')} ORDER BY id`)).rows.map(
+        (r) => r.data,
+      ),
+      now: profile === 'reference' ? undefined : seoulNow(),
       topics: topics.map((t) => ({
         ...t.data,
         roles: Object.fromEntries(
@@ -248,7 +275,14 @@ export function openPostgresDatabase(
     try {
       await client.query('BEGIN');
       await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [schema]);
-      if (!(await client.query(`SELECT id FROM ${table('people')} WHERE id=$1`, [actor])).rowCount)
+      if (
+        !(
+          await client.query(
+            `SELECT id FROM ${table('people')} WHERE id=$1 AND ($2 OR data->>'isTestAccount'='true')`,
+            [actor, profile === 'reference'],
+          )
+        ).rowCount
+      )
         throw new RuleError('데모 사용자를 다시 선택해주세요.');
       const data = await load(client);
       const result = mutate(data);

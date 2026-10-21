@@ -3,6 +3,7 @@ import { ChevronRight, Search, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Attachment, Person } from '../domain/models';
 import { Button, Modal } from './ui';
+import { PersonAvatar } from './PersonAvatar';
 export function PageHeading({
   title,
   description,
@@ -83,7 +84,9 @@ export function PeoplePicker({
 }) {
   const id = useId();
   const [query, setQuery] = useState('');
-  const matches = people.filter((p) => `${p.name} ${p.team}`.includes(query.trim()));
+  const matches = people.filter((p) =>
+    `${p.name} ${p.team} ${p.position ?? ''}`.toLowerCase().includes(query.trim().toLowerCase()),
+  );
   return (
     <fieldset className="people-picker">
       <legend>{label}</legend>
@@ -95,7 +98,7 @@ export function PeoplePicker({
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="이름 또는 부서로 검색"
+          placeholder="이름, 팀, 직책으로 검색"
         />
       </label>
       <div className="selected-people">
@@ -103,6 +106,7 @@ export function PeoplePicker({
           const p = people.find((p) => p.id === pid);
           return p ? (
             <span className="person-chip" key={pid}>
+              <PersonAvatar person={p} />
               {p.name}
               {lockedIds.includes(pid) ? (
                 <small>유지</small>
@@ -130,9 +134,13 @@ export function PeoplePicker({
                 onChange(e.target.checked ? [...value, p.id] : value.filter((id) => id !== p.id))
               }
             />
+            <PersonAvatar person={p} />
             <span>
               <strong>{p.name}</strong>
-              <small>{p.team}</small>
+              <small>
+                {p.team}
+                {p.position ? ` · ${p.position}` : ''}
+              </small>
             </span>
           </label>
         ))}

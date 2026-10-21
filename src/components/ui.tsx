@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { AlertCircle, ArrowRight, Check, FileText, LoaderCircle, X } from 'lucide-react';
 import type { MeetingStatus, Person } from '../domain/models';
+import { PersonAvatar } from './PersonAvatar';
 
 export const Button = forwardRef<
   HTMLButtonElement,
@@ -87,15 +88,8 @@ export function AvatarGroup({ people, max = 4 }: { people: Person[]; max?: numbe
       className="avatar-group"
       aria-label={`참석자 ${people.length}명: ${people.map((p) => p.name).join(', ')}`}
     >
-      {people.slice(0, max).map((person, i) => (
-        <span
-          key={person.id}
-          className={`avatar avatar-${i % 3}`}
-          title={person.name}
-          aria-hidden="true"
-        >
-          {person.name.slice(0, 1)}
-        </span>
+      {people.slice(0, max).map((person) => (
+        <PersonAvatar key={person.id} person={person} />
       ))}
       {people.length > max ? (
         <span className="avatar avatar-more" aria-hidden="true">

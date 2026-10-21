@@ -19,7 +19,7 @@ describe.skipIf(!process.env.POSTGRES_TEST_URL)('real PostgreSQL transactions', 
   let db: ReturnType<typeof openPostgresDatabase>;
   beforeEach(async () => {
     schema = 'butler_test_' + randomUUID().replaceAll('-', '');
-    db = openPostgresDatabase(url, schema, url);
+    db = openPostgresDatabase(url, schema, url, 'reference');
     await db.seed();
     configureTransactionAdapter(db.transaction);
   }, 60_000);
@@ -42,7 +42,7 @@ describe.skipIf(!process.env.POSTGRES_TEST_URL)('real PostgreSQL transactions', 
       description: '재연결 보존',
       managerIds: ['jin', 'yoseop'],
     });
-    const another = openPostgresDatabase(url, schema, url);
+    const another = openPostgresDatabase(url, schema, url, 'reference');
     try {
       await another.seed();
       configureTransactionAdapter(another.transaction);
@@ -75,7 +75,7 @@ describe.skipIf(!process.env.POSTGRES_TEST_URL)('real PostgreSQL transactions', 
       material: 'none' as const,
       attachments: [],
     };
-    const another = openPostgresDatabase(url, schema, url);
+    const another = openPostgresDatabase(url, schema, url, 'reference');
     try {
       const first = localService.createMeeting('juhyung', input, 'first');
       configureTransactionAdapter(another.transaction);
@@ -91,6 +91,67 @@ describe.skipIf(!process.env.POSTGRES_TEST_URL)('real PostgreSQL transactions', 
       ).toHaveLength(1);
     } finally {
       await another.close();
+    }
+  }, 60_000);
+  it('resets old activity once while preserving edited/custom rooms and later test work', async () => {
+    const sql = new Pool({ connectionString: url });
+    const clean = openPostgresDatabase(url, schema, url);
+    try {
+      await localService.savePreferences('me', { materials: false, summary: false, reminders: [] });
+      await localService.cancelMeeting('juhyung', 'equipment-today', 0);
+      await localService.createTopic(
+        'me',
+        { title: '지울 Topic', description: '이전 데이터', managerIds: [] },
+        'old-request',
+      );
+      await sql.query(
+        `UPDATE "${schema}".rooms SET data=data || '{"capacity":99}'::jsonb WHERE id='it-room'`,
+      );
+      await sql.query(`INSERT INTO "${schema}".rooms VALUES ('custom',$1)`, [
+        JSON.stringify({
+          id: 'custom',
+          name: '추가 회의실',
+          location: '명동',
+          floor: '20층',
+          capacity: 8,
+          active: true,
+        }),
+      ]);
+      const before = (await sql.query(`SELECT * FROM "${schema}".rooms ORDER BY id`)).rows;
+      await clean.seed();
+      expect((await sql.query(`SELECT * FROM "${schema}".rooms ORDER BY id`)).rows).toEqual(before);
+      expect(await clean.directory()).toHaveLength(24);
+      for (const name of [
+        'topics',
+        'meetings',
+        'attachments',
+        'preferences',
+        'delivery_logs',
+        'requests',
+      ])
+        expect(
+          Number((await sql.query(`SELECT count(*) AS n FROM "${schema}".${name}`)).rows[0].n),
+        ).toBe(0);
+      configureTransactionAdapter(clean.transaction);
+      expect((await localService.snapshot('sujin')).meetings).toHaveLength(0);
+      await expect(localService.snapshot('me')).rejects.toThrow('사용자');
+      await expect(localService.snapshot('employee-01')).rejects.toThrow('사용자');
+      const id = await localService.createTopic(
+        'sujin',
+        { title: '새 테스트', description: '보존 확인', managerIds: ['wooseok'] },
+        'clean-test',
+      );
+      const reopened = openPostgresDatabase(url, schema, url);
+      try {
+        await reopened.seed();
+        configureTransactionAdapter(reopened.transaction);
+        expect((await localService.snapshot('wooseok')).topics.some((t) => t.id === id)).toBe(true);
+      } finally {
+        await reopened.close();
+      }
+    } finally {
+      await clean.close();
+      await sql.end();
     }
   }, 60_000);
 });

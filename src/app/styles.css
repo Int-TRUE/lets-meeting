@@ -1,6 +1,33 @@
 * {
   box-sizing: border-box;
 }
+html {
+  min-height: 100%;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+  scrollbar-color: var(--control-border) var(--background);
+}
+/* Let document content grow; keep a visible, draggable desktop scrollbar. */
+body,
+#root {
+  min-height: 100dvh;
+}
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--control-border);
+  border: 3px solid var(--background);
+  border-radius: 999px;
+}
+/* Follow actual dialog state so closing overlapping dialogs cannot leave a lock. */
+html:has(dialog[open]) {
+  overflow-y: hidden;
+}
 body {
   margin: 0;
   color: var(--text);

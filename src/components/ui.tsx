@@ -187,13 +187,10 @@ export function Modal({
     const trigger =
       returnFocusRef?.current ??
       (document.activeElement instanceof HTMLElement ? document.activeElement : null);
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     dialog?.showModal();
     dialog?.querySelector<HTMLInputElement>('input:not([disabled])')?.focus();
     return () => {
       dialog?.close();
-      document.body.style.overflow = previous;
       trigger?.focus();
     };
   }, []);

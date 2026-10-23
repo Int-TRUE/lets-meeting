@@ -8,7 +8,8 @@ permissions:
   contents: read
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:17
@@ -21,6 +22,7 @@ jobs:
           --health-cmd "pg_isready -U butler -d butler_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
+      PLAYWRIGHT_CHANNEL: chrome
       POSTGRES_TEST_URL: postgresql://butler:test-only-password@127.0.0.1:5432/butler_test
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +34,8 @@ jobs:
       - run: npm run tokens:check
       - run: npm run build
       - run: npm test
-      - run: npx playwright install --with-deps chromium
+      - name: Verify preinstalled browser
+        run: google-chrome --version
       - run: npm run test:e2e
       - run: npm run test:db
       - uses: actions/upload-artifact@v4

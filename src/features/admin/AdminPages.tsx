@@ -198,14 +198,21 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
   const [location, setLocation] = useState('명동');
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState('');
-  if (admin && !data.user.isAdmin) return <Denied />;
   const filtered = rooms
     .filter(
       (room) =>
         room.location === location && `${room.location} ${room.floor} ${room.name}`.includes(query),
     )
-    .toSorted(compareRooms);
+    .toSorted(
+      (a, b) =>
+        Number(favorites.ids.includes(b.id)) - Number(favorites.ids.includes(a.id)) ||
+        compareRooms(a, b),
+    );
   const selected = filtered.find((room) => room.id === selectedId) ?? filtered[0];
+  useEffect(() => {
+    if (selected && selected.id !== selectedId) setSelectedId(selected.id);
+  }, [selected?.id, selectedId]);
+  if (admin && !data.user.isAdmin) return <Denied />;
   return (
     <div className="workflow-page rooms-page">
       <PageHeading
@@ -240,26 +247,31 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
           <Card>
             <div className="rooms-list">
               {filtered.map((room) => (
-                <button
-                  className="room-list-item"
-                  aria-pressed={selected?.id === room.id}
-                  key={room.id}
-                  onClick={() => setSelectedId(room.id)}
-                >
-                  <span className="topic-icon tone-blue">
-                    <MapPin size={24} />
-                  </span>
-                  <span>
-                    <strong>
-                      {favorites.ids.includes(room.id) ? '★ ' : ''}
-                      {room.location} · {room.name}
-                    </strong>
-                    <small>
-                      {room.floor} · 수용 {room.capacity}명
-                    </small>
-                  </span>
-                  <span className="badge status-completed">예시</span>
-                </button>
+                <div className="room-list-row" key={room.id}>
+                  <button
+                    className="room-list-item"
+                    aria-pressed={selected?.id === room.id}
+                    onClick={() => setSelectedId(room.id)}
+                  >
+                    <span className="topic-icon tone-blue">
+                      <MapPin size={24} />
+                    </span>
+                    <span>
+                      <strong>
+                        {room.location} · {room.name}
+                      </strong>
+                      <small>
+                        {room.floor} · 수용 {room.capacity}명
+                      </small>
+                    </span>
+                  </button>
+                  <FavoriteRoomButton
+                    compact
+                    roomId={room.id}
+                    roomName={`${room.location} ${room.name}`}
+                    favorites={favorites}
+                  />
+                </div>
               ))}
               {!filtered.length ? (
                 <EmptyState
@@ -272,8 +284,11 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
           </Card>
           {selected ? (
             <Card className="room-details">
-              <RoomDirections room={selected} title="회의실 정보" />
-              <FavoriteRoomButton roomId={selected.id} favorites={favorites} />
+              <RoomDirections
+                room={selected}
+                title="회의실 정보"
+                actions={<FavoriteRoomButton roomId={selected.id} favorites={favorites} />}
+              />
               <h2>
                 {selected.location} · {selected.name}
               </h2>

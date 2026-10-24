@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ImageIcon, MapPin, Maximize2 } from 'lucide-react';
 import type { Room } from '../domain/models';
 import { Modal } from './ui';
@@ -7,9 +7,11 @@ import illustration from '../assets/room-directions.png';
 export function RoomDirections({
   room,
   title = '회의실 가는 길',
+  actions,
 }: {
   room?: Room;
   title?: string;
+  actions?: ReactNode;
 }) {
   const [expanded, setExpanded] = useState<'photo' | 'directions'>();
   const [failedPhoto, setFailedPhoto] = useState('');
@@ -40,6 +42,7 @@ export function RoomDirections({
             <p>회의실 안내가 아직 등록되지 않았어요.</p>
           )}
         </div>
+        {actions ? <div className="room-directions-actions">{actions}</div> : null}
       </div>
       {room ? (
         <div className="room-media-grid">

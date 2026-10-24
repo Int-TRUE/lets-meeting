@@ -63,7 +63,7 @@ try {
   await page.goto('/rooms');
   await expect(page.getByLabel('센터', { exact: true })).toBeVisible();
   await expect(page.getByRole('group', { name: '회의실 일정 달력' })).toBeVisible();
-  await expect(page.locator('.room-agenda h3')).toContainText(/예정 회의 \d+개/);
+  await expect(page.locator('.room-agenda > h3')).toContainText(/예정 회의 \d+개/);
   await expect(page.getByRole('alert')).toHaveCount(0);
   await page.screenshot({ path: output + '/rooms.png', fullPage: true });
   if (process.env.DEPLOYMENT_WRITE_TEST === 'true') {

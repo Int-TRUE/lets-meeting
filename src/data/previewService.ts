@@ -26,6 +26,7 @@ import {
   RuleError,
   saveSummary,
   validateSchedule,
+  meetingReminderChoices,
 } from '../domain/workflows.js';
 const DB_NAME = 'robot-butler-preview-v1';
 function openDatabase(): Promise<IDBDatabase> {
@@ -115,6 +116,50 @@ async function transact<T>(
 const now = (data: PreviewDatabase) => data.now ?? fixture.now;
 const directory = (data: PreviewDatabase) => data.people ?? people;
 export const localService = {
+  favoriteRooms(userId: string) {
+    return transact(userId, (data) => data.preferences[userId]?.favoriteRoomIds ?? [], false);
+  },
+  setFavoriteRoom(userId: string, roomId: string, favorite: boolean) {
+    return transact(userId, (data) => {
+      if (
+        !(data.rooms ?? rooms).some((r) => r.id === roomId && r.active) ||
+        typeof favorite !== 'boolean'
+      )
+        throw new RuleError('회의실을 다시 선택해주세요.');
+      const prefs = data.preferences[userId] ?? structuredClone(defaultPreferences);
+      const ids = new Set(prefs.favoriteRoomIds ?? []);
+      if (favorite) ids.add(roomId);
+      else ids.delete(roomId);
+      data.preferences[userId] = { ...prefs, favoriteRoomIds: [...ids] };
+      return [...ids];
+    });
+  },
+  sendReminder(userId: string, id: string, requestId: string) {
+    return transact(userId, (data) => {
+      const { meeting } = requireMeeting(data, id, userId);
+      if (
+        meeting.creatorId !== userId ||
+        meeting.cancelled ||
+        meeting.completed ||
+        Date.parse(meeting.end) <= Date.parse(now(data))
+      )
+        throw new RuleError('진행 중이거나 예정된 회의의 주최자만 리마인드를 보낼 수 있어요.');
+      const key = `manual-reminder:${id}:${userId}:${requestId}`;
+      if (data.requests[key]) return id;
+      if (
+        data.logs.some(
+          (l) =>
+            l.meetingId === id &&
+            l.event === 'reminder' &&
+            Date.parse(now(data)) - Date.parse(l.time) < 60000,
+        )
+      )
+        throw new RuleError('리마인드를 보낸 후 1분 뒤 다시 시도해주세요.');
+      recordEvent(data, meeting, 'reminder', now(data));
+      data.requests[key] = id;
+      return id;
+    });
+  },
   roomSchedule(userId: string, roomId: string, month: string) {
     return transact(
       userId,
@@ -305,6 +350,7 @@ export const localService = {
         end: input.end,
         room: roomLabel(input.roomId, data.rooms),
         roomId: input.roomId,
+        reminderMinutes: [...new Set(input.reminderMinutes ?? [])],
         creatorId: userId,
         participantIds: [...new Set([userId, ...input.participantIds])],
         files: attachments.map((a) => a.name),
@@ -362,6 +408,7 @@ export const localService = {
         room: roomLabel(input.roomId, data.rooms),
         roomId: input.roomId,
         participantIds: [...new Set([meeting.creatorId, ...input.participantIds])],
+        reminderMinutes: [...new Set(input.reminderMinutes ?? meeting.reminderMinutes ?? [])],
         revision: revision + 1,
       });
       recordEvent(data, meeting, 'changed', now(data), previous, previousMeeting);
@@ -444,6 +491,7 @@ export const localService = {
       if (settings.reminders.some((r) => !reminderChoices.includes(r)))
         throw new RuleError('리마인드 시점을 다시 선택해주세요.');
       data.preferences[userId] = {
+        ...data.preferences[userId],
         materials: Boolean(settings.materials),
         summary: Boolean(settings.summary),
         reminders: [...new Set(settings.reminders)],
@@ -457,7 +505,9 @@ export const localService = {
       (data) => {
         requireMeeting(data, id, userId);
         const logs = data.logs.filter(
-          (log) => log.meetingId === id && ['created', 'changed', 'cancelled'].includes(log.event),
+          (log) =>
+            log.meetingId === id &&
+            ['created', 'changed', 'cancelled', 'reminder'].includes(log.event),
         );
         logs.sort(
           (a, b) =>
@@ -483,6 +533,7 @@ export const localService = {
   },
 };
 export interface MeetingInput {
+  reminderMinutes?: number[];
   topicId: string;
   title: string;
   description: string;
@@ -494,6 +545,12 @@ export interface MeetingInput {
   attachments: Attachment[];
 }
 function validateInput(input: MeetingInput, data: PreviewDatabase) {
+  if (
+    input.reminderMinutes !== undefined &&
+    (!Array.isArray(input.reminderMinutes) ||
+      input.reminderMinutes.some((n) => !meetingReminderChoices.includes(n)))
+  )
+    throw new RuleError('리마인드 시점을 다시 선택해주세요.');
   if (!input.title.trim() || !input.description.trim())
     throw new RuleError('회의명과 회의 내용을 입력해주세요.');
   if (input.participantIds.some((id) => !directory(data).some((p) => p.id === id)))

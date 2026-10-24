@@ -125,7 +125,10 @@ export function NotificationSettingsPage() {
         </Card>
         <Card>
           <h2>회의 전 리마인드</h2>
-          <p className="muted">받고 싶은 시점을 선택하세요.</p>
+          <p className="muted">
+            개인 선호 시점입니다. 실제 자동 발송은 회의 생성·수정에서 주최자가 선택한 30·10·5·3분 전
+            설정을 따릅니다.
+          </p>
           <fieldset className="reminder-options">
             <legend className="sr-only">리마인드 시점</legend>
             {reminderChoices.map((choice) => (

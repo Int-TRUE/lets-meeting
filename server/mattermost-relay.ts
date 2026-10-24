@@ -34,6 +34,7 @@ export function queueForRelay(
               log.relay ||
               !log.payload ||
               ![
+                'reminder',
                 'created',
                 'changed',
                 'cancelled',
@@ -155,7 +156,7 @@ export async function handleRelayRequest(
         let sequence = Math.max(0, ...state.logs.map((l) => l.relay?.sequence ?? 0));
         for (const log of state.logs)
           if (
-            ['start-check', 'end-reminder'].includes(log.event) &&
+            ['start-check', 'end-reminder', 'reminder'].includes(log.event) &&
             log.result === 'not-connected'
           ) {
             log.relay = { sequence: ++sequence };

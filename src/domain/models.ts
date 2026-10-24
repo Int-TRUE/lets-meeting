@@ -35,6 +35,7 @@ export interface Meeting {
   hostAtTime?: string;
   updatedAt?: string;
   roomId?: string;
+  reminderMinutes?: number[];
   summary?: Summary;
   attachments?: Attachment[];
 }
@@ -48,7 +49,13 @@ export interface Workspace {
 export type PreviewState =
   'normal' | 'empty-meetings' | 'empty' | 'error' | 'loading' | 'forbidden' | 'expired';
 
+export interface FollowUp {
+  id: string;
+  text: string;
+  done: boolean;
+}
 export interface Summary {
+  tasks?: FollowUp[];
   discussion: string;
   decisions: string;
   nextSteps: string;
@@ -73,6 +80,7 @@ export interface Room {
   active: boolean;
 }
 export interface NotificationSettings {
+  favoriteRoomIds?: string[];
   materials: boolean;
   summary: boolean;
   reminders: string[];
@@ -81,6 +89,7 @@ export interface DeliveryLog {
   id: string;
   meetingId: string;
   event:
+    | 'reminder'
     | 'created'
     | 'changed'
     | 'cancelled'
@@ -105,6 +114,11 @@ export interface DeliveryLog {
     end: string;
     room: string;
     removed: boolean;
+    topicTitle?: string;
+    host?: string;
+    participants?: string[];
+    material?: Meeting['material'];
+    reminderMinutes?: number;
     response?: string;
     responder?: string;
     extensions?: number[];

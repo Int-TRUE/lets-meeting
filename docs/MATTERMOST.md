@@ -84,3 +84,5 @@ Docker 중계기가 가동되는 동안 서버를 약 5초 간격으로 조회�
 검증: 권한·서명 변조·중복·시간 창·충돌·운영시간 단위 검사, 실제 로컬 Mattermost의 복수 선택 창·두 참가자 DM·응답 회신·30분 연장과 참가자 변경 DM을 격리된 SQLite 회의로 확인했다. 테스트에서만 시계를 주입하며 배포 API에는 시간 변경 입력이 없다.
 
 참고: [Mattermost interactive dialogs](https://docs.mattermost.com/developer/interactive-dialogs), [interactive messages](https://docs.mattermost.com/developer/interactive-messages).
+
+2026-10-25: 초대·리마인드 배너는 `comic-v3` 경로를 사용한다. 자동 회의 전 알림은 회의 생성/수정에서 선택한 30·10·5·3분 전 설정을 따른다(기본 꺼짐). Mac/Docker/중계기가 실행 중이어야 하며 선택 시점부터 1분 이내의 연결에서 처리한다. 오프라인으로 지난 알림은 몰아서 전송하지 않는다. 수동 리마인드는 회의 주최자만 상세 맨 아래에서 요청할 수 있다. 서버·중계기의 reminder 이벤트 지원을 함께 배포한다.

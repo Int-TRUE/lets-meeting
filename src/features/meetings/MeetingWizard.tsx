@@ -19,6 +19,7 @@ import {
 } from '../../components/workflow-ui';
 import { isoTime, SchedulePicker, type ScheduleValue } from './SchedulePicker';
 interface Draft {
+  reminderMinutes: number[];
   title: string;
   description: string;
   participantIds: string[];
@@ -36,6 +37,7 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
   const draftKey = `robot-butler:draft:v1:${data.user.id}:${editing ? 'edit' : 'new'}:${id}`;
   const [draft, setDraft] = useState<Draft>(() => {
     const fallback: Draft = {
+      reminderMinutes: existing?.reminderMinutes ?? [],
       title: existing?.title ?? '',
       description: existing?.description ?? '',
       participantIds: existing?.participantIds ?? [data.user.id],
@@ -57,7 +59,11 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
       const raw = sessionStorage.getItem(draftKey);
       if (!raw) return fallback;
       const parsed: Draft = JSON.parse(raw);
-      return { ...parsed, material: parsed.material === 'uploaded' ? 'pending' : parsed.material };
+      return {
+        ...fallback,
+        ...parsed,
+        material: parsed.material === 'uploaded' ? 'pending' : parsed.material,
+      };
     } catch {
       return fallback;
     }
@@ -142,6 +148,7 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
     setBusy(true);
     setError('');
     const input: MeetingInput = {
+      reminderMinutes: draft.reminderMinutes,
       topicId: topic!.id,
       title: draft.title,
       description: draft.description,
@@ -303,6 +310,41 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
             />
           ) : (
             <div className="stack-form">
+              <fieldset className="material-options">
+                <legend>자동 리마인드 알람</legend>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={draft.reminderMinutes.length > 0}
+                    onChange={(e) => patch({ reminderMinutes: e.target.checked ? [30] : [] })}
+                  />{' '}
+                  자동 리마인드 켜기
+                </label>
+                {draft.reminderMinutes.length ? (
+                  <div>
+                    {[30, 10, 5, 3].map((minutes) => (
+                      <label key={minutes}>
+                        <input
+                          type="checkbox"
+                          checked={draft.reminderMinutes.includes(minutes)}
+                          onChange={(e) =>
+                            patch({
+                              reminderMinutes: e.target.checked
+                                ? [...draft.reminderMinutes, minutes]
+                                : draft.reminderMinutes.filter((n) => n !== minutes),
+                            })
+                          }
+                        />
+                        {minutes}분 전
+                      </label>
+                    ))}
+                  </div>
+                ) : null}
+                <p>
+                  선택한 시점마다 참가자에게 알림을 보냅니다. 모두 해제하면 자동 리마인드가
+                  꺼집니다.
+                </p>
+              </fieldset>
               <PeoplePicker
                 label="참가자"
                 people={directory.filter((person) => Object.hasOwn(topic.roles, person.id))}

@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { RoomDirections } from '../../components/RoomDirections';
+import { useRoomFavorites, FavoriteRoomButton } from '../../components/RoomFavorites';
 import { compareRooms } from '../../domain/selectors';
 import { Check, Clock3, MapPin } from 'lucide-react';
 import type { Room } from '../../domain/models';
@@ -23,6 +26,8 @@ export function SchedulePicker({
   now: string;
 }) {
   const { rooms } = useWorkspace();
+  const favorites = useRoomFavorites();
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const selectedRoom = rooms.find((r) => r.id === value.roomId);
   const location = selectedRoom?.location ?? '명동';
   const slots = Array.from(
@@ -73,30 +78,56 @@ export function SchedulePicker({
             </button>
           ))}
         </div>
-        <div className="room-options">
+        <label>
+          <input
+            type="checkbox"
+            checked={favoritesOnly}
+            onChange={(e) => setFavoritesOnly(e.target.checked)}
+          />{' '}
+          자주 사용하는 회의실만 보기
+        </label>
+        {favorites.error ? <p role="alert">{favorites.error}</p> : null}
+        <div className="rooms-list">
           {rooms
-            .filter((r) => r.location === location)
+            .filter(
+              (r) =>
+                r.active &&
+                (favoritesOnly ? favorites.ids.includes(r.id) : r.location === location),
+            )
             .toSorted(compareRooms)
             .map((r) => (
               <button
                 type="button"
-                className="room-option"
+                className="room-list-item"
                 key={r.id}
                 aria-pressed={value.roomId === r.id}
                 onClick={() => roomChange(r)}
               >
-                <span className="room-illustration">
-                  <MapPin size={32} />
-                  <span>{r.floor}</span>
-                </span>
-                <strong>{r.name}</strong>
+                <MapPin size={24} />
                 <span>
-                  {r.location} · 수용 {r.capacity}명
+                  <strong>
+                    {favorites.ids.includes(r.id) ? '★ ' : ''}
+                    {r.location} · {r.name}
+                  </strong>
+                  <small>
+                    {r.floor} · 수용 {r.capacity}명
+                  </small>
                 </span>
-                <small>예시 회의실</small>
               </button>
             ))}
         </div>
+        {favoritesOnly && !favorites.ids.length ? (
+          <p>자주 사용하는 회의실을 지정하면 여기서 바로 선택할 수 있어요.</p>
+        ) : null}
+        {selectedRoom ? (
+          <Card className="room-details">
+            <RoomDirections room={selectedRoom} title="회의실 정보" />
+            <p>
+              {selectedRoom.floor} · 수용 {selectedRoom.capacity}명
+            </p>
+            <FavoriteRoomButton roomId={selectedRoom.id} favorites={favorites} />
+          </Card>
+        ) : null}
       </section>
       <section>
         <h2>일정 선택</h2>

@@ -1,0 +1,65 @@
+import { test, expect } from '@playwright/test';
+
+test('favorite rooms are reusable in the wizard and reminder settings survive save', async ({
+  page,
+}) => {
+  await page.goto('/rooms');
+  await page.getByLabel('센터', { exact: true }).selectOption('분당');
+  await page.getByRole('button', { name: '자주 사용하는 회의실로 지정', exact: true }).click();
+  await page.reload();
+  await page.getByLabel('센터', { exact: true }).selectOption('분당');
+  await expect(page.getByRole('button', { name: '자주 사용하는 회의실 해제' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await page.goto('/topics/system/meetings/new');
+  await page.getByLabel(/^회의명/).fill('즐겨찾기 회의');
+  await page.getByLabel(/^회의 내용·안건/).fill('리마인드 검증');
+  await page.getByRole('button', { name: '다음', exact: true }).click();
+  await page.getByLabel('자주 사용하는 회의실만 보기').check();
+  await expect(page.locator('.room-list-item')).toHaveCount(1);
+  await page.locator('.room-list-item').click();
+  await expect(page.getByRole('region', { name: '회의실 정보' })).toContainText('분당');
+  await page.getByLabel('회의 일자 *').fill('2026-10-21');
+  await page.getByRole('button', { name: '14:00 예약 가능', exact: true }).click();
+  await page.getByRole('button', { name: '다음', exact: true }).click();
+  await page.getByLabel('자동 리마인드 켜기').check();
+  await page.getByLabel('5분 전', { exact: true }).check();
+  await page.getByRole('button', { name: '회의 생성', exact: true }).click();
+  await page.getByRole('link', { name: '회의 상세 보기', exact: true }).click();
+  await expect(page.getByRole('button', { name: '리마인드 알람 보내기' })).toBeVisible();
+  await page.getByRole('link', { name: '회의 수정', exact: true }).click();
+  await page.getByRole('button', { name: '다음', exact: true }).click();
+  await page.getByRole('button', { name: '다음', exact: true }).click();
+  await expect(page.getByLabel('30분 전', { exact: true })).toBeChecked();
+  await expect(page.getByLabel('5분 전', { exact: true })).toBeChecked();
+  await expect(page.getByLabel('3분 전', { exact: true })).not.toBeChecked();
+  await page.screenshot({
+    path: `test-results/reminder-settings-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+});
+
+test('follow-up checklist can be added and checked with persistent state', async ({ page }) => {
+  await page.goto('/meetings/strategy/summary');
+  await page.getByRole('button', { name: '후속 작업 추가' }).click();
+  const fields = page.getByRole('textbox', { name: /^후속 작업 \d+$/ });
+  await fields.last().fill('체크리스트 공유');
+  await page.getByRole('button', { name: '임시 저장', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('요약을 저장했어요');
+  await page.goto('/meetings/strategy?tab=summary');
+  await page.getByLabel('체크리스트 공유', { exact: true }).check();
+  await expect(page.getByLabel('체크리스트 공유', { exact: true })).toBeEnabled();
+  await page.reload();
+  await expect(page.getByLabel('체크리스트 공유', { exact: true })).toBeChecked();
+  await page.screenshot({
+    path: `test-results/checklist-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+});
+
+test('noncreator does not get the manual reminder action', async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem('robot-butler:preview-user:v1', 'park'));
+  await page.goto('/meetings/equipment');
+  await expect(page.getByRole('button', { name: '리마인드 알람 보내기' })).toHaveCount(0);
+});

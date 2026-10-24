@@ -1,6 +1,7 @@
 import type { DeliveryLog, Meeting, PreviewDatabase } from '../src/domain/models.js';
 import {
   recordEvent,
+  meetingPayload,
   requireMeeting,
   RuleError,
   validateSchedule,
@@ -25,7 +26,7 @@ function add(
     channel: 'Mattermost',
     result: 'not-connected',
     detail: '발송 대기',
-    payload: { title: m.title, start: m.start, end: m.end, room: m.room, removed: false },
+    payload: meetingPayload(db, m),
   };
   db.logs.push(log);
   return log;
@@ -57,6 +58,28 @@ export function availableExtensions(db: PreviewDatabase, m: Meeting, now: number
 }
 export function scheduleReminders(db: PreviewDatabase, now: number) {
   for (const m of db.meetings) {
+    if (!m.cancelled && !m.completed && now < Date.parse(m.start)) {
+      const minutes = [...(m.reminderMinutes ?? [])]
+        .sort((a, b) => a - b)
+        .find((n) => now >= Date.parse(m.start) - n * 60000);
+      if (minutes !== undefined) {
+        // Mark elapsed slots together after offline recovery; send only the nearest relevant reminder.
+        const due = Date.parse(m.start) - minutes * 60000;
+        const key = `reminder:before:${m.id}:${m.start}:${minutes}`;
+        if (!db.requests[key]) {
+          for (const n of m.reminderMinutes ?? [])
+            if (now >= Date.parse(m.start) - n * 60000)
+              db.requests[`reminder:before:${m.id}:${m.start}:${n}`] = 'processed';
+          const batchId = crypto.randomUUID();
+          if (now < due + 60000)
+            for (const id of new Set(m.participantIds)) {
+              const log = add(db, m, 'reminder', id, now);
+              log.batchId = batchId;
+              log.payload!.reminderMinutes = minutes;
+            }
+        }
+      }
+    }
     if (m.cancelled || m.completed || now < Date.parse(m.start) || now >= Date.parse(m.end))
       continue;
     for (const event of ['start-check', 'end-reminder'] as const) {
@@ -69,7 +92,10 @@ export function scheduleReminders(db: PreviewDatabase, now: number) {
     }
   }
   for (const log of db.logs) {
-    if (!['start-check', 'end-reminder', 'late'].includes(log.event) || log.result !== 'pending')
+    if (
+      !['start-check', 'end-reminder', 'late', 'reminder'].includes(log.event) ||
+      log.result !== 'pending'
+    )
       continue;
     const m = db.meetings.find((m) => m.id === log.meetingId);
     if (
@@ -77,6 +103,12 @@ export function scheduleReminders(db: PreviewDatabase, now: number) {
       m.cancelled ||
       m.completed ||
       now >= Date.parse(m.end) ||
+      (log.event === 'reminder' &&
+        (m.start !== log.payload?.start ||
+          !m.participantIds.includes(log.recipientId) ||
+          (log.payload?.reminderMinutes !== undefined &&
+            (now >= Date.parse(m.start) ||
+              !(m.reminderMinutes ?? []).includes(log.payload.reminderMinutes))))) ||
       (log.event === 'start-check' && now >= Date.parse(m.start) + 5 * 60000) ||
       m.start !== log.payload?.start ||
       (log.event === 'end-reminder' && m.end !== log.payload?.end) ||

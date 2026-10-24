@@ -1,3 +1,4 @@
+import { useRoomFavorites, FavoriteRoomButton } from '../../components/RoomFavorites';
 import { deliveryLabels } from '../../components/MeetingDelivery';
 import { useEffect, useState } from 'react';
 import { RoomSchedule } from '../meetings/RoomSchedule';
@@ -15,7 +16,8 @@ export const eventLabels: Record<DeliveryLog['event'], string> = {
   late: '지각 알림',
   'late-reply': '지각 응답',
   'end-reminder': '회의 종료·연장 안내',
-  created: '회의 생성·초대',
+  created: '회의 초대',
+  reminder: '회의 리마인드',
   changed: '회의 변경',
   cancelled: '회의 취소',
   materials: '자료 등록·수정',
@@ -192,6 +194,7 @@ export function AdminNotificationsPage() {
 }
 export function RoomsPage({ admin = false }: { admin?: boolean }) {
   const { data, rooms } = useWorkspace();
+  const favorites = useRoomFavorites();
   const [location, setLocation] = useState('명동');
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState('');
@@ -216,6 +219,7 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
           ) : undefined
         }
       />
+      <FormMessage error={favorites.error} />
       <div className="admin-filters">
         <Field
           label="회의실 검색"
@@ -247,6 +251,7 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
                   </span>
                   <span>
                     <strong>
+                      {favorites.ids.includes(room.id) ? '★ ' : ''}
                       {room.location} · {room.name}
                     </strong>
                     <small>
@@ -268,6 +273,7 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
           {selected ? (
             <Card className="room-details">
               <RoomDirections room={selected} title="회의실 정보" />
+              <FavoriteRoomButton roomId={selected.id} favorites={favorites} />
               <h2>
                 {selected.location} · {selected.name}
               </h2>

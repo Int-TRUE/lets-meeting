@@ -23,7 +23,12 @@ export function mattermostConfig(
       url.hash ||
       !(
         url.protocol === 'https:' ||
-        (url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname))
+        (url.protocol === 'http:' &&
+          (['localhost', '127.0.0.1'].includes(url.hostname) ||
+            (url === base &&
+              env.MATTERMOST_DOCKER_NETWORK === 'true' &&
+              url.hostname === 'mattermost' &&
+              url.port === '8065')))
       )
     )
       throw new Error('Invalid Mattermost URL configuration');

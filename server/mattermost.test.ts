@@ -157,3 +157,32 @@ test('requires explicit enablement and rejects unsafe configured URLs and invali
     }),
   ).toThrow();
 });
+
+test('Docker network permits only the fixed Mattermost service, never arbitrary HTTP or an internal app link', () => {
+  const env = {
+    MATTERMOST_ENABLED: 'true',
+    MATTERMOST_URL: 'http://mattermost:8065',
+    MATTERMOST_BOT_TOKEN: 'secret',
+    MATTERMOST_BOT_ID: botId,
+    MATTERMOST_USER_MAP: '{}',
+    ROBOT_BUTLER_URL: 'https://robot-butler.vercel.app',
+  };
+  expect(() => mattermostConfig(env)).toThrow();
+  expect(mattermostConfig({ ...env, MATTERMOST_DOCKER_NETWORK: 'true' })?.baseUrl).toBe(
+    'http://mattermost:8065',
+  );
+  expect(() =>
+    mattermostConfig({
+      ...env,
+      MATTERMOST_DOCKER_NETWORK: 'true',
+      MATTERMOST_URL: 'http://elsewhere:8065',
+    }),
+  ).toThrow();
+  expect(() =>
+    mattermostConfig({
+      ...env,
+      MATTERMOST_DOCKER_NETWORK: 'true',
+      ROBOT_BUTLER_URL: 'http://mattermost:8065',
+    }),
+  ).toThrow();
+});

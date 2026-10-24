@@ -56,4 +56,4 @@ npm run check
 
 ## 배포 앱의 매터모스트 시연
 
-Mac에서 `start-mattermost-demo.command`를 실행하면 Docker 컨테이너와 중계기를 시작합니다. https://robot-butler.vercel.app 에서 생성·변경·취소한 회의 알림을 로컬 매터모스트로 전달합니다. 로컬 개발 서버는 필요 없습니다. 설정·종료·복구는 [시연 안내](docs/MATTERMOST.md)를 참고하세요.
+Mac에서 `start-mattermost-demo.command`를 실행하면 매터모스트·DB·중계기를 모두 Docker 컨테이너로 시작합니다. 초기 구성 후에는 Docker Desktop을 켜면 함께 다시 시작되며 터미널 창을 유지할 필요가 없습니다. https://robot-butler.vercel.app 에서 생성·변경·취소한 회의 알림을 로컬 매터모스트로 전달합니다. 로컬 개발 서버는 필요 없습니다. 설정·종료·복구는 [시연 안내](docs/MATTERMOST.md)를 참고하세요.

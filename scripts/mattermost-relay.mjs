@@ -98,6 +98,7 @@ export function createRelayWorker({
       job.relay?.claimId !== state.claimId ||
       !job.payload ||
       ![
+        'reminder',
         'created',
         'changed',
         'cancelled',

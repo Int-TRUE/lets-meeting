@@ -130,7 +130,9 @@ test('text stays accessible, banners are limited, tickets cannot be altered or u
     users: { sujin: 's'.repeat(26) },
     interaction: { url: 'http://relay:8066', secret: 'secret' },
   };
-  expect(notificationMessage(log, config.appUrl)).toContain('- 📋');
+  expect(notificationMessage(log, config.appUrl)).toContain(
+    '· **일시**: 2026.10.26(월) 10:00~11:00',
+  );
   expect(JSON.stringify(notificationProps(log, config))).not.toContain('image_url');
   log.event = 'late';
   expect(JSON.stringify(notificationProps(log, config))).toContain('/late.jpg');
@@ -148,4 +150,50 @@ test('a queued start prompt expires when the relay backlog exceeds five minutes'
   scheduleReminders(db, at('10:06'));
   expect(db.logs[0].result).toBe('failed');
   expect(db.logs).toHaveLength(1);
+});
+
+test('selected pre-meeting slots fire once for participants and invalidate cancelled or disabled work', () => {
+  const db = fixture();
+  db.meetings[0].reminderMinutes = [30, 10, 5, 3];
+  scheduleReminders(db, at('09:29'));
+  expect(db.logs).toHaveLength(0);
+  for (const clock of ['09:30', '09:50', '09:55', '09:57']) {
+    scheduleReminders(db, at(clock));
+    scheduleReminders(db, at(clock));
+  }
+  expect(db.logs).toHaveLength(12);
+  expect(db.logs.map((l) => l.payload?.reminderMinutes)).toEqual([
+    30, 30, 30, 10, 10, 10, 5, 5, 5, 3, 3, 3,
+  ]);
+  db.logs.forEach((l) => (l.result = 'pending'));
+  db.meetings[0].reminderMinutes = [];
+  scheduleReminders(db, at('09:58'));
+  expect(db.logs.every((l) => l.result === 'failed')).toBe(true);
+  const offline = fixture();
+  offline.meetings[0].reminderMinutes = [30, 10, 5, 3];
+  scheduleReminders(offline, at('09:54'));
+  expect(offline.logs).toHaveLength(0);
+  scheduleReminders(offline, at('09:55'));
+  expect(offline.logs).toHaveLength(3);
+});
+
+test('invitation format contains topic, host, participants, materials and a safe detail link', () => {
+  const db = fixture();
+  const log = prompt(db, 'start-check', at('10:00'));
+  log.event = 'created';
+  Object.assign(log.payload!, {
+    topicTitle: '정기 점검',
+    host: '최승호 차장',
+    participants: ['정수진', '김태헌'],
+    material: 'pending',
+  });
+  const message = notificationMessage(log, 'https://app.example');
+  for (const text of [
+    '**[회의 초대] 정기 점검 > 주간 회의**',
+    '· **주최**: 최승호 차장',
+    '· 참가자: 정수진, 김태헌',
+    '· 자료: 등록예정',
+    '[회의상세보기](https://app.example/meetings/meeting)',
+  ])
+    expect(message).toContain(text);
 });

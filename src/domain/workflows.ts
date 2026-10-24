@@ -1,3 +1,4 @@
+import { people } from '../data/workspace.js';
 import type {
   DeliveryLog,
   Meeting,
@@ -127,6 +128,35 @@ export function requireMeeting(db: PreviewDatabase, id: string, userId: string) 
   if (!m || !t || !canReadMeeting(t, m, userId)) throw new RuleError('이 정보에 접근할 수 없어요.');
   return { meeting: m, topic: t };
 }
+export const meetingReminderChoices = [30, 10, 5, 3];
+export function meetingPayload(db: PreviewDatabase, meeting: Meeting) {
+  const directory = db.people ?? people;
+  const host = directory.find((p) => p.id === meeting.creatorId);
+  return {
+    title: meeting.title,
+    start: meeting.start,
+    end: meeting.end,
+    room: meeting.room,
+    removed: false,
+    topicTitle: db.topics.find((t) => t.id === meeting.topicId)?.title ?? '',
+    host: host
+      ? [host.name, host.position].filter(Boolean).join(' ')
+      : (meeting.hostAtTime ?? '주최자'),
+    participants: meeting.participantIds.map(
+      (id) => directory.find((p) => p.id === id)?.name ?? id,
+    ),
+    material: meeting.material,
+  };
+}
+export function summaryTasks(summary?: Summary) {
+  return (
+    summary?.tasks ??
+    (summary?.nextSteps ?? '')
+      .split('\n')
+      .filter((t) => t.trim())
+      .map((text, i) => ({ id: `legacy-${i}`, text, done: false }))
+  );
+}
 export function recordEvent(
   db: PreviewDatabase,
   meeting: Meeting,
@@ -153,6 +183,7 @@ export function recordEvent(
       result: 'not-connected',
       batchId,
       payload: {
+        ...meetingPayload(db, meeting),
         title: meeting.title,
         start: meeting.start,
         end: meeting.end,
@@ -195,11 +226,38 @@ export function saveSummary(
     throw new RuleError('종료된 회의의 참가자만 요약을 작성·수정할 수 있어요.');
   if (complete && (meeting.creatorId !== userId || meeting.completed))
     throw new RuleError('미완료 회의의 생성자만 회의를 완료할 수 있어요.');
-  if (complete && !Object.values(summary).some((v) => v.trim()))
+  if (
+    summary.tasks !== undefined &&
+    (!Array.isArray(summary.tasks) ||
+      summary.tasks.some(
+        (t) =>
+          !t ||
+          typeof t.id !== 'string' ||
+          !t.id ||
+          typeof t.text !== 'string' ||
+          !t.text.trim() ||
+          typeof t.done !== 'boolean',
+      ) ||
+      new Set(summary.tasks.map((t) => t.id)).size !== summary.tasks.length)
+  )
+    throw new RuleError('후속 작업 내용을 확인해주세요.');
+  if (
+    complete &&
+    ![
+      summary.discussion,
+      summary.decisions,
+      summary.tasks ? summary.tasks.map((t) => t.text).join('\n') : summary.nextSteps,
+    ].some((v) => v.trim()) &&
+    !summary.tasks?.length
+  )
     throw new RuleError(
       '빈 요약 완료 기준은 아직 정해지지 않았어요. 내용을 작성하거나 임시 저장해주세요.',
     );
-  meeting.summary = { ...summary, savedAt: now };
+  meeting.summary = {
+    ...summary,
+    ...(summary.tasks ? { nextSteps: summary.tasks.map((t) => t.text).join('\n') } : {}),
+    savedAt: now,
+  };
   meeting.revision = revision + 1;
   if (complete) {
     meeting.completed = true;

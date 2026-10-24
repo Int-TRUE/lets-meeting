@@ -2772,3 +2772,24 @@ td {
   color: var(--primary);
   font-weight: 600;
 }
+
+.followup-list {
+  list-style: none;
+  padding: 0;
+}
+.followup-list label,
+.followup-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.followup-row {
+  margin: 12px 0;
+}
+.followup-row input:not([type='checkbox']) {
+  flex: 1;
+  min-width: 0;
+}
+.followup-editor {
+  min-width: 0;
+}

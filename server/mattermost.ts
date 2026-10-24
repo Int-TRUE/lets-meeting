@@ -54,7 +54,8 @@ export function mattermostConfig(
   };
 }
 const labels = {
-  created: '회의 생성·초대',
+  created: '회의 초대',
+  reminder: '회의 리마인드',
   changed: '회의 변경',
   cancelled: '회의 취소',
   materials: '자료 변경',
@@ -69,16 +70,15 @@ const plain = (value: string) =>
     .replace(/[\r\n]/g, ' ')
     .replace(/@/g, '＠')
     .replace(/[\\`*_{}\[\]()<>#!|~]/g, '\\$&');
-const date = (value: string) =>
-  new Date(value).toLocaleString('ko-KR', {
-    timeZone: 'Asia/Seoul',
-    hour12: false,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+const date = (value: string) => {
+  const d = new Date(Date.parse(value) + 9 * 3600000);
+  return `${d.toISOString().slice(0, 10).replaceAll('-', '.')}(${'일월화수목금토'[d.getUTCDay()]}) ${d.toISOString().slice(11, 16)}`;
+};
+const period = (start: string, end: string) => {
+  const a = date(start),
+    b = date(end);
+  return `${a}~${a.slice(0, 13) === b.slice(0, 13) ? b.slice(-5) : b}`;
+};
 export function notificationMessage(log: DeliveryLog, appUrl: string) {
   const p = log.payload!;
   const schedule = (v: { start: string; end: string; room: string }) =>
@@ -86,14 +86,21 @@ export function notificationMessage(log: DeliveryLog, appUrl: string) {
   if (p.removed)
     return `**[로봇집사] 회의 참가 제외**\n\n- 📋 회의: ${plain(p.previous?.title ?? p.title)}\n이 회의의 참가 대상에서 제외되었습니다.`;
   return [
-    `**[로봇집사] ${labels[log.event]}**`,
-    `- 📋 회의: ${plain(p.title)}`,
+    `**[${labels[log.event]}] ${p.topicTitle ? plain(p.topicTitle) + ' > ' : ''}${plain(p.title)}**`,
+    `· **일시**: ${period(p.start, p.end)}`,
+    `· **장소**: ${plain(p.room)}`,
+    `· **주최**: ${plain(p.host ?? '주최자')}`,
+    `· 참가자: ${(p.participants ?? []).map(plain).join(', ') || '상세정보에서 확인'}`,
+    `· 자료: ${p.material === 'none' ? '없음' : p.material === 'pending' ? '등록예정' : '상세정보에서 확인'}`,
+    ...(log.event === 'reminder' && p.reminderMinutes
+      ? [`회의 시작 ${p.reminderMinutes}분 전입니다.`]
+      : []),
     ...(p.previous
       ? [
           `- 🔄 변경 전: ${plain(p.previous.title)} / ${schedule(p.previous)}`,
           `- 📅 변경 후: ${schedule(p)}`,
         ]
-      : [`- 📅 일시·장소: ${schedule(p)}`]),
+      : []),
     ...(log.event === 'cancelled' ? ['회의가 취소되었습니다.'] : []),
     ...(log.event === 'late-reply'
       ? [`- 🙋 ${plain(p.responder ?? '참가자')}: ${plain(p.response ?? '')}`]
@@ -107,7 +114,7 @@ export function notificationMessage(log: DeliveryLog, appUrl: string) {
           `[회의 변경 페이지](${appUrl}/meetings/${encodeURIComponent(log.meetingId)}/edit)`,
         ]
       : []),
-    `[회의 상세 보기](${appUrl}/meetings/${encodeURIComponent(log.meetingId)})`,
+    `· 회의실 가는 법, 자료, 그 외 상세정보가 필요하면 여기 👉 [회의상세보기](${appUrl}/meetings/${encodeURIComponent(log.meetingId)})를 눌러주세요!`,
   ].join('\n\n');
 }
 export const lateReplies = [
@@ -150,7 +157,8 @@ export function verifyInteraction(
 export function notificationProps(log: DeliveryLog, config: MattermostConfig) {
   const message = notificationMessage(log, config.appUrl);
   const banner =
-    !log.payload?.removed && ['created', 'changed', 'cancelled', 'late'].includes(log.event);
+    !log.payload?.removed &&
+    ['created', 'changed', 'cancelled', 'late', 'reminder'].includes(log.event);
   const actions: object[] = [];
   const interaction = config.interaction;
   if (interaction && !log.payload?.removed) {
@@ -203,7 +211,7 @@ export function notificationProps(log: DeliveryLog, config: MattermostConfig) {
               ? [
                   {
                     fallback: labels[log.event],
-                    image_url: `${config.appUrl}/notification-banners/comic-v2/${log.event}.jpg`,
+                    image_url: `${config.appUrl}/notification-banners/${['created', 'reminder'].includes(log.event) ? 'comic-v3' : 'comic-v2'}/${log.event}.jpg`,
                   },
                 ]
               : []),
@@ -340,7 +348,7 @@ export function createMattermostDelivery(
             if (
               existing.has(log.id) ||
               !log.payload ||
-              !['created', 'changed', 'cancelled'].includes(log.event)
+              !['created', 'changed', 'cancelled', 'reminder'].includes(log.event)
             )
               continue;
             log.result = 'pending';

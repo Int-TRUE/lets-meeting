@@ -216,3 +216,31 @@ test('interactive callbacks verify recipient and original bot post before any cl
   });
   await assert.rejects(badPost('/action', body));
 });
+
+test('relay accepts reminder jobs and acknowledges them', async (t) => {
+  const journal = setup(t);
+  let sent = 0,
+    acknowledged = false;
+  const tick = createRelayWorker({
+    origin,
+    config,
+    token: 'secret',
+    journal,
+    fetcher: async (url, options) => {
+      if (url.includes('/system/ping')) return Response.json({});
+      const body = JSON.parse(options.body);
+      if (body.action === 'claim')
+        return Response.json({ jobs: [{ ...jobFor(body.claimId), event: 'reminder' }] });
+      acknowledged = true;
+      return Response.json({ ok: true });
+    },
+    send: async (job) => {
+      assert.equal(job.event, 'reminder');
+      sent++;
+      return { result: 'sent', postId: 'p'.repeat(26) };
+    },
+  });
+  await tick();
+  assert.equal(sent, 1);
+  assert.equal(acknowledged, true);
+});

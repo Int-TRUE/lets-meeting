@@ -299,3 +299,52 @@ it('does not grant summary editing to a nonparticipant Topic manager', () => {
     ),
   ).toThrow('참가자');
 });
+
+it('persists favorites per user and preserves them when notification preferences change', async () => {
+  await previewService.setFavoriteRoom('kim', 'bd-3', true);
+  await previewService.savePreferences('kim', { materials: false, summary: false, reminders: [] });
+  expect(await previewService.favoriteRooms('kim')).toEqual(['bd-3']);
+  expect(await previewService.favoriteRooms('park')).toEqual([]);
+  await previewService.setFavoriteRoom('kim', 'bd-3', false);
+  expect(await previewService.favoriteRooms('kim')).toEqual([]);
+  await expect(previewService.setFavoriteRoom('kim', 'missing', true)).rejects.toThrow();
+});
+it('stores meeting reminder choices and only permits the creator to send manual reminders idempotently', async () => {
+  const id = await previewService.createMeeting(
+    'kim',
+    input({ reminderMinutes: [30, 5, 3] }),
+    'reminders',
+  );
+  expect(
+    (await previewService.snapshot('kim')).meetings.find((m) => m.id === id)?.reminderMinutes,
+  ).toEqual([30, 5, 3]);
+  await expect(previewService.sendReminder('lee', id, 'not-host')).rejects.toThrow('주최자');
+  await previewService.sendReminder('kim', id, 'once');
+  await previewService.sendReminder('kim', id, 'once');
+  await expect(previewService.sendReminder('kim', id, 'again')).rejects.toThrow('1분');
+  await expect(
+    previewService.createMeeting('kim', input({ reminderMinutes: [7] }), 'invalid'),
+  ).rejects.toThrow('리마인드');
+});
+it('stores checklist state, preserves completed status and rejects stale summary edits', async () => {
+  const summary = {
+    discussion: '논의',
+    decisions: '결정',
+    nextSteps: '',
+    tasks: [{ id: 'task-1', text: '자료 공유', done: false }],
+  };
+  await previewService.saveSummary('kim', 'strategy', summary, true, 0);
+  await previewService.saveSummary(
+    'jung',
+    'strategy',
+    { ...summary, tasks: [{ ...summary.tasks[0], done: true }] },
+    false,
+    1,
+  );
+  const m = (await previewService.snapshot('kim')).meetings.find((m) => m.id === 'strategy')!;
+  expect(m.completed).toBe(true);
+  expect(m.summary?.tasks?.[0].done).toBe(true);
+  await expect(previewService.saveSummary('kim', 'strategy', summary, false, 1)).rejects.toThrow(
+    '다른 창',
+  );
+});

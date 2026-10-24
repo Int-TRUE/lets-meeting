@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import type { Attachment } from '../../domain/models';
 import { fullDate, meetingStatus, time } from '../../domain/selectors';
-import { canEditMeeting, canEditSummary } from '../../domain/workflows';
+import { canEditMeeting, canEditSummary, summaryTasks } from '../../domain/workflows';
 import { previewService } from '../../data/previewService';
 import { useUnsavedChanges, useWorkspace } from '../../app/WorkspaceContext';
 import { AvatarGroup, Button, Card, EmptyState, Modal, StatusBadge } from '../../components/ui';
@@ -36,6 +36,10 @@ export function MeetingDetail() {
   const meeting = data.meetings.find((m) => m.id === id);
   const topic = data.topics.find((t) => t.id === meeting?.topicId);
   const tab = params.get('tab') ?? 'info';
+  const [pendingTasks, setPendingTasks] = useState<Record<string, boolean>>({});
+  const [deliveryRefresh, setDeliveryRefresh] = useState(0);
+  const [reminderResult, setReminderResult] = useState('');
+  const [reminderRequest, setReminderRequest] = useState(() => crypto.randomUUID());
   const [cancel, setCancel] = useState(false);
   const [cancelAcknowledged, setCancelAcknowledged] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -189,7 +193,6 @@ export function MeetingDetail() {
           참석자 {meeting.participantIds.length}명
         </span>
       </div>
-      <MeetingDelivery meetingId={meeting.id} revision={meeting.revision} />
       {meeting.cancelled ? (
         <p className="form-error" role="status">
           취소된 회의입니다. 미리보기 예약은 해제되었습니다. 참가자 알림 결과를 확인해주세요.
@@ -356,7 +359,50 @@ export function MeetingDetail() {
               <h3>결정 사항</h3>
               <p>{meeting.summary.decisions || '작성된 내용이 없어요.'}</p>
               <h3>후속 할 일</h3>
-              <p>{meeting.summary.nextSteps || '작성된 내용이 없어요.'}</p>
+              {summaryTasks(meeting.summary).length ? (
+                <ul className="followup-list">
+                  {summaryTasks(meeting.summary).map((task) => (
+                    <li key={task.id}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={pendingTasks[task.id] ?? task.done}
+                          disabled={!canSummarize || busy}
+                          onChange={async (e) => {
+                            setPendingTasks({ [task.id]: e.target.checked });
+                            const tasks = summaryTasks(meeting.summary).map((t) =>
+                              t.id === task.id ? { ...t, done: e.target.checked } : t,
+                            );
+                            setBusy(true);
+                            setError('');
+                            try {
+                              await run(() =>
+                                previewService.saveSummary(
+                                  data.user.id,
+                                  meeting.id,
+                                  { ...meeting.summary!, tasks },
+                                  false,
+                                  meeting.revision ?? 0,
+                                ),
+                              );
+                            } catch (e) {
+                              setError(e instanceof Error ? e.message : '저장하지 못했어요.');
+                            } finally {
+                              setBusy(false);
+                              setPendingTasks({});
+                            }
+                          }}
+                        />
+                        <span style={{ textDecoration: task.done ? 'line-through' : undefined }}>
+                          {task.text}
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>후속 작업이 없어요.</p>
+              )}
             </div>
           ) : (
             <EmptyState
@@ -376,6 +422,37 @@ export function MeetingDetail() {
           ) : null}
         </Card>
       )}
+      <Card>
+        <MeetingDelivery
+          meetingId={meeting.id}
+          revision={(meeting.revision ?? 0) + deliveryRefresh}
+        />
+        {meeting.creatorId === data.user.id && status === 'scheduled' ? (
+          <Button
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              setError('');
+              setReminderResult('');
+              try {
+                await run(() =>
+                  previewService.sendReminder(data.user.id, meeting.id, reminderRequest),
+                );
+                setReminderRequest(crypto.randomUUID());
+                setDeliveryRefresh((n) => n + 1);
+                setReminderResult('참가자에게 리마인드 발송을 요청했어요.');
+              } catch (e) {
+                setError(e instanceof Error ? e.message : '알림을 요청하지 못했어요.');
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            리마인드 알람 보내기
+          </Button>
+        ) : null}
+        {reminderResult ? <p role="status">{reminderResult}</p> : null}
+      </Card>
       {cancel ? (
         <Modal
           className="cancel-confirm-modal"
@@ -430,6 +507,7 @@ export function SummaryEditor() {
     discussion: meeting?.summary?.discussion ?? '',
     decisions: meeting?.summary?.decisions ?? '',
     nextSteps: meeting?.summary?.nextSteps ?? '',
+    tasks: summaryTasks(meeting?.summary),
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -513,19 +591,70 @@ export function SummaryEditor() {
           {[
             ['discussion', '주요 논의 내용'],
             ['decisions', '결정 사항'],
-            ['nextSteps', '후속 할 일'],
           ].map(([key, label]) => (
             <TextareaField
               key={key}
               label={label}
               rows={5}
-              value={summary[key as keyof typeof summary]}
+              value={summary[key as 'discussion' | 'decisions']}
               onChange={(e) => {
                 setSummary((s) => ({ ...s, [key]: e.target.value }));
                 setSuccess('');
               }}
             />
           ))}
+          <fieldset className="followup-editor">
+            <legend>후속 할 일</legend>
+            {summary.tasks.map((task, index) => (
+              <div className="followup-row" key={task.id}>
+                <input
+                  type="checkbox"
+                  aria-label={`후속 작업 ${index + 1} 완료`}
+                  checked={task.done}
+                  onChange={(e) =>
+                    setSummary((s) => ({
+                      ...s,
+                      tasks: s.tasks.map((t) =>
+                        t.id === task.id ? { ...t, done: e.target.checked } : t,
+                      ),
+                    }))
+                  }
+                />
+                <input
+                  aria-label={`후속 작업 ${index + 1}`}
+                  value={task.text}
+                  onChange={(e) =>
+                    setSummary((s) => ({
+                      ...s,
+                      tasks: s.tasks.map((t) =>
+                        t.id === task.id ? { ...t, text: e.target.value } : t,
+                      ),
+                    }))
+                  }
+                />
+                <Button
+                  variant="text"
+                  aria-label={`후속 작업 ${index + 1} 삭제`}
+                  onClick={() =>
+                    setSummary((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== task.id) }))
+                  }
+                >
+                  삭제
+                </Button>
+              </div>
+            ))}
+            <Button
+              variant="secondary"
+              onClick={() =>
+                setSummary((s) => ({
+                  ...s,
+                  tasks: [...s.tasks, { id: crypto.randomUUID(), text: '', done: false }],
+                }))
+              }
+            >
+              후속 작업 추가
+            </Button>
+          </fieldset>
         </div>
         <FormMessage error={!confirm ? error : undefined} success={success} />
         <div className="form-actions">

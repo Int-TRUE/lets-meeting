@@ -7,14 +7,15 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "vitest run",
+    "test": "vitest run && node --experimental-strip-types --test scripts/mattermost-relay.test.mjs",
     "test:e2e": "playwright test",
     "check": "npm run tokens:check && npm run format:check && npm run build && npm test && npm run test:e2e && npm run test:db",
     "tokens": "node scripts/generate-tokens.mjs",
     "tokens:check": "node scripts/generate-tokens.mjs --check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:db": "playwright test --config playwright.database.config.ts"
+    "test:db": "playwright test --config playwright.database.config.ts",
+    "mattermost:relay": "node --experimental-strip-types --env-file=.env.mattermost-local/relay.env scripts/mattermost-relay.mjs"
   },
   "dependencies": {
     "@vercel/functions": "^3.10.1",

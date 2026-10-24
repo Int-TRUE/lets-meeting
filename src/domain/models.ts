@@ -86,6 +86,7 @@ export interface DeliveryLog {
   channel: 'Mattermost';
   result: 'not-connected' | 'pending' | 'sending' | 'sent' | 'failed' | 'unknown';
   batchId?: string;
+  relay?: { sequence: number; claimId?: string; expiresAt?: number };
   attemptedAt?: string;
   deliveredAt?: string;
   postId?: string;

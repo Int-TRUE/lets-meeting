@@ -442,6 +442,10 @@ export const localService = {
         const logs = data.logs.filter(
           (log) => log.meetingId === id && ['created', 'changed', 'cancelled'].includes(log.event),
         );
+        logs.sort(
+          (a, b) =>
+            a.time.localeCompare(b.time) || (a.relay?.sequence ?? 0) - (b.relay?.sequence ?? 0),
+        );
         const last = logs.at(-1);
         const latest = last?.batchId ? logs.filter((log) => log.batchId === last.batchId) : logs;
         return latest.map(({ result, event }) => ({ result, event }));
@@ -455,7 +459,7 @@ export const localService = {
       (data) => {
         if (!directory(data).find((p) => p.id === userId)?.isAdmin)
           throw new RuleError('운영 관리자만 접근할 수 있어요.');
-        return data.logs.map(({ payload: _payload, ...log }) => log);
+        return data.logs.map(({ payload: _payload, relay: _relay, ...log }) => log);
       },
       false,
     );

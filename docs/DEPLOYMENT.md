@@ -42,3 +42,5 @@
 ## Mattermost 로컬 시연 — 2026-10-24
 
 실제 발송은 Mac의 Vite/SQLite 서버에서만 활성화한다. Vercel에는 봇 비밀값을 추가하지 않으며 상태 조회·표시만 반영한다. Mac 서버를 외부에 노출하거나 Production의 가짜 세션으로 DM을 발송하지 않는다. 구성·검증·실패 처리는 [Mattermost 안내](MATTERMOST.md)를 따른다.
+
+2026-10-24 중계 기능 후속: `api/mattermost-relay.ts`가 인증된 claim/ack를 제공하고 `api/demo.ts`는 활성화된 환경에서만 기존 PostgreSQL의 JSON 발송 기록에 대기를 저장한다. 스키마 변경은 없다. Production은 시연 참가자 허용 목록과 별도 중계 Secret을 사용하며 실제 봇 토큰은 Mac에만 보관한다. Preview는 `task/mattermost-relay`에 한정한 별도 Secret으로 검증한다. 기동·장애 복구는 [Mattermost 안내](MATTERMOST.md)를 따른다.

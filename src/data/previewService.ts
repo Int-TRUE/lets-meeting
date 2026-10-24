@@ -336,6 +336,7 @@ export const localService = {
         throw new RuleError('Topic에 포함된 사람만 참가자로 선택할 수 있어요.');
       validateSchedule(data, input.roomId, input.start, input.end, now(data), id);
       const previous = meeting.participantIds;
+      const previousMeeting = structuredClone(meeting);
       Object.assign(meeting, {
         title: input.title.trim(),
         description: input.description,
@@ -346,7 +347,7 @@ export const localService = {
         participantIds: [...new Set([meeting.creatorId, ...input.participantIds])],
         revision: revision + 1,
       });
-      recordEvent(data, meeting, 'changed', now(data), previous);
+      recordEvent(data, meeting, 'changed', now(data), previous, previousMeeting);
       return id;
     });
   },
@@ -433,13 +434,28 @@ export const localService = {
       return true;
     });
   },
+  meetingDelivery(userId: string, id: string) {
+    return transact(
+      userId,
+      (data) => {
+        requireMeeting(data, id, userId);
+        const logs = data.logs.filter(
+          (log) => log.meetingId === id && ['created', 'changed', 'cancelled'].includes(log.event),
+        );
+        const last = logs.at(-1);
+        const latest = last?.batchId ? logs.filter((log) => log.batchId === last.batchId) : logs;
+        return latest.map(({ result, event }) => ({ result, event }));
+      },
+      false,
+    );
+  },
   adminLogs(userId: string) {
     return transact(
       userId,
       (data) => {
         if (!directory(data).find((p) => p.id === userId)?.isAdmin)
           throw new RuleError('운영 관리자만 접근할 수 있어요.');
-        return data.logs;
+        return data.logs.map(({ payload: _payload, ...log }) => log);
       },
       false,
     );

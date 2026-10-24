@@ -1,3 +1,4 @@
+import { deliveryLabels } from '../../components/MeetingDelivery';
 import { useEffect, useState } from 'react';
 import { RoomSchedule } from '../meetings/RoomSchedule';
 import { RoomDirections } from '../../components/RoomDirections';
@@ -58,7 +59,7 @@ export function AdminNotificationsPage() {
     <div className="workflow-page admin-notifications-page">
       <PageHeading
         title="관리자 발송 이력"
-        description="알림 이벤트와 전달 결과를 확인하세요. 미리보기 기록은 실제 발송 성공이 아닙니다."
+        description="참가자별 알림 발송 결과와 실패 원인을 확인하세요."
         actions={
           <Link className="button button-secondary" to="/admin/rooms">
             회의실 관리
@@ -130,7 +131,11 @@ export function AdminNotificationsPage() {
                     <td>{eventLabels[log.event]}</td>
                     <td>Mattermost</td>
                     <td>
-                      <span className="badge status-summary-needed">미전송 · 미연결</span>
+                      <span
+                        className={`badge ${log.result === 'sent' ? 'status-completed' : 'status-summary-needed'}`}
+                      >
+                        {deliveryLabels[log.result]}
+                      </span>
                     </td>
                     <td>
                       <Button
@@ -149,7 +154,7 @@ export function AdminNotificationsPage() {
         ) : (
           <EmptyState
             title={logs.length ? '필터에 맞는 기록이 없어요' : '아직 발송 이력이 없어요'}
-            description="회의 생성·변경·취소 또는 자료·요약 작업 후 예시 이벤트가 기록됩니다."
+            description="회의 생성·변경·취소 또는 자료·요약 작업 후 이벤트가 기록됩니다."
           />
         )}
       </Card>
@@ -163,15 +168,15 @@ export function AdminNotificationsPage() {
             <dt>채널</dt>
             <dd>Mattermost</dd>
             <dt>결과</dt>
-            <dd>미전송 · 외부 채널 미연결</dd>
+            <dd>{deliveryLabels[selected.result]}</dd>
             <dt>상세</dt>
             <dd>{selected.detail}</dd>
             <dt>재시도 이력</dt>
             <dd>재시도 없음</dd>
           </dl>
           <p className="detail-note">
-            실제 전송·재시도 정책 확정 후 제공됩니다. 이 기록은 회의 본문 열람 권한을 부여하지
-            않습니다.
+            자동 재전송은 제공하지 않습니다. 결과 확인 필요 항목은 실제 DM을 확인해주세요. 이 기록은
+            회의 본문 열람 권한을 부여하지 않습니다.
           </p>
           <Button disabled variant="secondary">
             재전송 준비 중

@@ -84,7 +84,19 @@ export interface DeliveryLog {
   recipientId: string;
   time: string;
   channel: 'Mattermost';
-  result: 'not-connected';
+  result: 'not-connected' | 'pending' | 'sending' | 'sent' | 'failed' | 'unknown';
+  batchId?: string;
+  attemptedAt?: string;
+  deliveredAt?: string;
+  postId?: string;
+  payload?: {
+    title: string;
+    start: string;
+    end: string;
+    room: string;
+    removed: boolean;
+    previous?: { title: string; start: string; end: string; room: string };
+  };
   detail: string;
 }
 export interface PreviewDatabase {

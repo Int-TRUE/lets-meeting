@@ -133,7 +133,9 @@ export function recordEvent(
   event: DeliveryLog['event'],
   time: string,
   previousParticipants: string[] = [],
+  previousMeeting?: Meeting,
 ) {
+  const batchId = crypto.randomUUID();
   for (const id of new Set([...meeting.participantIds, ...previousParticipants])) {
     const preferences = db.preferences[id] ?? defaultPreferences;
     if (
@@ -149,6 +151,24 @@ export function recordEvent(
       time,
       channel: 'Mattermost',
       result: 'not-connected',
+      batchId,
+      payload: {
+        title: meeting.title,
+        start: meeting.start,
+        end: meeting.end,
+        room: meeting.room,
+        removed: !meeting.participantIds.includes(id),
+        ...(previousMeeting
+          ? {
+              previous: {
+                title: previousMeeting.title,
+                start: previousMeeting.start,
+                end: previousMeeting.end,
+                room: previousMeeting.room,
+              },
+            }
+          : {}),
+      },
       detail: '외부 채널에 연결되지 않아 전송하지 않았습니다. 미리보기 이벤트 기록입니다.',
     });
   }

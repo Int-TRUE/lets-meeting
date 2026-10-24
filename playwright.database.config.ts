@@ -16,6 +16,10 @@ export default defineConfig({
     command: 'npm run dev -- --port 4175',
     url: 'http://127.0.0.1:4175',
     reuseExistingServer: false,
-    env: { VITE_DATA_MODE: 'database', ROBOT_BUTLER_DB: `data/test-${Date.now()}.sqlite` },
+    env: {
+      MATTERMOST_ENABLED: 'false',
+      VITE_DATA_MODE: 'database',
+      ROBOT_BUTLER_DB: `data/test-${Date.now()}.sqlite`,
+    },
   },
 });

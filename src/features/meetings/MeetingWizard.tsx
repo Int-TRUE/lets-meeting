@@ -1,3 +1,4 @@
+import { MeetingDelivery } from '../../components/MeetingDelivery';
 import successArt from '../../assets/meeting-success.png';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
@@ -194,7 +195,10 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
         <Card className="creation-result">
           <img className="success-illustration" src={successArt} alt="" />
           <h2>{editing ? '변경 내용을 저장했어요' : '회의 생성이 완료되었어요!'}</h2>
-          <p>예시 일정이 저장되었습니다. 실제 회의실 예약과 알림 전송은 연결되지 않았습니다.</p>
+          <p>
+            회의 일정이 저장되었습니다. 실제 회의실 예약은 미연결이며, 알림 결과는 아래에서
+            확인하세요.
+          </p>
           <div className="creation-result-grid">
             <dl>
               <dt className="result-section-title">회의 정보</dt>
@@ -239,10 +243,7 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
                 </p>
               </Card>
               <Card>
-                <h3>
-                  참가자 Mattermost 초대 알림 <span className="badge status-scheduled">미전송</span>
-                </h3>
-                <p>미전송 · 외부 채널 미연결</p>
+                <MeetingDelivery meetingId={resultId} />
               </Card>
             </div>
           </div>
@@ -414,7 +415,9 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
                   : '등록 예정'}
             </dd>
           </dl>
-          <p className="detail-note">실제 예약·Mattermost 알림과 연결되지 않은 미리보기입니다.</p>
+          <p className="detail-note">
+            실제 회의실 예약은 미연결입니다. 저장 후 참가자별 알림 결과를 확인할 수 있습니다.
+          </p>
         </Card>
       </div>
       {discard ? (

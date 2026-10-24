@@ -1,4 +1,5 @@
-import type { Plugin } from 'vite';
+import { loadEnv, type Plugin } from 'vite';
+import { createMattermostDelivery, mattermostConfig } from './mattermost';
 import { resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { openDemoDatabase } from './database';
@@ -12,6 +13,11 @@ export function demoDatabasePlugin(): Plugin {
         resolve(process.env.ROBOT_BUTLER_DB ?? 'data/robot-butler.sqlite'),
       );
       await db.seed();
+      const env = { ...loadEnv(server.config.mode, server.config.root, ''), ...process.env };
+      const config = mattermostConfig(env);
+      const delivery = config ? createMattermostDelivery(db.transaction, config) : undefined;
+      if (delivery) await delivery.recover('taeheon');
+      const store = { ...db, transaction: delivery?.transaction ?? db.transaction };
       server.httpServer?.once('close', () => db.close());
       server.middlewares.use('/api/demo', async (req, res) => {
         const headers = new Headers();
@@ -28,7 +34,7 @@ export function demoDatabasePlugin(): Plugin {
           `http://${req.headers.host ?? 'localhost'}/api/demo${req.url}`,
           init,
         );
-        const response = await handleDemoRequest(request, async () => db, true);
+        const response = await handleDemoRequest(request, async () => store, true);
         res.statusCode = response.status;
         response.headers.forEach((value, key) => res.setHeader(key, value));
         res.end(Buffer.from(await response.arrayBuffer()));

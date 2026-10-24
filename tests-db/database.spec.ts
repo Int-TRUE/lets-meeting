@@ -65,7 +65,9 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
   await page.getByRole('button', { name: '14:00 예약 가능', exact: true }).click();
   await page.getByRole('button', { name: '다음', exact: true }).click();
   const picker = page.locator('.people-picker');
-  await expect(picker.getByRole('checkbox')).toHaveCount(0);
+  await expect(picker.getByRole('checkbox')).toHaveCount(4);
+  await picker.getByRole('button', { name: '전체 추가', exact: true }).click();
+  await expect(picker.getByRole('checkbox', { name: /장우석/ })).toBeChecked();
   await picker.getByRole('searchbox').fill('CMS개발팀');
   await expect(picker.getByRole('checkbox')).toHaveCount(1);
   await picker.getByRole('checkbox', { name: /김주영/ }).check();

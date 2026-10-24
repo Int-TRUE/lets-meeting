@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { RoomDirections } from '../../components/RoomDirections';
 import { useRoomFavorites, FavoriteRoomButton } from '../../components/RoomFavorites';
 import { compareRooms } from '../../domain/selectors';
@@ -18,11 +19,13 @@ export function SchedulePicker({
   onChange,
   unavailable,
   now,
+  actions,
 }: {
   value: ScheduleValue;
   onChange: (value: ScheduleValue) => void;
   unavailable: string[];
   now: string;
+  actions?: ReactNode;
 }) {
   const { rooms } = useWorkspace();
   const favorites = useRoomFavorites();
@@ -178,6 +181,7 @@ export function SchedulePicker({
             <p>미리보기는 30분 단위 · 09:00–18:00 예시 정책입니다.</p>
           </div>
         </Card>
+        {actions}
       </section>
     </div>
   );

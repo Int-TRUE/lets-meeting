@@ -374,3 +374,11 @@ it('deletes only the creator’s attachment with revision checks and restores pe
   await expect(previewService.download('kim', id, file.id)).rejects.toThrow();
   await expect(previewService.deleteFile('kim', id, file.id, 2)).rejects.toThrow();
 });
+
+it('lists all topic members including attendees and rejects unauthorized readers', async () => {
+  const topic = initialDatabase().topics.find((topic) => topic.id === 'system')!;
+  const members = await previewService.topicPeople('kim', 'system');
+  expect(members.map((person) => person.id).sort()).toEqual(Object.keys(topic.roles).sort());
+  await expect(previewService.topicPeople('ops', 'system')).rejects.toThrow();
+  await expect(previewService.topicPeople('park', 'system')).rejects.toThrow();
+});

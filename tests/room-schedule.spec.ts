@@ -76,6 +76,7 @@ test('new 토픽 participant picker excludes outsiders and stale draft selection
   await page.getByLabel(/^회의명/).fill('구성원 회의');
   await page.getByLabel(/^회의 내용·안건/).fill('참가 범위 확인');
   await page.getByRole('button', { name: '다음', exact: true }).click();
+  await page.screenshot({ path: 'test-results/meeting-schedule-actions.png', fullPage: true });
   await page.getByLabel('회의 일자 *').fill('2026-10-21');
   await page.getByRole('button', { name: '14:00 예약 가능', exact: true }).click();
   await page.getByRole('button', { name: '다음', exact: true }).click();
@@ -90,7 +91,12 @@ test('new 토픽 participant picker excludes outsiders and stale draft selection
   page.once('dialog', (dialog) => dialog.accept());
   await page.reload();
   const picker = page.locator('.people-picker');
-  await expect(picker.getByRole('checkbox')).toHaveCount(0);
+  await expect(picker.getByRole('checkbox')).toHaveCount(2);
+  await picker.getByRole('searchbox').fill('김하늘');
+  await picker.getByRole('button', { name: '전체 추가', exact: true }).click();
+  await picker.getByRole('searchbox').fill('');
+  await page.screenshot({ path: 'test-results/meeting-topic-people.png', fullPage: true });
+  await expect(picker.getByRole('checkbox', { name: /이서준/ })).toBeChecked();
   await picker.getByRole('searchbox').fill('김하늘');
   await expect(picker.getByRole('checkbox', { name: /김하늘/ })).toBeDisabled();
   await picker.getByRole('searchbox').fill('이서준');

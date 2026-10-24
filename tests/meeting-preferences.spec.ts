@@ -22,6 +22,12 @@ test('favorite rooms are reusable in the wizard and reminder settings survive sa
   await expect(page.locator('.room-list-item')).toHaveCount(1);
   await page.locator('.room-list-item').click();
   await expect(page.getByRole('region', { name: '회의실 정보' })).toContainText('분당');
+  await expect(
+    page
+      .locator('.schedule-picker > section')
+      .last()
+      .getByRole('button', { name: '다음', exact: true }),
+  ).toBeVisible();
   await page.getByLabel('회의 일자 *').fill('2026-10-21');
   await page.getByRole('button', { name: '14:00 예약 가능', exact: true }).click();
   await page.getByRole('button', { name: '다음', exact: true }).click();

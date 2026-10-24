@@ -652,6 +652,7 @@
   margin: 0;
 }
 .people-search-status {
+  grid-column: 1 / -1;
   display: grid;
   justify-items: center;
   gap: 8px;
@@ -838,4 +839,17 @@
     justify-content: flex-end;
     flex-basis: 100%;
   }
+}
+
+.people-picker-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 16px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.schedule-picker .wizard-actions {
+  margin-top: 24px;
 }

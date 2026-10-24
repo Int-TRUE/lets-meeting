@@ -116,6 +116,17 @@ async function transact<T>(
 const now = (data: PreviewDatabase) => data.now ?? fixture.now;
 const directory = (data: PreviewDatabase) => data.people ?? people;
 export const localService = {
+  topicPeople(userId: string, topicId: string) {
+    return transact(
+      userId,
+      (data) => {
+        const topic = requireTopic(data, topicId, userId);
+        if (!canCreateMeeting(topic, userId)) throw new RuleError('참가자를 조회할 권한이 없어요.');
+        return directory(data).filter((person) => Object.hasOwn(topic.roles, person.id));
+      },
+      false,
+    );
+  },
   searchPeople(userId: string, query: string, topicId?: string) {
     return transact(
       userId,

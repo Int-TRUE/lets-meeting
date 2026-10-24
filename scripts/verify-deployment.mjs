@@ -61,7 +61,15 @@ try {
   await page.locator('img').evaluateAll((images) => Promise.all(images.map((img) => img.decode())));
   await page.screenshot({ path: output + '/home.png', fullPage: true });
   await page.goto('/rooms');
-  await expect(page.getByLabel('센터', { exact: true })).toBeVisible();
+  const center = page.getByLabel('센터', { exact: true });
+  await expect(center).toHaveValue('명동');
+  await expect(center.locator('option')).toHaveText(['명동', '분당']);
+  await expect(page.locator('.room-list-item')).toHaveCount(4);
+  await center.selectOption('분당');
+  await expect(page.locator('.room-list-item')).toHaveCount(1);
+  await expect(page.locator('.room-list-item')).toContainText('분당');
+  await expect(page.locator('.room-schedule h2')).toHaveText('분당 · 3층 회의실 일정');
+  await center.selectOption('명동');
   await expect(page.getByRole('group', { name: '회의실 일정 달력' })).toBeVisible();
   await expect(page.locator('.room-agenda > h3')).toContainText(/예정 회의 \d+개/);
   await expect(page.getByRole('alert')).toHaveCount(0);

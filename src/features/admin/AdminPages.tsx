@@ -183,15 +183,14 @@ export function AdminNotificationsPage() {
 }
 export function RoomsPage({ admin = false }: { admin?: boolean }) {
   const { data, rooms } = useWorkspace();
-  const [location, setLocation] = useState('all');
+  const [location, setLocation] = useState('명동');
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState('');
   if (admin && !data.user.isAdmin) return <Denied />;
   const filtered = rooms
     .filter(
       (room) =>
-        (location === 'all' || room.location === location) &&
-        `${room.location} ${room.floor} ${room.name}`.includes(query),
+        room.location === location && `${room.location} ${room.floor} ${room.name}`.includes(query),
     )
     .toSorted(compareRooms);
   const selected = filtered.find((room) => room.id === selectedId) ?? filtered[0];
@@ -218,7 +217,6 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
         <div className="field">
           <label htmlFor="room-location">센터</label>
           <select id="room-location" value={location} onChange={(e) => setLocation(e.target.value)}>
-            <option value="all">전체</option>
             <option>명동</option>
             <option>분당</option>
           </select>

@@ -23,7 +23,9 @@ async function createMeeting(page: Page, title = '테스트 협업 회의', uplo
   }
   await page.getByRole('button', { name: '회의 생성', exact: true }).click();
   await expect(page.getByRole('heading', { name: '회의 생성이 완료되었어요!' })).toBeVisible();
-  await expect(page.getByText('미전송 · 외부 채널 미연결', { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: '매터모스트 발송 결과' }).getByText(/미전송 · 미연결 \d+명/),
+  ).toBeVisible();
   await page.getByRole('link', { name: '회의 상세 보기', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
   return page.url();
@@ -173,7 +175,7 @@ test('preferences persist and only the operations user can see undelivered event
     .getByRole('button', { name: /상세 보기/ })
     .first()
     .click();
-  await expect(page.getByRole('dialog')).toContainText('실제 전송·재시도 정책');
+  await expect(page.getByRole('dialog')).toContainText('자동 재전송은 제공하지 않습니다.');
   await page.getByRole('button', { name: '닫기', exact: true }).click();
   await page.getByRole('link', { name: '회의실 관리', exact: true }).click();
   await expect(

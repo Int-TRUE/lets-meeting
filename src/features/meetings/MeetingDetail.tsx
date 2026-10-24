@@ -1,3 +1,4 @@
+import { MeetingDelivery } from '../../components/MeetingDelivery';
 import { useState } from 'react';
 import { RoomDirections } from '../../components/RoomDirections';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -188,9 +189,10 @@ export function MeetingDetail() {
           참석자 {meeting.participantIds.length}명
         </span>
       </div>
+      <MeetingDelivery meetingId={meeting.id} revision={meeting.revision} />
       {meeting.cancelled ? (
         <p className="form-error" role="status">
-          취소된 회의입니다. 미리보기 예약은 해제되었습니다. 실제 알림은 전송되지 않았습니다.
+          취소된 회의입니다. 미리보기 예약은 해제되었습니다. 참가자 알림 결과를 확인해주세요.
         </p>
       ) : null}
       <div className="line-tabs" role="group" aria-label="회의 상세 탭">
@@ -386,7 +388,9 @@ export function MeetingDetail() {
             <TriangleAlert /> 이 회의를 취소하시겠습니까?
           </h3>
           <ul className="cancel-consequences">
-            <li>모든 참가자의 취소 알림 이력이 기록됩니다. 데모에서는 실제 발송되지 않습니다.</li>
+            <li>
+              참가자에게 취소 알림을 요청합니다. 계정 연결과 발송 결과는 취소 후 확인할 수 있습니다.
+            </li>
             <li>이 회의의 데모 예약이 해제됩니다.</li>
             <li>첨부된 자료와 회의 정보는 보관됩니다.</li>
           </ul>

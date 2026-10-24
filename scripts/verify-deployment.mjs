@@ -73,6 +73,12 @@ try {
   await expect(page.getByRole('group', { name: '회의실 일정 달력' })).toBeVisible();
   await expect(page.locator('.room-agenda > h3')).toContainText(/예정 회의 \d+개/);
   await expect(page.getByRole('alert')).toHaveCount(0);
+  const roomInfo = page.getByRole('region', { name: '회의실 정보' });
+  await expect(roomInfo).toBeVisible();
+  const listBox = await page.locator('.rooms-list').boundingBox();
+  const infoBox = await roomInfo.boundingBox();
+  assert.ok(infoBox.y > listBox.y + listBox.height);
+  assert.ok(Math.abs(infoBox.x - listBox.x) < 2);
   await page.screenshot({ path: output + '/rooms.png', fullPage: true });
   if (process.env.DEPLOYMENT_WRITE_TEST === 'true') {
     // The caller must verify this is a Preview deployment before enabling writes.

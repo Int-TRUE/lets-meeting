@@ -3,15 +3,21 @@ import type { Room } from '../domain/models';
 import illustration from '../assets/room-directions.png';
 
 /** Shared demo artwork, labelled from the selected room rather than a baked-in room name. */
-export function RoomDirections({ room }: { room?: Room }) {
+export function RoomDirections({
+  room,
+  title = '회의실 가는 길',
+}: {
+  room?: Room;
+  title?: string;
+}) {
   return (
-    <section className="room-directions" aria-label="회의실 가는 길">
+    <section className="room-directions" aria-label={title}>
       <div className="room-directions-heading">
         <span className="room-directions-icon">
           <MapPin size={30} aria-hidden="true" />
         </span>
         <div>
-          <h2>회의실 가는 길</h2>
+          <h2>{title}</h2>
           {room ? (
             <strong>
               {room.location} · {room.name}

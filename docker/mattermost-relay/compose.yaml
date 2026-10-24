@@ -4,6 +4,8 @@ services:
     restart: always
   mattermost:
     restart: always
+    environment:
+      MM_SERVICESETTINGS_ALLOWEDUNTRUSTEDINTERNALCONNECTIONS: relay
   relay:
     image: robot-butler-mattermost-relay:local
     build:

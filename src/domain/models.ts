@@ -80,7 +80,16 @@ export interface NotificationSettings {
 export interface DeliveryLog {
   id: string;
   meetingId: string;
-  event: 'created' | 'changed' | 'cancelled' | 'materials' | 'summary';
+  event:
+    | 'created'
+    | 'changed'
+    | 'cancelled'
+    | 'materials'
+    | 'summary'
+    | 'start-check'
+    | 'late'
+    | 'late-reply'
+    | 'end-reminder';
   recipientId: string;
   time: string;
   channel: 'Mattermost';
@@ -96,6 +105,9 @@ export interface DeliveryLog {
     end: string;
     room: string;
     removed: boolean;
+    response?: string;
+    responder?: string;
+    extensions?: number[];
     previous?: { title: string; start: string; end: string; room: string };
   };
   detail: string;

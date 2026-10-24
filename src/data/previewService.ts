@@ -334,7 +334,24 @@ export const localService = {
       validateInput(input, data);
       if (input.participantIds.some((id) => !Object.hasOwn(topic.roles, id)))
         throw new RuleError('Topic에 포함된 사람만 참가자로 선택할 수 있어요.');
-      validateSchedule(data, input.roomId, input.start, input.end, now(data), id);
+      const ongoing = Date.parse(meeting.start) <= Date.parse(now(data));
+      if (
+        ongoing &&
+        (input.start !== meeting.start ||
+          input.roomId !== meeting.roomId ||
+          Date.parse(input.end) <= Date.parse(now(data)))
+      )
+        throw new RuleError(
+          '진행 중인 회의는 시작 시각·회의실을 유지하고 현재 이후의 종료 시각을 선택해주세요.',
+        );
+      validateSchedule(
+        data,
+        input.roomId,
+        input.start,
+        input.end,
+        ongoing ? meeting.start : now(data),
+        id,
+      );
       const previous = meeting.participantIds;
       const previousMeeting = structuredClone(meeting);
       Object.assign(meeting, {

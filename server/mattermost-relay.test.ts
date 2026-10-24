@@ -123,3 +123,42 @@ test('old unconnected events stay untouched and newest event is selected despite
   const logs = await localService.meetingDelivery('sujin', id);
   expect(logs.every((log) => log.event === 'cancelled')).toBe(true);
 });
+
+test('scheduler claims start/end prompts and concurrent extension actions commit once with participant notifications', async () => {
+  const id = await create();
+  const meeting = db.load().meetings.find((m) => m.id === id)!;
+  // Creation events are already covered above; mark them delivered to isolate the clock.
+  await db.transaction(
+    'sujin',
+    (state) => {
+      for (const log of state.logs) log.result = 'sent';
+    },
+    true,
+  );
+  const due = Date.parse(meeting.end) - 5 * 60_000;
+  const claimId = randomUUID();
+  const job = (await (await rpc({ action: 'claim', claimId }, config.token, due)).json()).jobs[0];
+  expect(job.event).toBe('end-reminder');
+  expect(job.payload.extensions).toEqual([30, 60]);
+  await rpc(
+    { action: 'ack', claimId, id: job.id, result: 'sent', postId: 'p'.repeat(26) },
+    config.token,
+    due,
+  );
+  const action = {
+    action: 'interact',
+    logId: job.id,
+    actor: 'sujin',
+    command: 'extend',
+    minutes: 30,
+  };
+  const responses = await Promise.all([
+    rpc(action, config.token, due),
+    rpc(action, config.token, due),
+  ]);
+  expect(responses.map((r) => r.status)).toEqual([200, 200]);
+  expect(db.load().meetings.find((m) => m.id === id)?.revision).toBe(1);
+  const logs = db.load().logs.filter((l) => l.event === 'changed');
+  expect(logs).toHaveLength(3);
+  expect(logs.filter((l) => l.result === 'pending')).toHaveLength(2);
+});

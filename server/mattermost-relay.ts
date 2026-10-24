@@ -1,4 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
+import { scheduleReminders, meetingInteraction, availableExtensions } from './meeting-reminders.js';
+import { RuleError } from '../src/domain/workflows.js';
 import type { TransactionAdapter } from '../src/data/previewService.js';
 import type { DeliveryLog } from '../src/domain/models.js';
 
@@ -29,8 +31,17 @@ export function queueForRelay(
           for (const log of state.logs) {
             if (
               existing.has(log.id) ||
+              log.relay ||
               !log.payload ||
-              !['created', 'changed', 'cancelled'].includes(log.event)
+              ![
+                'created',
+                'changed',
+                'cancelled',
+                'start-check',
+                'late',
+                'late-reply',
+                'end-reminder',
+              ].includes(log.event)
             )
               continue;
             if (!config.recipients.has(log.recipientId)) {
@@ -82,7 +93,11 @@ export async function handleRelayRequest(
         chunks.push(value);
       }
     const input = JSON.parse(Buffer.concat(chunks).toString());
-    if (!input || !uuid(input.claimId) || !['claim', 'ack'].includes(input.action))
+    if (
+      !input ||
+      (!uuid(input.claimId) && input.action !== 'interact') ||
+      !['claim', 'ack', 'interact'].includes(input.action)
+    )
       return json(400, { error: '잘못된 중계 요청입니다.' });
     if (
       input.action === 'ack' &&
@@ -91,7 +106,20 @@ export async function handleRelayRequest(
         (input.result === 'sent' && !/^[a-z0-9]{26}$/.test(input.postId ?? '')))
     )
       return json(400, { error: '잘못된 발송 결과입니다.' });
-    const transaction = await getTransaction();
+    const transaction = queueForRelay(await getTransaction(), config);
+    if (input.action === 'interact') {
+      if (
+        !uuid(input.logId) ||
+        typeof input.actor !== 'string' ||
+        !config.recipients.has(input.actor) ||
+        !['options', 'late', 'reply', 'extend'].includes(input.command)
+      )
+        return json(400, { error: '잘못된 동작입니다.' });
+      return json(
+        200,
+        await transaction(input.actor, (state) => meetingInteraction(state, input, now), true),
+      );
+    }
     const result = await transaction(
       'taeheon',
       (state) => {
@@ -117,11 +145,21 @@ export async function handleRelayRequest(
           });
           return { ok: true };
         }
+        scheduleReminders(state, now);
         for (const log of state.logs)
           if (log.relay && log.result === 'sending' && (log.relay.expiresAt ?? 0) <= now) {
             log.result = 'unknown';
             log.detail =
               '중계 응답 시간이 만료되었습니다. 중복 방지를 위해 자동 재전송하지 않습니다.';
+          }
+        let sequence = Math.max(0, ...state.logs.map((l) => l.relay?.sequence ?? 0));
+        for (const log of state.logs)
+          if (
+            ['start-check', 'end-reminder'].includes(log.event) &&
+            log.result === 'not-connected'
+          ) {
+            log.relay = { sequence: ++sequence };
+            log.result = config.recipients.has(log.recipientId) ? 'pending' : 'failed';
           }
         const active = state.logs.find((log) => log.relay && log.result === 'sending');
         if (active)
@@ -136,6 +174,10 @@ export async function handleRelayRequest(
           next.detail = '중계 시연 대상에서 제외된 참가자입니다.';
           return { jobs: [] };
         }
+        if (next.event === 'end-reminder' && next.payload) {
+          const meeting = state.meetings.find((m) => m.id === next.meetingId);
+          next.payload.extensions = meeting ? availableExtensions(state, meeting, now) : [];
+        }
         next.result = 'sending';
         next.attemptedAt = new Date(now).toISOString();
         next.detail = '맥 중계기에서 전송 중입니다.';
@@ -146,7 +188,8 @@ export async function handleRelayRequest(
       true,
     );
     return json('conflict' in result || ('ok' in result && !result.ok) ? 409 : 200, result);
-  } catch {
+  } catch (error) {
+    if (error instanceof RuleError) return json(409, { error: error.message });
     return json(503, { error: '중계 요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.' });
   }
 }

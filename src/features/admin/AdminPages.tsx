@@ -223,43 +223,42 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
         </div>
       </div>
       <div className="settings-grid">
-        <Card>
-          <div className="rooms-list">
-            {filtered.map((room) => (
-              <button
-                className="room-list-item"
-                aria-pressed={selected?.id === room.id}
-                key={room.id}
-                onClick={() => setSelectedId(room.id)}
-              >
-                <span className="topic-icon tone-blue">
-                  <MapPin size={24} />
-                </span>
-                <span>
-                  <strong>
-                    {room.location} · {room.name}
-                  </strong>
-                  <small>
-                    {room.floor} · 수용 {room.capacity}명
-                  </small>
-                </span>
-                <span className="badge status-completed">예시</span>
-              </button>
-            ))}
-            {!filtered.length ? (
-              <EmptyState
-                compact
-                title="회의실 검색 결과가 없어요"
-                description="다른 이름이나 센터로 검색해주세요."
-              />
-            ) : null}
-          </div>
-        </Card>
-        {selected ? (
-          <div className="room-selection-details">
-            <RoomSchedule room={selected} />
+        <div className="room-selection-details">
+          <Card>
+            <div className="rooms-list">
+              {filtered.map((room) => (
+                <button
+                  className="room-list-item"
+                  aria-pressed={selected?.id === room.id}
+                  key={room.id}
+                  onClick={() => setSelectedId(room.id)}
+                >
+                  <span className="topic-icon tone-blue">
+                    <MapPin size={24} />
+                  </span>
+                  <span>
+                    <strong>
+                      {room.location} · {room.name}
+                    </strong>
+                    <small>
+                      {room.floor} · 수용 {room.capacity}명
+                    </small>
+                  </span>
+                  <span className="badge status-completed">예시</span>
+                </button>
+              ))}
+              {!filtered.length ? (
+                <EmptyState
+                  compact
+                  title="회의실 검색 결과가 없어요"
+                  description="다른 이름이나 센터로 검색해주세요."
+                />
+              ) : null}
+            </div>
+          </Card>
+          {selected ? (
             <Card className="room-details">
-              <RoomDirections room={selected} />
+              <RoomDirections room={selected} title="회의실 정보" />
               <h2>
                 {selected.location} · {selected.name}
               </h2>
@@ -289,8 +288,9 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
                 </Link>
               )}
             </Card>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
+        {selected ? <RoomSchedule room={selected} /> : null}
       </div>
     </div>
   );

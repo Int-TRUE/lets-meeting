@@ -199,13 +199,13 @@ export function App() {
               <Route path="/topics/:id/settings" element={<TopicForm editing />} />
               <Route
                 path="/topics/:id/meetings/new"
-                element={<MeetingWizard key={`new-${userId}`} />}
+                element={<MeetingWizard key={`new-${userId}-${location.pathname}`} />}
               />
               <Route path="/meetings" element={<MeetingsPage />} />
               <Route path="/meetings/:id" element={<MeetingDetail />} />
               <Route
                 path="/meetings/:id/edit"
-                element={<MeetingWizard editing key={`edit-${userId}`} />}
+                element={<MeetingWizard editing key={`edit-${userId}-${location.pathname}`} />}
               />
               <Route path="/meetings/:id/summary" element={<SummaryEditor />} />
               <Route path="/rooms" element={<RoomsPage />} />

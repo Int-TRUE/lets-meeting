@@ -265,7 +265,18 @@ export function TopicDetail() {
               </Link>
             ) : null}
             {manager ? (
-              <Link className="button button-primary" to={`/topics/${id}/meetings/new`}>
+              <Link
+                className="button button-primary"
+                to={`/topics/${id}/meetings/new`}
+                onClick={() => {
+                  // An explicit create action starts a new request, not an older draft.
+                  try {
+                    sessionStorage.removeItem(`robot-butler:draft:v1:${data.user.id}:new:${id}`);
+                  } catch {
+                    /* Draft persistence is optional. */
+                  }
+                }}
+              >
                 <Plus size={18} />
                 회의 만들기
               </Link>

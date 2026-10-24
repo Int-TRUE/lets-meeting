@@ -4,7 +4,12 @@ test('registered room selection updates the uncropped route illustration and lab
   page,
 }, testInfo) => {
   await page.goto('/rooms');
-  const guide = page.getByRole('region', { name: '회의실 가는 길' });
+  const guide = page.getByRole('region', { name: '회의실 정보' });
+  await expect(guide).toBeVisible();
+  const listBox = (await page.locator('.rooms-list').boundingBox())!;
+  const infoBox = (await guide.boundingBox())!;
+  expect(infoBox.y).toBeGreaterThan(listBox.y + listBox.height);
+  expect(Math.abs(infoBox.x - listBox.x)).toBeLessThan(2);
   for (const name of [
     '9층 대회의실',
     '3층 회의실 A',

@@ -1,12 +1,20 @@
 import { MeetingSummary } from '../../components/MeetingSummary';
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { CalendarDays, ChevronDown, ChevronRight, Plus, Settings } from 'lucide-react';
+import { CalendarDays, ChevronRight, MapPin, Plus, Settings } from 'lucide-react';
 import { useUnsavedChanges, useWorkspace } from '../../app/WorkspaceContext';
 import { previewService } from '../../data/previewService';
 import { canCreateMeeting } from '../../domain/workflows';
-import { fullDate, time } from '../../domain/selectors';
-import { Button, Card, EmptyState, Field, Modal } from '../../components/ui';
+import { fullDate, meetingStatus, time } from '../../domain/selectors';
+import {
+  AvatarGroup,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  Modal,
+  StatusBadge,
+} from '../../components/ui';
 import { TopicCard } from '../../components/TopicCard';
 import {
   ConfirmDialog,
@@ -235,7 +243,7 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
   );
 }
 export function TopicDetail() {
-  const [expanded, setExpanded] = useState<string[]>([]);
+  const [selectedId, setSelectedId] = useState<string>();
   const { data } = useWorkspace();
   const { id } = useParams();
   const topic = data.topics.find((t) => t.id === id);
@@ -244,6 +252,7 @@ export function TopicDetail() {
     .filter((m) => m.topicId === id)
     .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
   const manager = canCreateMeeting(topic, data.user.id);
+  const selected = meetings.find((meeting) => meeting.id === selectedId);
   return (
     <div className="workflow-page topic-detail-page">
       <PageHeading
@@ -296,43 +305,89 @@ export function TopicDetail() {
         <span className="muted">{meetings.length}개</span>
       </div>
       {meetings.length ? (
-        <ol className="meeting-history">
-          {meetings.map((m) => {
-            const open = expanded.includes(m.id);
-            return (
-              <li key={m.id} className={`history-card${open ? ' is-expanded' : ''}`}>
-                <div className="history-card-header">
-                  <button
-                    type="button"
-                    className="history-toggle"
-                    aria-expanded={open}
-                    aria-controls={`history-${m.id}`}
-                    aria-label={`${m.title} 요약 ${open ? '접기' : '펼치기'}`}
-                    onClick={() =>
-                      setExpanded((ids) =>
-                        open ? ids.filter((id) => id !== m.id) : [...ids, m.id],
-                      )
-                    }
-                  >
-                    <span className="history-title">{m.title}</span>
-                    <span className="history-date">
-                      <CalendarDays size={16} aria-hidden="true" />
-                      {fullDate(m.start)} · {time(m.start)}–{time(m.end)}
-                    </span>
-                    <ChevronDown className="history-chevron" size={20} aria-hidden="true" />
-                  </button>
-                  <Link to={`/meetings/${m.id}`} className="history-detail-link">
-                    상세보기
+        <>
+          <ol className="meeting-flow history-flow" aria-label="회의 히스토리 카드" tabIndex={0}>
+            {meetings.map((m) => (
+              <li key={m.id}>
+                <button
+                  type="button"
+                  className={`card history-card flow-${meetingStatus(m, data.now)}${selected?.id === m.id ? ' is-selected' : ''}`}
+                  aria-pressed={selected?.id === m.id}
+                  aria-controls={`history-detail-${topic.id}`}
+                  aria-label={`${m.title} 회의 정보 보기`}
+                  onClick={() => setSelectedId(m.id)}
+                >
+                  <StatusBadge status={meetingStatus(m, data.now)} />
+                  <span className="history-title">{m.title}</span>
+                  <span className="history-date">
+                    <CalendarDays size={16} aria-hidden="true" />
+                    {fullDate(m.start)}
+                  </span>
+                  <span className="history-time">
+                    {time(m.start)} – {time(m.end)}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ol>
+          <section
+            id={`history-detail-${topic.id}`}
+            className="card history-detail-panel"
+            aria-label="선택한 회의 상세"
+          >
+            {selected ? (
+              <>
+                <div className="history-panel-heading">
+                  <div>
+                    <span className="history-panel-eyebrow">선택한 회의</span>
+                    <h2>{selected.title}</h2>
+                  </div>
+                  <Link to={`/meetings/${selected.id}`} className="button button-secondary">
+                    회의 상세 보기
                     <ChevronRight size={16} aria-hidden="true" />
                   </Link>
                 </div>
-                <div id={`history-${m.id}`} hidden={!open} className="history-expanded">
-                  {open ? <MeetingSummary meeting={m} /> : null}
+                <div className="history-meeting-info">
+                  <div className="history-info-meta">
+                    <StatusBadge status={meetingStatus(selected, data.now)} />
+                    <span>
+                      <CalendarDays size={16} aria-hidden="true" />
+                      {fullDate(selected.start)} · {time(selected.start)}–{time(selected.end)}
+                    </span>
+                    <span>
+                      <MapPin size={16} aria-hidden="true" />
+                      {selected.room}
+                    </span>
+                  </div>
+                  <p className="history-agenda">
+                    {selected.description || '등록된 회의 안건이 없어요.'}
+                  </p>
+                  <div className="history-people">
+                    <AvatarGroup
+                      people={data.people.filter((person) =>
+                        selected.participantIds.includes(person.id),
+                      )}
+                      max={5}
+                    />
+                    <span>참가자 {selected.participantIds.length}명</span>
+                    <span>
+                      주최자 ·{' '}
+                      {selected.hostAtTime ??
+                        data.people.find((person) => person.id === selected.creatorId)?.name}
+                    </span>
+                  </div>
                 </div>
-              </li>
-            );
-          })}
-        </ol>
+                <MeetingSummary key={selected.id} meeting={selected} />
+              </>
+            ) : (
+              <div className="history-selection-empty">
+                <CalendarDays size={28} aria-hidden="true" />
+                <h3>회의 카드를 선택해주세요</h3>
+                <p>선택한 회의의 정보와 요약, 후속 작업을 여기에서 확인할 수 있어요.</p>
+              </div>
+            )}
+          </section>
+        </>
       ) : (
         <Card>
           <EmptyState

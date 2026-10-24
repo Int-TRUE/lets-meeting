@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import type { Attachment } from '../../domain/models';
 import { fullDate, meetingStatus, time } from '../../domain/selectors';
-import { canEditMeeting } from '../../domain/workflows';
+import { canEditMeeting, canEditSummary } from '../../domain/workflows';
 import { previewService } from '../../data/previewService';
 import { useUnsavedChanges, useWorkspace } from '../../app/WorkspaceContext';
 import { AvatarGroup, Button, Card, EmptyState, Modal, StatusBadge } from '../../components/ui';
@@ -46,7 +46,7 @@ export function MeetingDetail() {
   const status = meetingStatus(meeting, data.now);
   const editable = canEditMeeting(topic, meeting, data.user.id) && status === 'scheduled';
   const canUpload = meeting.creatorId === data.user.id && !meeting.completed && !meeting.cancelled;
-  const canSummarize = meeting.creatorId === data.user.id && status === 'summary-needed';
+  const canSummarize = canEditSummary(meeting, data.user.id, data.now);
   async function cancelMeeting() {
     if (busy) return;
     setBusy(true);
@@ -160,7 +160,7 @@ export function MeetingDetail() {
           ) : canSummarize ? (
             <Link className="button button-primary" to={`/meetings/${id}/summary`}>
               <FilePenLine size={18} />
-              요약 작성
+              {meeting.summary ? '요약 수정' : '요약 작성'}
             </Link>
           ) : null
         }
@@ -239,7 +239,7 @@ export function MeetingDetail() {
               <StatusBadge status={status} />
               <p className="muted">
                 {status === 'summary-needed'
-                  ? '회의가 종료되었어요. 생성자가 요약을 저장하고 완료 처리해주세요.'
+                  ? '회의가 종료되었어요. 참가자 모두 요약을 작성할 수 있고, 생성자가 완료 처리합니다.'
                   : status === 'completed'
                     ? '생성자가 회의 요약을 저장하고 완료한 회의입니다.'
                     : '회의가 취소되었습니다.'}
@@ -369,10 +369,8 @@ export function MeetingDetail() {
           )}
           {canSummarize ? (
             <Link to={`/meetings/${id}/summary`} className="button button-primary">
-              요약 작성
+              {meeting.summary ? '요약 수정' : '요약 작성'}
             </Link>
-          ) : meeting.completed && meeting.creatorId === data.user.id ? (
-            <p className="detail-note">완료 후 요약 수정·재개 정책은 확정 후 제공됩니다.</p>
           ) : null}
         </Card>
       )}
@@ -435,12 +433,8 @@ export function SummaryEditor() {
   const [confirm, setConfirm] = useState(false);
   const [saved, setSaved] = useState(JSON.stringify(summary));
   const allowLeave = useUnsavedChanges(JSON.stringify(summary) !== saved);
-  if (
-    !meeting ||
-    meeting.creatorId !== data.user.id ||
-    meetingStatus(meeting, data.now) !== 'summary-needed'
-  )
-    return <Denied />;
+  if (!meeting || !canEditSummary(meeting, data.user.id, data.now)) return <Denied />;
+  const canComplete = meeting.creatorId === data.user.id && !meeting.completed;
   async function save(complete: boolean) {
     if (busy) return;
     setBusy(true);
@@ -460,7 +454,12 @@ export function SummaryEditor() {
       if (complete) {
         allowLeave();
         navigate(`/meetings/${id}?tab=summary`);
-      } else setSuccess('이 브라우저에 요약을 임시 저장했어요. 회의는 아직 완료되지 않았습니다.');
+      } else
+        setSuccess(
+          meeting!.completed
+            ? '요약 변경을 저장했어요. 완료 상태는 유지됩니다.'
+            : '요약을 저장했어요. 회의는 아직 완료되지 않았습니다.',
+        );
       setConfirm(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : '저장하지 못했어요.');
@@ -480,7 +479,7 @@ export function SummaryEditor() {
         ]}
       />
       <div className="summary-meeting-meta">
-        <StatusBadge status="summary-needed" />
+        <StatusBadge status={meetingStatus(meeting, data.now)} />
         <span>
           <CalendarDays size={18} />
           {fullDate(meeting.start)} · {time(meeting.start)}–{time(meeting.end)}
@@ -502,7 +501,9 @@ export function SummaryEditor() {
       </div>
       <Card className="summary-editor">
         <p className="info-notice">
-          임시 저장만으로 회의가 완료되지 않습니다. 내용을 확인한 뒤 명시적으로 완료해주세요.
+          {meeting.completed
+            ? '참가자 모두 요약을 수정할 수 있어요. 저장해도 완료 상태는 유지됩니다.'
+            : '참가자 모두 요약을 작성·수정할 수 있어요. 회의 완료는 생성자가 진행합니다.'}
         </p>
         <div className="stack-form">
           {[
@@ -525,17 +526,19 @@ export function SummaryEditor() {
         <FormMessage error={!confirm ? error : undefined} success={success} />
         <div className="form-actions">
           <Button variant="secondary" onClick={() => void save(false)} loading={busy}>
-            임시 저장
+            {meeting.completed ? '변경 저장' : '임시 저장'}
           </Button>
-          <Button
-            onClick={() => {
-              setError('');
-              setConfirm(true);
-            }}
-            disabled={busy}
-          >
-            요약 저장 및 완료
-          </Button>
+          {canComplete ? (
+            <Button
+              onClick={() => {
+                setError('');
+                setConfirm(true);
+              }}
+              disabled={busy}
+            >
+              요약 저장 및 완료
+            </Button>
+          ) : null}
         </div>
       </Card>
       {confirm ? (

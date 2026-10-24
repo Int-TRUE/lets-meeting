@@ -11,6 +11,10 @@ import { useWorkspace } from '../../app/WorkspaceContext';
 import { Button, Card, EmptyState, Field, Modal } from '../../components/ui';
 import { Denied, FormMessage, PageHeading } from '../../components/workflow-ui';
 export const eventLabels: Record<DeliveryLog['event'], string> = {
+  'start-check': '회의 시작·참석 확인',
+  late: '지각 알림',
+  'late-reply': '지각 응답',
+  'end-reminder': '회의 종료·연장 안내',
   created: '회의 생성·초대',
   changed: '회의 변경',
   cancelled: '회의 취소',

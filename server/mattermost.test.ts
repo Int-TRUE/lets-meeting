@@ -28,7 +28,11 @@ const posts: { message: string; channel_id: string }[] = [];
 const success = vi.fn<typeof fetch>(async (url, init) => {
   const body = JSON.parse(String(init?.body));
   if (String(url).endsWith('/channels/direct')) return Response.json({ id: channelId });
-  posts.push(body);
+  posts.push({
+    ...body,
+    message:
+      body.message || body.props.attachments.map((a: { text?: string }) => a.text ?? '').join('\n'),
+  });
   return Response.json({ id: `post-${posts.length}`, user_id: botId, channel_id: body.channel_id });
 });
 beforeEach(async () => {

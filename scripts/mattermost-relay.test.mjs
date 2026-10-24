@@ -141,3 +141,78 @@ test('expired claim response never sends a DM', async (t) => {
   assert.equal(sends, 0);
   assert.equal(journal.get(origin).outcome.result, 'unknown');
 });
+
+test('interactive callbacks verify recipient and original bot post before any cloud mutation', async () => {
+  const { createInteractionHandler } = await import('./mattermost-interactions.mjs');
+  const { signInteraction } = await import('../server/mattermost.ts');
+  const config = {
+    baseUrl: 'http://mattermost:8065',
+    token: 'bot',
+    botId: 'b'.repeat(26),
+    users: { sujin: 's'.repeat(26) },
+    interaction: { url: 'http://relay:8066', secret: 'test-secret' },
+  };
+  const postId = 'p'.repeat(26),
+    channelId = 'c'.repeat(26);
+  const value = {
+    logId: 'log',
+    actor: 'sujin',
+    userId: config.users.sujin,
+    command: 'options',
+    expires: Date.now() + 60000,
+  };
+  const body = {
+    user_id: value.userId,
+    post_id: postId,
+    channel_id: channelId,
+    trigger_id: 'trigger',
+    context: { ticket: signInteraction(value, config.interaction.secret) },
+  };
+  let mutations = 0,
+    dialog;
+  const handler = createInteractionHandler({
+    config,
+    rpc: async () => {
+      mutations++;
+      return {
+        participants: [
+          { id: 'taeheon', name: '김태헌' },
+          { id: 'wooseok', name: '장우석' },
+        ],
+      };
+    },
+    fetcher: async (url, init) => {
+      if (url.endsWith('/dialogs/open')) {
+        dialog = JSON.parse(init.body);
+        return Response.json({});
+      }
+      return Response.json({
+        user_id: config.botId,
+        channel_id: channelId,
+        props: { robot_butler_delivery_id: 'log' },
+      });
+    },
+  });
+  await assert.rejects(handler('/action', { ...body, user_id: 'x'.repeat(26) }));
+  await assert.rejects(
+    handler('/action', { ...body, context: { ticket: body.context.ticket + 'x' } }),
+  );
+  assert.equal(mutations, 0);
+  await handler('/action', body);
+  assert.equal(mutations, 1);
+  assert.equal(dialog.dialog.elements[0].multiselect, true);
+  assert.equal(dialog.dialog.elements[0].options.length, 2);
+  const badPost = createInteractionHandler({
+    config,
+    rpc: async () => {
+      throw new Error('must not run');
+    },
+    fetcher: async () =>
+      Response.json({
+        user_id: 'other',
+        channel_id: channelId,
+        props: { robot_butler_delivery_id: 'log' },
+      }),
+  });
+  await assert.rejects(badPost('/action', body));
+});

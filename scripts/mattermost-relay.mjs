@@ -1,7 +1,8 @@
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync, chmodSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { createServer } from 'node:net';
+import { createServer } from 'node:http';
+import { createInteractionHandler, interactionListener } from './mattermost-interactions.mjs';
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { mattermostConfig, createMattermostSender } from '../server/mattermost.ts';
@@ -30,15 +31,8 @@ export function openJournal(path) {
     close: () => db.close(),
   };
 }
-export function createRelayWorker({
-  origin,
-  token,
-  config,
-  journal,
-  fetcher = fetch,
-  send = createMattermostSender(config, fetcher),
-}) {
-  async function rpc(body) {
+export function relayRpc(origin, token, fetcher = fetch) {
+  return async function rpc(body) {
     const response = await fetcher(`${origin}/api/mattermost-relay`, {
       method: 'POST',
       redirect: 'error',
@@ -52,9 +46,24 @@ export function createRelayWorker({
       },
       body: JSON.stringify(body),
     });
-    if (!response.ok) throw new Error(`중계 API HTTP ${response.status}`);
+    if (!response.ok) {
+      const error = new Error(`중계 API HTTP ${response.status}`);
+      if (response.status === 409) error.publicMessage = (await response.json()).error;
+      throw error;
+    }
     return response.json();
-  }
+  };
+}
+
+export function createRelayWorker({
+  origin,
+  token,
+  config,
+  journal,
+  fetcher = fetch,
+  send = createMattermostSender(config, fetcher),
+}) {
+  const rpc = relayRpc(origin, token, fetcher);
   return async () => {
     let state = journal.get(origin);
     // Results are uploaded even when Mattermost is offline.
@@ -88,7 +97,15 @@ export function createRelayWorker({
     if (
       job.relay?.claimId !== state.claimId ||
       !job.payload ||
-      !['created', 'changed', 'cancelled'].includes(job.event)
+      ![
+        'created',
+        'changed',
+        'cancelled',
+        'start-check',
+        'late',
+        'late-reply',
+        'end-reminder',
+      ].includes(job.event)
     )
       throw new Error('중계 작업 확인 실패');
     // An old/lost claim response must never trigger a send after its deadline.
@@ -123,11 +140,16 @@ async function main() {
   )
     throw new Error('중계 설정 파일을 확인해주세요.');
   config.appUrl = url.origin;
-  // OS releases this loopback-only lock automatically on exit/crash.
-  const lock = createServer((socket) => socket.destroy());
+  const interactive = process.env.MATTERMOST_DOCKER_NETWORK === 'true';
+  if (interactive) config.interaction = { url: 'http://relay:8066', secret: token };
+  const lock = createServer(
+    interactive
+      ? interactionListener(createInteractionHandler({ config, rpc: relayRpc(url.origin, token) }))
+      : (_request, response) => response.writeHead(404).end(),
+  );
   await new Promise((resolve, reject) => {
     lock.once('error', reject);
-    lock.listen(8066, '127.0.0.1', resolve);
+    lock.listen(8066, interactive ? '0.0.0.0' : '127.0.0.1', resolve);
   });
   const journal = openJournal(
     resolve(process.env.MATTERMOST_RELAY_JOURNAL ?? 'data/mattermost-relay.sqlite'),

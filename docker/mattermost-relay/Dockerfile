@@ -2,6 +2,7 @@ FROM node:22-bookworm-slim@sha256:de170b39439eb0e5a3444ad7d60b015614a381e10fecae
 WORKDIR /app
 COPY package.json ./
 COPY scripts/mattermost-relay.mjs ./scripts/mattermost-relay.mjs
+COPY scripts/mattermost-interactions.mjs ./scripts/mattermost-interactions.mjs
 COPY server/mattermost.ts ./server/mattermost.ts
 RUN mkdir /state && chown node:node /state
 USER node

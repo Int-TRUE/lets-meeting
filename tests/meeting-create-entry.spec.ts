@@ -32,6 +32,7 @@ test('explicit new meeting starts empty even when an earlier draft exists', asyn
   await page.getByLabel('회의 일자 *').fill('2026-10-21');
   await page.getByRole('button', { name: '14:00 예약 가능', exact: true }).click();
   await page.getByRole('button', { name: '다음', exact: true }).click();
+  await page.getByRole('button', { name: '다음', exact: true }).click();
   await page.getByRole('button', { name: '회의 생성', exact: true }).click();
   await expect(page.getByRole('heading', { name: '회의 생성이 완료되었어요!' })).toBeVisible();
   await page.getByRole('link', { name: 'Topic으로 이동', exact: true }).click();

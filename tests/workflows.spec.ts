@@ -13,6 +13,7 @@ async function createMeeting(page: Page, title = '테스트 협업 회의', uplo
   await page.getByRole('button', { name: '14:30 예약 가능', exact: true }).click();
   await page.getByRole('button', { name: '다음', exact: true }).click();
   await page.getByRole('checkbox', { name: /박지우/ }).check();
+  await page.getByRole('button', { name: '다음', exact: true }).click();
   if (upload) {
     await page.getByRole('radio', { name: '자료 첨부', exact: true }).check();
     await page.getByLabel('회의 자료 선택', { exact: true }).setInputFiles({
@@ -69,7 +70,7 @@ test('Topic modal keeps inputs when discarding is declined', async ({ page }) =>
   await confirm.getByRole('button', { name: '돌아가기', exact: true }).click();
   await expect(page.getByLabel(/^주제명/)).toHaveValue('저장 전 주제');
 });
-test('three-step meeting creation, attachment download, cancellation and persistence', async ({
+test('four-step meeting creation, attachment download, cancellation and persistence', async ({
   page,
 }, info) => {
   const url = await createMeeting(page, '자료와 함께하는 실무 회의', true);
@@ -97,14 +98,12 @@ test('three-step meeting creation, attachment download, cancellation and persist
   await expect(page.locator('.meeting-header-meta .status-cancelled')).toContainText('취소');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
-test('wizard preserves three-step input and a reloadable draft without a fourth input step', async ({
-  page,
-}, info) => {
+test('wizard preserves input and a reloadable draft across four steps', async ({ page }, info) => {
   await open(page, '/topics/system/meetings/new');
   await page.getByLabel(/^회의명/).fill('초안 유지 확인');
   await page.getByLabel(/^회의 내용·안건/).fill('초안 보존');
   await page.getByRole('button', { name: '다음', exact: true }).click();
-  await expect(page.locator('.stepper li')).toHaveCount(3);
+  await expect(page.locator('.stepper li')).toHaveCount(4);
   await page.getByLabel('회의 일자 *').fill('2026-10-21');
   await page.getByRole('button', { name: '15:00 예약 가능', exact: true }).click();
   await page.screenshot({
@@ -205,6 +204,7 @@ test('meeting edit, file registration and replacement respect actor permissions'
   await page.getByLabel(/^회의명/).fill('수정된 회의');
   await page.getByRole('button', { name: '다음', exact: true }).click();
   await expect(page.getByText('변경 전 장소·시간', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '다음', exact: true }).click();
   await page.getByRole('button', { name: '다음', exact: true }).click();
   await page.getByRole('button', { name: '변경 저장', exact: true }).click();
   await expect(

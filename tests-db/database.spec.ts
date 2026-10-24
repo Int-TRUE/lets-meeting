@@ -73,6 +73,7 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
   await picker.getByRole('checkbox', { name: /박성민/ }).check();
   await picker.getByRole('searchbox').fill('');
   await page.screenshot({ path: 'test-results/clean-workspace/staff-picker.png', fullPage: true });
+  await page.getByRole('button', { name: '다음', exact: true }).click();
   await page.getByRole('radio', { name: '자료 첨부', exact: true }).check();
   await page.getByLabel('회의 자료 선택', { exact: true }).setInputFiles({
     name: '첫회의.txt',

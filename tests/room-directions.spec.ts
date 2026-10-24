@@ -13,6 +13,9 @@ test('registered room selection updates the uncropped route illustration and lab
     '12층 회의실',
   ]) {
     await page
+      .getByLabel('센터', { exact: true })
+      .selectOption(name === '3층 회의실' ? '분당' : '명동');
+    await page
       .locator('.room-list-item')
       .filter({ hasText: name === '3층 회의실' ? '분당' : name })
       .click();

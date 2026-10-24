@@ -5,15 +5,25 @@ test('room calendar, numeric floors, center filtering and meeting details', asyn
 }, info) => {
   await page.goto('/rooms');
   const rows = page.locator('.room-list-item');
-  await expect(rows).toHaveCount(5);
+  const center = page.getByLabel('센터', { exact: true });
+  await expect(center).toHaveValue('명동');
+  await expect(center.locator('option')).toHaveText(['명동', '분당']);
+  await expect(rows).toHaveCount(4);
   expect(await rows.locator('small').allTextContents()).toEqual([
     '3층 · 수용 6명',
-    '3층 · 수용 10명',
     '9층 · 수용 8명',
     '11층 · 수용 12명',
     '12층 · 수용 16명',
   ]);
-  await page.getByLabel('센터', { exact: true }).selectOption('명동');
+  await center.selectOption('분당');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('분당');
+  await expect(page.locator('.room-schedule h2')).toHaveText('분당 · 3층 회의실 일정');
+  await page.getByLabel('회의실 검색', { exact: true }).fill('9층');
+  await expect(page.getByText('회의실 검색 결과가 없어요')).toBeVisible();
+  await expect(page.locator('.room-schedule')).toHaveCount(0);
+  await page.getByLabel('회의실 검색', { exact: true }).fill('');
+  await center.selectOption('명동');
   await expect(rows).toHaveCount(4);
   await rows.filter({ hasText: '9층 대회의실' }).click();
   const agenda = page.getByRole('region', { name: '선택한 날짜의 예정 회의' });
@@ -42,6 +52,13 @@ test('nonmembers see schedules but cannot open private meeting details', async (
   const agenda = page.getByRole('region', { name: '선택한 날짜의 예정 회의' });
   await expect(agenda).toContainText('전산기기 교체 · 2차 실무 회의');
   await expect(agenda.getByRole('link')).toHaveCount(0);
+  await page.goto('/admin/rooms');
+  const center = page.getByLabel('센터', { exact: true });
+  await expect(center).toHaveValue('명동');
+  await expect(center.locator('option')).toHaveText(['명동', '분당']);
+  await center.selectOption('분당');
+  await expect(page.locator('.room-list-item')).toHaveCount(1);
+  await expect(page.locator('.room-list-item')).toContainText('분당');
   await page.goto('/meetings/equipment');
   await expect(page.getByRole('heading', { name: '이 정보에 접근할 수 없어요' })).toBeVisible();
 });

@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { previewService, type MeetingInput } from './previewService';
-import { defaultPreferences } from '../domain/workflows';
+import { initialDatabase, previewService, type MeetingInput } from './previewService';
+import { defaultPreferences, saveSummary } from '../domain/workflows';
 const input = (extra: Partial<MeetingInput> = {}): MeetingInput => ({
   topicId: 'system',
   title: '새 회의',
@@ -248,4 +248,54 @@ it('exposes room schedule summaries to nonmembers without disclosing meeting con
     ),
   ).toBe(false);
   expect(await previewService.roomSchedule('ops', 'md-9', '2026-11')).toEqual([]);
+});
+
+it('lets attendees write and revise shared summaries, including after completion', async () => {
+  const summary = { discussion: '참가자 작성', decisions: '함께 결정', nextSteps: '' };
+  await previewService.saveSummary('jung', 'strategy', summary, false, 0);
+  expect(
+    (await previewService.snapshot('kim')).meetings.find((m) => m.id === 'strategy')?.summary
+      ?.discussion,
+  ).toBe('참가자 작성');
+  await expect(previewService.saveSummary('choi', 'strategy', summary, false, 0)).rejects.toThrow(
+    '변경되었습니다',
+  );
+  await expect(previewService.saveSummary('jung', 'strategy', summary, true, 1)).rejects.toThrow(
+    '생성자',
+  );
+  await previewService.saveSummary('kim', 'strategy', summary, true, 1);
+  await previewService.saveSummary(
+    'jung',
+    'strategy',
+    { ...summary, discussion: '완료 후 보완' },
+    false,
+    2,
+  );
+  const meeting = (await previewService.snapshot('kim')).meetings.find((m) => m.id === 'strategy')!;
+  expect(meeting.completed).toBe(true);
+  expect(meeting.summary?.discussion).toBe('완료 후 보완');
+  expect(meeting.revision).toBe(3);
+  await expect(previewService.saveSummary('park', 'equipment', summary, false, 0)).rejects.toThrow(
+    '종료된',
+  );
+  await previewService.cancelMeeting('lee', 'equipment', 0);
+  await expect(previewService.saveSummary('park', 'equipment', summary, false, 1)).rejects.toThrow(
+    '종료된',
+  );
+});
+
+it('does not grant summary editing to a nonparticipant Topic manager', () => {
+  const db = initialDatabase();
+  db.topics.find((topic) => topic.id === 'brand')!.roles.lee = 'Master';
+  expect(() =>
+    saveSummary(
+      db,
+      'strategy',
+      'lee',
+      { discussion: '비참가자', decisions: '', nextSteps: '' },
+      false,
+      '2026-10-20T13:30:00+09:00',
+      0,
+    ),
+  ).toThrow('참가자');
 });

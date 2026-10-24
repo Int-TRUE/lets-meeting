@@ -7,7 +7,6 @@ import type {
   Summary,
   Topic,
 } from './models.js';
-import { meetingStatus } from './selectors.js';
 export class RuleError extends Error {}
 export const rooms: Room[] = [
   { id: 'md-9', name: '9층 대회의실', location: '명동', floor: '9층', capacity: 8, active: true },
@@ -154,6 +153,13 @@ export function recordEvent(
     });
   }
 }
+export function canEditSummary(meeting: Meeting, userId: string, now: string) {
+  return (
+    !meeting.cancelled &&
+    Date.parse(meeting.end) <= Date.parse(now) &&
+    (meeting.creatorId === userId || meeting.participantIds.includes(userId))
+  );
+}
 export function saveSummary(
   db: PreviewDatabase,
   meetingId: string,
@@ -165,8 +171,10 @@ export function saveSummary(
 ) {
   const { meeting } = requireMeeting(db, meetingId, userId);
   requireRevision(meeting, revision);
-  if (meeting.creatorId !== userId || meetingStatus(meeting, now) !== 'summary-needed')
-    throw new RuleError('종료된 미완료 회의의 생성자만 요약을 작성할 수 있어요.');
+  if (!canEditSummary(meeting, userId, now))
+    throw new RuleError('종료된 회의의 참가자만 요약을 작성·수정할 수 있어요.');
+  if (complete && (meeting.creatorId !== userId || meeting.completed))
+    throw new RuleError('미완료 회의의 생성자만 회의를 완료할 수 있어요.');
   if (complete && !Object.values(summary).some((v) => v.trim()))
     throw new RuleError(
       '빈 요약 완료 기준은 아직 정해지지 않았어요. 내용을 작성하거나 임시 저장해주세요.',

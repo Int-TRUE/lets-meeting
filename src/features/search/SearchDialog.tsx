@@ -57,8 +57,8 @@ export function SearchDialog({
   }
   return (
     <Modal
-      title="회의와 Topic 검색"
-      description="내가 접근할 수 있는 Topic과 회의를 검색합니다."
+      title="회의와 토픽 검색"
+      description="내가 접근할 수 있는 토픽과 회의를 검색합니다."
       onClose={onClose}
       returnFocusRef={returnFocusRef}
       className="search-modal"
@@ -76,7 +76,7 @@ export function SearchDialog({
       <div className="search-filters" role="group" aria-label="검색 결과 종류">
         {[
           ['all', '전체', results.topics.length + results.meetings.length],
-          ['topics', 'Topic', results.topics.length],
+          ['topics', '토픽', results.topics.length],
           ['meetings', '회의', results.meetings.length],
         ].map(([id, label, count]) => (
           <button
@@ -102,7 +102,7 @@ export function SearchDialog({
             {filter !== 'meetings' && results.topics.length ? (
               <section>
                 <h3>
-                  Topic <span>{results.topics.length}개</span>
+                  토픽 <span>{results.topics.length}개</span>
                 </h3>
                 {results.topics.map((t) => (
                   <button

@@ -38,16 +38,16 @@ export function TopicsPage() {
   return (
     <div className="workflow-page topics-page">
       <PageHeading
-        title="Topic"
+        title="토픽"
         description="우리 팀의 이야기를 관리하고, 관련 회의를 이어가세요."
         actions={
           <Link to="/topics/new" className="button button-primary">
             <Plus size={18} />
-            Topic 만들기
+            토픽 만들기
           </Link>
         }
       />
-      <div className="line-tabs" role="group" aria-label="Topic 필터">
+      <div className="line-tabs" role="group" aria-label="토픽 필터">
         {[
           ['all', '전체'],
           ['managed', '관리 중'],
@@ -82,9 +82,7 @@ export function TopicsPage() {
       ) : (
         <Card>
           <EmptyState
-            title={
-              data.topics.length ? '이 조건에 맞는 Topic이 없어요' : '참여 중인 Topic이 없어요'
-            }
+            title={data.topics.length ? '이 조건에 맞는 토픽이 없어요' : '참여 중인 토픽이 없어요'}
             description="새로운 주제를 만들고 좋은 대화를 시작해보세요."
           />
         </Card>
@@ -172,7 +170,7 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
         lockedIds={editing ? managers : [data.user.id]}
       />
       <p className="info-notice">
-        Topic을 만든 사람은 Owner가 됩니다. 선택한 회의 관리자는 Master 권한을 가집니다.
+        토픽을 만든 사람은 Owner가 됩니다. 선택한 회의 관리자는 Master 권한을 가집니다.
       </p>
       <FormMessage error={error} />
       <div className="form-actions">
@@ -180,7 +178,7 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
           취소
         </Button>
         <Button type="submit" loading={busy}>
-          {editing ? '변경 저장' : 'Topic 만들기'}
+          {editing ? '변경 저장' : '토픽 만들기'}
         </Button>
       </div>
     </form>
@@ -190,7 +188,7 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
       {editing ? (
         <div className="workflow-page topic-settings-page">
           <PageHeading
-            title="Topic 설정"
+            title="토픽 설정"
             description="주제 정보와 회의 관리자를 관리하세요."
             crumbs={[{ label: topic!.title, to: `/topics/${id}` }]}
           />
@@ -200,19 +198,19 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
               <h2>권한 안내</h2>
               <dl>
                 <dt>Owner · 소유자</dt>
-                <dd>Topic 정보·관리자 수정, 전체 회의 조회와 관리</dd>
+                <dd>토픽 정보·관리자 수정, 전체 회의 조회와 관리</dd>
                 <dt>Master · 회의 관리자</dt>
                 <dd>전체 회의 조회, 회의 생성, 자신이 만든 회의 수정</dd>
                 <dt>Attendee · 참가자</dt>
                 <dd>본인이 초대된 회의만 조회</dd>
               </dl>
-              <h3>Owner 위임·Topic 삭제</h3>
+              <h3>Owner 위임·토픽 삭제</h3>
               <p className="muted">위임 후 역할과 하위 회의 보존 정책 확정 후 제공됩니다.</p>
               <Button variant="secondary" disabled>
                 Owner 위임 준비 중
               </Button>
               <Button variant="secondary" disabled>
-                Topic 삭제 준비 중
+                토픽 삭제 준비 중
               </Button>
             </Card>
           </div>
@@ -220,7 +218,7 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
       ) : (
         <Modal
           className="topic-form-modal"
-          title="새로운 Topic 만들기"
+          title="새로운 토픽 만들기"
           description="한 가지 주제로 회의를 이어가는 우리 팀의 공간입니다."
           onClose={close}
         >
@@ -230,7 +228,7 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
       {discard ? (
         <ConfirmDialog
           title="입력을 닫을까요?"
-          description="저장하지 않은 Topic 입력은 사라집니다."
+          description="저장하지 않은 토픽 입력은 사라집니다."
           actionLabel="저장하지 않고 나가기"
           onClose={() => setDiscard(false)}
           onConfirm={() => {
@@ -258,13 +256,13 @@ export function TopicDetail() {
       <PageHeading
         title={topic.title}
         description={topic.description}
-        crumbs={[{ label: 'Topic', to: '/topics' }]}
+        crumbs={[{ label: '토픽', to: '/topics' }]}
         actions={
           <>
             {topic.roles[data.user.id] === 'Owner' ? (
               <Link className="button button-secondary" to={`/topics/${id}/settings`}>
                 <Settings size={17} />
-                Topic 설정
+                토픽 설정
               </Link>
             ) : null}
             {manager ? (

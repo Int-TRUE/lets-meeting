@@ -197,3 +197,26 @@ test('invitation format contains topic, host, participants, materials and a safe
   ])
     expect(message).toContain(text);
 });
+
+test('24-hour and 1-hour reminders each fire once at their own exact window', () => {
+  const db = fixture();
+  db.meetings[0].reminderMinutes = [1440, 60];
+  const startMs = Date.parse(start);
+  scheduleReminders(db, startMs - 1440 * 60000 - 1);
+  expect(db.logs).toHaveLength(0);
+  for (const minutes of [1440, 60]) {
+    scheduleReminders(db, startMs - minutes * 60000);
+    scheduleReminders(db, startMs - minutes * 60000 + 1000);
+    expect(db.logs.filter((l) => l.payload?.reminderMinutes === minutes)).toHaveLength(3);
+    expect(
+      notificationMessage(
+        db.logs.find((l) => l.payload?.reminderMinutes === minutes)!,
+        'https://robot-butler.vercel.app',
+      ),
+    ).toContain(minutes === 1440 ? '하루 전' : '1시간 전');
+  }
+  const offline = fixture();
+  offline.meetings[0].reminderMinutes = [1440, 60];
+  scheduleReminders(offline, startMs - 1440 * 60000 + 60000);
+  expect(offline.logs).toHaveLength(0);
+});

@@ -93,7 +93,9 @@ export function notificationMessage(log: DeliveryLog, appUrl: string) {
     `· 참가자: ${(p.participants ?? []).map(plain).join(', ') || '상세정보에서 확인'}`,
     `· 자료: ${p.material === 'none' ? '없음' : p.material === 'pending' ? '등록예정' : '상세정보에서 확인'}`,
     ...(log.event === 'reminder' && p.reminderMinutes
-      ? [`회의 시작 ${p.reminderMinutes}분 전입니다.`]
+      ? [
+          `회의 시작 ${p.reminderMinutes === 1440 ? '하루 전' : p.reminderMinutes === 60 ? '1시간 전' : `${p.reminderMinutes}분 전`}입니다.`,
+        ]
       : []),
     ...(p.previous
       ? [

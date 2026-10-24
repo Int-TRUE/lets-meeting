@@ -28,7 +28,7 @@ export function PreviewTools({
           onChange={(e) => onChange(e.target.value as PreviewState, userId)}
         >
           <option value="normal">정상</option>
-          <option value="empty-meetings">회의 없음 · Topic 있음</option>
+          <option value="empty-meetings">회의 없음 · 토픽 있음</option>
           <option value="empty">전체 비어 있음</option>
           <option value="loading">불러오는 중</option>
           <option value="error">연결 오류</option>

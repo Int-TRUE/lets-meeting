@@ -4,6 +4,7 @@ import type { Person, Room, Workspace } from '../domain/models';
 export interface WorkspaceContextValue {
   data: Workspace;
   directory: Person[];
+  rememberPeople: (people: Person[]) => void;
   rooms: Room[];
   run: <T>(operation: () => Promise<T>) => Promise<T>;
 }

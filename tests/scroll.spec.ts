@@ -27,6 +27,6 @@ test('long pages scroll with wheel and keyboard, including after closing a dialo
       page.evaluate(() => scrollY + innerHeight >= document.documentElement.scrollHeight - 2),
     )
     .toBe(true);
-  await expect(page.getByRole('link', { name: 'Topic에서 회의 만들기' })).toBeInViewport();
+  await expect(page.getByRole('link', { name: '토픽에서 회의 만들기' })).toBeInViewport();
   await page.screenshot({ path: `test-results/scroll-bottom-${testInfo.project.name}.png` });
 });

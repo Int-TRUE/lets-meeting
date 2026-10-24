@@ -1,8 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('Topic creation entry stays fresh after leaving an existing meeting edit', async ({
-  page,
-}) => {
+test('토픽 creation entry stays fresh after leaving an existing meeting edit', async ({ page }) => {
   await page.addInitScript(() => sessionStorage.setItem('robot-butler:preview-user:v1', 'lee'));
   await page.goto('/meetings/equipment/edit');
   await expect(page.getByRole('heading', { level: 1, name: '회의 수정' })).toBeVisible();
@@ -35,7 +33,7 @@ test('explicit new meeting starts empty even when an earlier draft exists', asyn
   await page.getByRole('button', { name: '다음', exact: true }).click();
   await page.getByRole('button', { name: '회의 생성', exact: true }).click();
   await expect(page.getByRole('heading', { name: '회의 생성이 완료되었어요!' })).toBeVisible();
-  await page.getByRole('link', { name: 'Topic으로 이동', exact: true }).click();
+  await page.getByRole('link', { name: '토픽으로 이동', exact: true }).click();
   await expect(page.locator('.history-card')).toHaveCount(3);
   await expect(
     page.locator('.history-card').filter({ hasText: '전산기기 교체 · 2차 실무 회의' }),

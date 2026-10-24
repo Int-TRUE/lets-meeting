@@ -128,7 +128,7 @@ export function requireMeeting(db: PreviewDatabase, id: string, userId: string) 
   if (!m || !t || !canReadMeeting(t, m, userId)) throw new RuleError('이 정보에 접근할 수 없어요.');
   return { meeting: m, topic: t };
 }
-export const meetingReminderChoices = [30, 10, 5, 3];
+export const meetingReminderChoices = [1440, 60, 30, 10, 5, 3];
 export function meetingPayload(db: PreviewDatabase, meeting: Meeting) {
   const directory = db.people ?? people;
   const host = directory.find((p) => p.id === meeting.creatorId);

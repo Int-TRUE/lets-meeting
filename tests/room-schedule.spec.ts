@@ -63,14 +63,15 @@ test('nonmembers see schedules but cannot open private meeting details', async (
   await expect(page.getByRole('heading', { name: '이 정보에 접근할 수 없어요' })).toBeVisible();
 });
 
-test('new Topic participant picker excludes outsiders and stale draft selections', async ({
+test('new 토픽 participant picker excludes outsiders and stale draft selections', async ({
   page,
 }) => {
   await page.goto('/topics/new');
   await page.getByLabel(/^주제명/).fill('구성원 제한');
-  await page.getByLabel(/^한줄 설명/).fill('Topic 구성원만 선택');
+  await page.getByLabel(/^한줄 설명/).fill('토픽 구성원만 선택');
+  await page.locator('.people-picker').getByRole('searchbox').fill('이서준');
   await page.getByRole('checkbox', { name: /이서준/ }).check();
-  await page.getByRole('button', { name: 'Topic 만들기', exact: true }).click();
+  await page.getByRole('button', { name: '토픽 만들기', exact: true }).click();
   await page.getByRole('link', { name: '회의 만들기', exact: true }).click();
   await page.getByLabel(/^회의명/).fill('구성원 회의');
   await page.getByLabel(/^회의 내용·안건/).fill('참가 범위 확인');
@@ -89,8 +90,10 @@ test('new Topic participant picker excludes outsiders and stale draft selections
   page.once('dialog', (dialog) => dialog.accept());
   await page.reload();
   const picker = page.locator('.people-picker');
-  await expect(picker.getByRole('checkbox')).toHaveCount(2);
+  await expect(picker.getByRole('checkbox')).toHaveCount(0);
+  await picker.getByRole('searchbox').fill('김하늘');
   await expect(picker.getByRole('checkbox', { name: /김하늘/ })).toBeDisabled();
+  await picker.getByRole('searchbox').fill('이서준');
   await expect(picker.getByRole('checkbox', { name: /이서준/ })).toBeVisible();
   await expect(picker).not.toContainText('운영관리자');
   await picker.getByRole('searchbox').fill('박지우');

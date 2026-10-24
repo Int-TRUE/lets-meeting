@@ -299,7 +299,7 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
                 </Button>
               ) : (
                 <Link to="/topics" className="button button-primary">
-                  Topic에서 회의 만들기
+                  토픽에서 회의 만들기
                 </Link>
               )}
             </Card>

@@ -1,3 +1,4 @@
+import { ReminderSettings } from '../../components/ReminderSettings';
 import { MeetingDelivery } from '../../components/MeetingDelivery';
 import successArt from '../../assets/meeting-success.png';
 import { useEffect, useRef, useState } from 'react';
@@ -258,7 +259,7 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
           </div>
           <div className="form-actions">
             <Link className="button button-secondary" to={`/topics/${topic.id}`}>
-              Topic으로 이동
+              토픽으로 이동
             </Link>
             <Link className="button button-primary" to={`/meetings/${resultId}`}>
               회의 상세 보기
@@ -276,7 +277,7 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
         title={editing ? '회의 수정' : '회의 만들기'}
         description="필요한 정보를 차근차근 정리하고 좋은 대화를 준비하세요."
         crumbs={[
-          { label: 'Topic', to: '/topics' },
+          { label: '토픽', to: '/topics' },
           { label: topic.title, to: `/topics/${topic.id}` },
         ]}
       />
@@ -312,6 +313,7 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
             />
           ) : draft.step === 2 ? (
             <PeoplePicker
+              topicId={topic.id}
               label="참가자"
               people={directory.filter((person) => Object.hasOwn(topic.roles, person.id))}
               value={participantIds}
@@ -320,41 +322,10 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
             />
           ) : (
             <div className="stack-form">
-              <fieldset className="material-options">
-                <legend>자동 리마인드 알람</legend>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={draft.reminderMinutes.length > 0}
-                    onChange={(e) => patch({ reminderMinutes: e.target.checked ? [30] : [] })}
-                  />{' '}
-                  자동 리마인드 켜기
-                </label>
-                {draft.reminderMinutes.length ? (
-                  <div>
-                    {[30, 10, 5, 3].map((minutes) => (
-                      <label key={minutes}>
-                        <input
-                          type="checkbox"
-                          checked={draft.reminderMinutes.includes(minutes)}
-                          onChange={(e) =>
-                            patch({
-                              reminderMinutes: e.target.checked
-                                ? [...draft.reminderMinutes, minutes]
-                                : draft.reminderMinutes.filter((n) => n !== minutes),
-                            })
-                          }
-                        />
-                        {minutes}분 전
-                      </label>
-                    ))}
-                  </div>
-                ) : null}
-                <p>
-                  선택한 시점마다 참가자에게 알림을 보냅니다. 모두 해제하면 자동 리마인드가
-                  꺼집니다.
-                </p>
-              </fieldset>
+              <ReminderSettings
+                value={draft.reminderMinutes}
+                onChange={(reminderMinutes) => patch({ reminderMinutes })}
+              />
               {editing ? (
                 <p className="info-notice">자료는 회의 상세의 자료 탭에서 관리하세요.</p>
               ) : (
@@ -468,7 +439,7 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
       {discard ? (
         <ConfirmDialog
           title="회의 작성을 닫을까요?"
-          description="작성 중인 미리보기 초안을 지우고 Topic으로 돌아갑니다."
+          description="작성 중인 미리보기 초안을 지우고 토픽으로 돌아갑니다."
           actionLabel="초안 지우고 나가기"
           onClose={() => setDiscard(false)}
           onConfirm={() => {

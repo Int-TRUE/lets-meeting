@@ -5,7 +5,7 @@ import {
 } from '../src/data/previewService.js';
 import { encodeWire, decodeWire } from '../src/data/wire.js';
 import { RuleError } from '../src/domain/workflows.js';
-import type { Workspace } from '../src/domain/models.js';
+import type { Person, Workspace } from '../src/domain/models.js';
 
 export interface DemoStore {
   transaction: TransactionAdapter;
@@ -31,7 +31,10 @@ export async function handleDemoRequest(
     const method = url.searchParams.get('method') ?? url.pathname.replace(/^\/api\/demo\//, '');
     if (request.method === 'GET' && method === 'directory') {
       const db = await getStore();
-      return json(200, { people: await db.directory(), rooms: await db.rooms() });
+      return json(200, {
+        people: ((await db.directory()) as Person[]).filter((p) => p.isTestAccount),
+        rooms: await db.rooms(),
+      });
     }
     if (
       request.method !== 'POST' ||

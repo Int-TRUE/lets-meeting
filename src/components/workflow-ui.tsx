@@ -1,8 +1,10 @@
-import { useId, useState, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import { useEffect, useId, useState, type ReactNode, type TextareaHTMLAttributes } from 'react';
 import { ChevronRight, Search, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Attachment, Person } from '../domain/models';
 import { Button, Modal } from './ui';
+import { previewService } from '../data/previewService';
+import { useWorkspace } from '../app/WorkspaceContext';
 import { PersonAvatar } from './PersonAvatar';
 export function PageHeading({
   title,
@@ -75,18 +77,59 @@ export function PeoplePicker({
   value,
   onChange,
   lockedIds = [],
+  topicId,
 }: {
   label: string;
   people: Person[];
   value: string[];
   onChange: (value: string[]) => void;
   lockedIds?: string[];
+  topicId?: string;
 }) {
   const id = useId();
+  const { data, rememberPeople } = useWorkspace();
   const [query, setQuery] = useState('');
-  const matches = people.filter((p) =>
-    `${p.name} ${p.team} ${p.position ?? ''}`.toLowerCase().includes(query.trim().toLowerCase()),
-  );
+  const [search, setSearch] = useState<{
+    query: string;
+    people: Person[];
+    hasMore: boolean;
+    error?: string;
+  }>({ query: '', people: [], hasMore: false });
+  const [selectedPeople, setSelectedPeople] = useState<Person[]>(people);
+  const [retry, setRetry] = useState(0);
+  const term = query.trim();
+  useEffect(() => {
+    if (!term) return;
+    let active = true;
+    const timer = setTimeout(() => {
+      void previewService
+        .searchPeople(data.user.id, term, topicId)
+        .then((result) => {
+          if (active) setSearch({ query: term, ...result });
+        })
+        .catch(() => {
+          if (active)
+            setSearch({
+              query: term,
+              people: [],
+              hasMore: false,
+              error: '직원을 검색하지 못했어요. 다시 시도해주세요.',
+            });
+        });
+    }, 250);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [term, topicId, data.user.id, retry]);
+  const loading = Boolean(term && search.query !== term);
+  const matches = term && !loading ? search.people : [];
+  function select(p: Person, checked: boolean) {
+    if (checked) rememberPeople([p]);
+    if (checked)
+      setSelectedPeople((current) => [...current.filter((person) => person.id !== p.id), p]);
+    onChange(checked ? [...new Set([...value, p.id])] : value.filter((id) => id !== p.id));
+  }
   return (
     <fieldset className="people-picker">
       <legend>{label}</legend>
@@ -103,7 +146,7 @@ export function PeoplePicker({
       </label>
       <div className="selected-people">
         {value.map((pid) => {
-          const p = people.find((p) => p.id === pid);
+          const p = people.find((p) => p.id === pid) ?? selectedPeople.find((p) => p.id === pid);
           return p ? (
             <span className="person-chip" key={pid}>
               <PersonAvatar person={p} />
@@ -130,9 +173,7 @@ export function PeoplePicker({
               type="checkbox"
               checked={value.includes(p.id)}
               disabled={lockedIds.includes(p.id)}
-              onChange={(e) =>
-                onChange(e.target.checked ? [...value, p.id] : value.filter((id) => id !== p.id))
-              }
+              onChange={(e) => select(p, e.target.checked)}
             />
             <PersonAvatar person={p} />
             <span>
@@ -144,7 +185,36 @@ export function PeoplePicker({
             </span>
           </label>
         ))}
-        {!matches.length ? <p className="muted">검색한 직원이 없어요.</p> : null}
+        <div className="people-search-status" role="status">
+          {!term ? (
+            <>
+              <Search size={24} />
+              <strong>함께할 동료를 찾아보세요</strong>
+              <p>이름, 팀 또는 직책을 검색하면 결과가 표시돼요.</p>
+            </>
+          ) : loading ? (
+            '직원을 검색하고 있어요…'
+          ) : search.error ? (
+            <>
+              <p>{search.error}</p>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setSearch({ query: '', people: [], hasMore: false });
+                  setRetry((n) => n + 1);
+                }}
+              >
+                다시 검색
+              </Button>
+            </>
+          ) : !matches.length ? (
+            '검색한 직원이 없어요.'
+          ) : search.hasMore ? (
+            '검색 결과가 많아요. 상위 20명을 표시합니다. 이름이나 팀을 더 입력해주세요.'
+          ) : (
+            `${matches.length}명 검색됨`
+          )}
+        </div>
       </div>
     </fieldset>
   );

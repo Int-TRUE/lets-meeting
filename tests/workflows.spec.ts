@@ -41,6 +41,13 @@ async function user(page: Page, id: string) {
 test('토픽 creation, filters, owner editing and reload persistence', async ({ page }, info) => {
   await open(page);
   await page.getByRole('link', { name: '토픽 만들기', exact: true }).click();
+  await expect(page.locator('.people-options').getByRole('checkbox')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '전체 추가', exact: true })).toHaveCount(0);
+  const optionsBox = (await page.locator('.people-options').boundingBox())!;
+  const noticeBox = (await page.locator('.people-search-status').boundingBox())!;
+  expect(
+    Math.abs(optionsBox.x + optionsBox.width / 2 - noticeBox.x - noticeBox.width / 2),
+  ).toBeLessThan(2);
   await page.getByLabel(/^주제명/).fill('장기 협업 프로젝트');
   await page.getByLabel(/^한줄 설명/).fill('여러 회의를 하나의 흐름으로 관리합니다.');
   await page.locator('.people-picker').getByRole('searchbox').fill('이서준');

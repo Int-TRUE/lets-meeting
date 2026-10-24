@@ -198,6 +198,36 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
     Object.hasOwn(topic.roles, personId),
   );
   const selectedRoom = rooms.find((r) => r.id === draft.schedule.roomId)!;
+  const wizardActions = (
+    <>
+      <FormMessage error={error} />
+      <div className="form-actions wizard-actions">
+        <Button variant="text" onClick={close} disabled={busy}>
+          취소
+        </Button>
+        {draft.step > 0 ? (
+          <Button
+            variant="secondary"
+            onClick={() => patch({ step: draft.step - 1 })}
+            disabled={busy}
+          >
+            <ArrowLeft size={16} />
+            이전
+          </Button>
+        ) : null}
+        {draft.step < steps.length - 1 ? (
+          <Button onClick={next}>
+            다음
+            <ArrowRight size={16} />
+          </Button>
+        ) : (
+          <Button onClick={() => void save()} loading={busy}>
+            {editing ? '변경 저장' : '회의 생성'}
+          </Button>
+        )}
+      </div>
+    </>
+  );
   if (resultId)
     return (
       <div className="workflow-page">
@@ -310,6 +340,7 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
               onChange={(schedule) => patch({ schedule })}
               unavailable={unavailable}
               now={data.now}
+              actions={wizardActions}
             />
           ) : draft.step === 2 ? (
             <PeoplePicker
@@ -359,32 +390,7 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
               )}
             </div>
           )}
-          <FormMessage error={error} />
-          <div className="form-actions wizard-actions">
-            <Button variant="text" onClick={close} disabled={busy}>
-              취소
-            </Button>
-            {draft.step > 0 ? (
-              <Button
-                variant="secondary"
-                onClick={() => patch({ step: draft.step - 1 })}
-                disabled={busy}
-              >
-                <ArrowLeft size={16} />
-                이전
-              </Button>
-            ) : null}
-            {draft.step < steps.length - 1 ? (
-              <Button onClick={next}>
-                다음
-                <ArrowRight size={16} />
-              </Button>
-            ) : (
-              <Button onClick={() => void save()} loading={busy}>
-                {editing ? '변경 저장' : '회의 생성'}
-              </Button>
-            )}
-          </div>
+          {draft.step !== 1 ? wizardActions : null}
         </Card>
         <Card className="wizard-summary">
           <h2>미리보기</h2>

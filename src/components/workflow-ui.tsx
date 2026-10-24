@@ -97,9 +97,35 @@ export function PeoplePicker({
   }>({ query: '', people: [], hasMore: false });
   const [selectedPeople, setSelectedPeople] = useState<Person[]>(people);
   const [retry, setRetry] = useState(0);
+  const [topicPeople, setTopicPeople] = useState<Person[]>([]);
+  const [topicLoading, setTopicLoading] = useState(Boolean(topicId));
+  const [topicError, setTopicError] = useState('');
+  useEffect(() => {
+    if (!topicId) return;
+    let active = true;
+    setTopicLoading(true);
+    setTopicError('');
+    void previewService
+      .topicPeople(data.user.id, topicId)
+      .then((result) => {
+        if (active) {
+          setTopicPeople(result);
+        }
+      })
+      .catch(() => {
+        if (active) setTopicError('토픽 참여자를 불러오지 못했어요. 다시 시도해주세요.');
+      })
+      .finally(() => {
+        if (active) setTopicLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [topicId, data.user.id, retry]);
+  const availablePeople = topicId ? topicPeople : people;
   const term = query.trim();
   useEffect(() => {
-    if (!term) return;
+    if (topicId || !term) return;
     let active = true;
     const timer = setTimeout(() => {
       void previewService
@@ -122,8 +148,16 @@ export function PeoplePicker({
       clearTimeout(timer);
     };
   }, [term, topicId, data.user.id, retry]);
-  const loading = Boolean(term && search.query !== term);
-  const matches = term && !loading ? search.people : [];
+  const loading = !topicId && Boolean(term && search.query !== term);
+  const matches = topicId
+    ? availablePeople.filter((person) =>
+        `${person.name} ${person.team} ${person.position ?? ''}`
+          .toLocaleLowerCase()
+          .includes(term.toLocaleLowerCase()),
+      )
+    : term && !loading
+      ? search.people
+      : [];
   function select(p: Person, checked: boolean) {
     if (checked) rememberPeople([p]);
     if (checked)
@@ -144,9 +178,33 @@ export function PeoplePicker({
           placeholder="이름, 팀, 직책으로 검색"
         />
       </label>
+      {topicId ? (
+        <div className="people-picker-toolbar">
+          <span>
+            토픽 참여자 {availablePeople.length}명 · 선택 {value.length}명
+          </span>
+          <Button
+            variant="secondary"
+            disabled={
+              topicLoading ||
+              Boolean(topicError) ||
+              availablePeople.every((person) => value.includes(person.id))
+            }
+            onClick={() => {
+              rememberPeople(availablePeople);
+              onChange([...new Set([...value, ...availablePeople.map((person) => person.id)])]);
+            }}
+          >
+            전체 추가
+          </Button>
+        </div>
+      ) : null}
       <div className="selected-people">
         {value.map((pid) => {
-          const p = people.find((p) => p.id === pid) ?? selectedPeople.find((p) => p.id === pid);
+          const p =
+            availablePeople.find((p) => p.id === pid) ??
+            people.find((p) => p.id === pid) ??
+            selectedPeople.find((p) => p.id === pid);
           return p ? (
             <span className="person-chip" key={pid}>
               <PersonAvatar person={p} />
@@ -186,7 +244,24 @@ export function PeoplePicker({
           </label>
         ))}
         <div className="people-search-status" role="status">
-          {!term ? (
+          {topicId && topicLoading ? (
+            '토픽 참여자를 불러오고 있어요…'
+          ) : topicId && topicError ? (
+            <>
+              <p>{topicError}</p>
+              <Button variant="secondary" onClick={() => setRetry((n) => n + 1)}>
+                다시 불러오기
+              </Button>
+            </>
+          ) : topicId ? (
+            matches.length ? (
+              `${matches.length}명 표시됨`
+            ) : term ? (
+              '검색한 참여자가 없어요.'
+            ) : (
+              '토픽 참여자가 없어요.'
+            )
+          ) : !term ? (
             <>
               <Search size={24} />
               <strong>함께할 동료를 찾아보세요</strong>

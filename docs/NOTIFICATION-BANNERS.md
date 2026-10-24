@@ -16,3 +16,5 @@
 ## 2026-10-25 초대·리마인드
 
 내장 imagegen 편집 모드, `comic-v2/created.jpg` 참조. `public/notification-banners/comic-v3/created.jpg`는 기존 캐릭터·배경·포즈를 유지하고 문구만 “회의에 초대되었어요”로 교체했다. `comic-v3/reminder.jpg`는 같은 손그림 집사가 파란 알람시계를 들고 가리키며 “회의 시간을 확인해주세요!”라고 안내한다. 숫자를 이미지에 넣지 않고 실제 선택 시점을 메시지 텍스트로 제공한다. JPEG 가로 720px로 최적화하며 이전 메시지 경로는 보존한다.
+
+2026-10-25 문구 수정: 내장 imagegen 편집 모드로 리마인드 배너의 캐릭터·배경을 유지하고 대사를 정확히 “회의 리마인드 알림입니다”로 교체했다. `public/notification-banners/comic-v4/reminder.jpg`를 사용해 이전 이미지 캐시와 구분한다.

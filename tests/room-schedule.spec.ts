@@ -95,6 +95,7 @@ test('new Topic participant picker excludes outsiders and stale draft selections
   await expect(picker).not.toContainText('운영관리자');
   await picker.getByRole('searchbox').fill('박지우');
   await expect(picker.getByRole('checkbox')).toHaveCount(0);
+  await page.getByRole('button', { name: '다음', exact: true }).click();
   await page.getByRole('button', { name: '회의 생성', exact: true }).click();
   await expect(page.getByRole('heading', { name: '회의 생성이 완료되었어요!' })).toBeVisible();
 });

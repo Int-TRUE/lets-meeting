@@ -18,6 +18,8 @@ import {
   TextareaField,
 } from '../../components/workflow-ui';
 import { isoTime, SchedulePicker, type ScheduleValue } from './SchedulePicker';
+const steps = ['기본 정보', '장소·시간', '참가자 선택', '자료·알람 설정'];
+
 interface Draft {
   reminderMinutes: number[];
   title: string;
@@ -278,11 +280,11 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
           { label: topic.title, to: `/topics/${topic.id}` },
         ]}
       />
-      <Stepper steps={['기본 정보', '장소·시간', '참가자 / 자료']} current={draft.step} />
+      <Stepper steps={steps} current={draft.step} />
       <div className="wizard-grid">
         <Card>
           <h2 ref={heading} tabIndex={-1} className="step-heading">
-            {draft.step + 1}. {['기본 정보', '장소·시간', '참가자 / 자료'][draft.step]}
+            {draft.step + 1}. {steps[draft.step]}
           </h2>
           {draft.step === 0 ? (
             <div className="stack-form">
@@ -307,6 +309,14 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
               onChange={(schedule) => patch({ schedule })}
               unavailable={unavailable}
               now={data.now}
+            />
+          ) : draft.step === 2 ? (
+            <PeoplePicker
+              label="참가자"
+              people={directory.filter((person) => Object.hasOwn(topic.roles, person.id))}
+              value={participantIds}
+              onChange={(participantIds) => patch({ participantIds })}
+              lockedIds={[editing ? existing!.creatorId : data.user.id]}
             />
           ) : (
             <div className="stack-form">
@@ -345,13 +355,6 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
                   꺼집니다.
                 </p>
               </fieldset>
-              <PeoplePicker
-                label="참가자"
-                people={directory.filter((person) => Object.hasOwn(topic.roles, person.id))}
-                value={participantIds}
-                onChange={(participantIds) => patch({ participantIds })}
-                lockedIds={[editing ? existing!.creatorId : data.user.id]}
-              />
               {editing ? (
                 <p className="info-notice">자료는 회의 상세의 자료 탭에서 관리하세요.</p>
               ) : (
@@ -400,7 +403,7 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
                 이전
               </Button>
             ) : null}
-            {draft.step < 2 ? (
+            {draft.step < steps.length - 1 ? (
               <Button onClick={next}>
                 다음
                 <ArrowRight size={16} />

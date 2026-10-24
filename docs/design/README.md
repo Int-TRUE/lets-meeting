@@ -32,7 +32,7 @@
 | --- | --- | --- |
 | [01-brand-and-entry.png](assets/01-brand-and-entry.png) | 01–04 로그인·홈·검색·빈 홈 | 최신 로봇집사 이름·캐릭터. 모든 화면의 브랜드 기준 |
 | [02-topic-and-permissions.png](assets/02-topic-and-permissions.png) | 05–08 Topic·권한 | 구조 기준. 옛 이름·로고는 로봇집사로 교체 |
-| [03-meeting-creation.png](assets/03-meeting-creation.png) | 09–12 생성·예약 | 구조 기준. 단계 번호는 문서의 3단계로 수정 |
+| [03-meeting-creation.png](assets/03-meeting-creation.png) | 09–12 생성·예약 | 구조 기준. 단계 번호는 문서의 4단계로 수정 |
 | [04-meeting-lifecycle.png](assets/04-meeting-lifecycle.png) | 13–16 상세·자료·요약·취소 | 구조 기준. 완료와 취소 확인은 서로 다른 상태 |
 | [05-notifications-and-admin.png](assets/05-notifications-and-admin.png) | 17–20 알림·관리자 | 구조 기준. 필수 알림은 잠금, 보조 기능과 미정 연동 구분 |
 | [reference-home-v2-blue.png](assets/reference-home-v2-blue.png) | 모여 블루 콘셉트 | 홈 정보 구조 참고만. 모여 이름·외곽 마케팅 문구 사용 금지 |
@@ -41,7 +41,7 @@
 
 ## 이미지 해석 시 반드시 수정할 부분
 
-- 생성 흐름은 **기본 정보 → 장소·시간 → 참가자·자료** 3단계다. 완료 화면은 입력 단계가 아니다.
+- 생성 흐름은 **기본 정보 → 장소·시간 → 참가자 선택 → 자료·알람 설정** 4단계다. 완료 화면은 입력 단계가 아니다.
 - 회의 생성·변경·취소 알림은 항상 켜짐이며 비활성 스위치 또는 잠금 아이콘으로 표시한다.
 - Topic 생성자의 Owner와 개별 회의 생성자는 다른 개념이다. 참가자 선택에서 직급 또는 주최자라는 이유로 Owner를 부여하지 않는다.
 - 홈 인사말과 캐릭터가 겹치지 않게 캐릭터 영역을 분리한다. 헤더·카드 정보를 가리지 않는다.

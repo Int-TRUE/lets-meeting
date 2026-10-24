@@ -104,6 +104,7 @@ try {
     await page.getByRole('checkbox', { name: /김주영/ }).check();
     await page.getByRole('checkbox', { name: /박성민/ }).check();
     await page.screenshot({ path: output + '/staff-picker.png', fullPage: true });
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.getByRole('radio', { name: '자료 첨부', exact: true }).check();
     await page.getByLabel('회의 자료 선택', { exact: true }).setInputFiles({
       name: '배포검증.txt',

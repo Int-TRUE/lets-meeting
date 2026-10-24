@@ -155,3 +155,89 @@ describe.skipIf(!process.env.POSTGRES_TEST_URL)('real PostgreSQL transactions', 
     }
   }, 60_000);
 });
+
+it.skipIf(!process.env.POSTGRES_TEST_URL)(
+  'relay claims serialize across PostgreSQL connections and receipts survive reconnect',
+  async () => {
+    const { queueForRelay, handleRelayRequest } = await import('./mattermost-relay');
+    const url = process.env.POSTGRES_TEST_URL!;
+    const schema = 'butler_test_' + randomUUID().replaceAll('-', '');
+    const db = openPostgresDatabase(url, schema, url);
+    const other = openPostgresDatabase(url, schema, url);
+    const config = { token: 'a'.repeat(64), recipients: new Set(['sujin']) };
+    try {
+      await db.seed();
+      await other.seed();
+      configureTransactionAdapter(queueForRelay(db.transaction, config));
+      const topicId = await localService.createTopic(
+        'sujin',
+        { title: '중계 DB 검증', description: '시연', managerIds: [] },
+        randomUUID(),
+      );
+      const day = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+      const id = await localService.createMeeting(
+        'sujin',
+        {
+          topicId,
+          title: '중계 DB 회의',
+          description: '시연',
+          roomId: 'it-room',
+          start: day + 'T10:00:00+09:00',
+          end: day + 'T10:30:00+09:00',
+          participantIds: [],
+          material: 'none',
+          attachments: [],
+        },
+        randomUUID(),
+      );
+      const request = (body: unknown) =>
+        new Request('https://demo.example/api/mattermost-relay', {
+          method: 'POST',
+          headers: { authorization: `Bearer ${config.token}`, 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+      const claimId = randomUUID();
+      const results = await Promise.all([
+        handleRelayRequest(
+          request({ action: 'claim', claimId }),
+          async () => db.transaction,
+          config,
+        ),
+        handleRelayRequest(
+          request({ action: 'claim', claimId: randomUUID() }),
+          async () => other.transaction,
+          config,
+        ),
+      ]);
+      const bodies = await Promise.all(results.map((r) => r.json()));
+      expect(bodies.map((b) => b.jobs.length).sort()).toEqual([0, 1]);
+      const job = bodies.flatMap((b) => b.jobs)[0];
+      const ack = await handleRelayRequest(
+        request({
+          action: 'ack',
+          claimId: job.relay.claimId,
+          id: job.id,
+          result: 'sent',
+          postId: 'p'.repeat(26),
+        }),
+        async () => other.transaction,
+        config,
+      );
+      expect(ack.status).toBe(200);
+      configureTransactionAdapter(db.transaction);
+      expect(await localService.meetingDelivery('sujin', id)).toEqual([
+        { result: 'sent', event: 'created' },
+      ]);
+    } finally {
+      await db.close();
+      await other.close();
+      const cleanup = new Pool({ connectionString: url });
+      try {
+        await cleanup.query(`DROP SCHEMA "${schema}" CASCADE`);
+      } finally {
+        await cleanup.end();
+      }
+    }
+  },
+  60000,
+);

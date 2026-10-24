@@ -77,19 +77,13 @@ export function notificationMessage(log: DeliveryLog, appUrl: string) {
   ].join('\n\n');
 }
 class DeliveryError extends Error {
-  constructor(
-    readonly uncertain: boolean,
-    message: string,
-  ) {
+  readonly uncertain: boolean;
+  constructor(uncertain: boolean, message: string) {
     super(message);
+    this.uncertain = uncertain;
   }
 }
-export function createMattermostDelivery(
-  transaction: TransactionAdapter,
-  config: MattermostConfig,
-  fetcher: typeof fetch = fetch,
-) {
-  let queue: Promise<unknown> = Promise.resolve();
+export function createMattermostSender(config: MattermostConfig, fetcher: typeof fetch = fetch) {
   async function call(path: string, body: unknown, post = false) {
     let response: Response;
     try {
@@ -119,20 +113,7 @@ export function createMattermostDelivery(
       throw new DeliveryError(post, '매터모스트 응답을 확인하지 못했습니다.');
     }
   }
-  async function deliver(actor: string, id: string) {
-    const log = await transaction(
-      actor,
-      (state) => {
-        const log = state.logs.find((entry) => entry.id === id);
-        if (!log || log.result !== 'pending') return;
-        log.result = 'sending';
-        log.attemptedAt = new Date().toISOString();
-        log.detail = '매터모스트 전송 중입니다.';
-        return structuredClone(log);
-      },
-      true,
-    );
-    if (!log) return;
+  return async (log: DeliveryLog) => {
     let result: DeliveryLog['result'] = 'failed',
       detail = '',
       postId: string | undefined;
@@ -161,17 +142,41 @@ export function createMattermostDelivery(
       result = error instanceof DeliveryError && error.uncertain ? 'unknown' : 'failed';
       detail = error instanceof DeliveryError ? error.message : '알림 처리 중 오류가 발생했습니다.';
     }
+    return {
+      result,
+      detail,
+      postId,
+      ...(result === 'sent' ? { deliveredAt: new Date().toISOString() } : {}),
+    };
+  };
+}
+export function createMattermostDelivery(
+  transaction: TransactionAdapter,
+  config: MattermostConfig,
+  fetcher: typeof fetch = fetch,
+) {
+  let queue: Promise<unknown> = Promise.resolve();
+  const send = createMattermostSender(config, fetcher);
+  async function deliver(actor: string, id: string) {
+    const log = await transaction(
+      actor,
+      (state) => {
+        const log = state.logs.find((entry) => entry.id === id);
+        if (!log || log.result !== 'pending') return;
+        log.result = 'sending';
+        log.attemptedAt = new Date().toISOString();
+        log.detail = '매터모스트 전송 중입니다.';
+        return structuredClone(log);
+      },
+      true,
+    );
+    if (!log) return;
+    const outcome = await send(log);
     await transaction(
       actor,
       (state) => {
         const entry = state.logs.find((item) => item.id === id);
-        if (entry)
-          Object.assign(entry, {
-            result,
-            detail,
-            postId,
-            ...(result === 'sent' ? { deliveredAt: new Date().toISOString() } : {}),
-          });
+        if (entry) Object.assign(entry, outcome);
       },
       true,
     );

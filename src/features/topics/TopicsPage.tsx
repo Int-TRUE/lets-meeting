@@ -1,19 +1,12 @@
+import { MeetingSummary } from '../../components/MeetingSummary';
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { CalendarDays, ChevronRight, Plus, Settings } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronRight, Plus, Settings } from 'lucide-react';
 import { useUnsavedChanges, useWorkspace } from '../../app/WorkspaceContext';
 import { previewService } from '../../data/previewService';
 import { canCreateMeeting } from '../../domain/workflows';
-import { fullDate, meetingStatus, time } from '../../domain/selectors';
-import {
-  AvatarGroup,
-  Button,
-  Card,
-  EmptyState,
-  Field,
-  Modal,
-  StatusBadge,
-} from '../../components/ui';
+import { fullDate, time } from '../../domain/selectors';
+import { Button, Card, EmptyState, Field, Modal } from '../../components/ui';
 import { TopicCard } from '../../components/TopicCard';
 import {
   ConfirmDialog,
@@ -242,6 +235,7 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
   );
 }
 export function TopicDetail() {
+  const [expanded, setExpanded] = useState<string[]>([]);
   const { data } = useWorkspace();
   const { id } = useParams();
   const topic = data.topics.find((t) => t.id === id);
@@ -302,48 +296,42 @@ export function TopicDetail() {
         <span className="muted">{meetings.length}개</span>
       </div>
       {meetings.length ? (
-        <ol className="meeting-flow">
-          {meetings.map((m) => (
-            <li key={m.id}>
-              <Link
-                to={`/meetings/${m.id}`}
-                className={`card flow-card flow-${meetingStatus(m, data.now)}`}
-              >
-                <StatusBadge status={meetingStatus(m, data.now)} />
-                <h2>{m.title}</h2>
-                <p>
-                  <CalendarDays size={16} />
-                  {fullDate(m.start)}
-                </p>
-                <p>
-                  {time(m.start)} – {time(m.end)}
-                </p>
-                <p>{m.room}</p>
-                <div className="flow-participants">
-                  <AvatarGroup
-                    people={data.people.filter((p) => m.participantIds.includes(p.id))}
-                    max={5}
-                  />
-                  <span>참가자 {m.participantIds.length}명</span>
+        <ol className="meeting-history">
+          {meetings.map((m) => {
+            const open = expanded.includes(m.id);
+            return (
+              <li key={m.id} className={`history-card${open ? ' is-expanded' : ''}`}>
+                <div className="history-card-header">
+                  <button
+                    type="button"
+                    className="history-toggle"
+                    aria-expanded={open}
+                    aria-controls={`history-${m.id}`}
+                    aria-label={`${m.title} 요약 ${open ? '접기' : '펼치기'}`}
+                    onClick={() =>
+                      setExpanded((ids) =>
+                        open ? ids.filter((id) => id !== m.id) : [...ids, m.id],
+                      )
+                    }
+                  >
+                    <span className="history-title">{m.title}</span>
+                    <span className="history-date">
+                      <CalendarDays size={16} aria-hidden="true" />
+                      {fullDate(m.start)} · {time(m.start)}–{time(m.end)}
+                    </span>
+                    <ChevronDown className="history-chevron" size={20} aria-hidden="true" />
+                  </button>
+                  <Link to={`/meetings/${m.id}`} className="history-detail-link">
+                    상세보기
+                    <ChevronRight size={16} aria-hidden="true" />
+                  </Link>
                 </div>
-                <p className="flow-host">
-                  주최자 · {m.hostAtTime ?? data.people.find((p) => p.id === m.creatorId)?.name}
-                </p>
-                <div className="flow-summary">
-                  <strong>회의 요약</strong>
-                  <p>
-                    {m.summary?.decisions ||
-                      m.summary?.discussion ||
-                      '회의 후 요약이 등록되면 이곳에서 확인할 수 있어요.'}
-                  </p>
+                <div id={`history-${m.id}`} hidden={!open} className="history-expanded">
+                  {open ? <MeetingSummary meeting={m} /> : null}
                 </div>
-                <span className="text-link">
-                  회의 상세 보기
-                  <ChevronRight size={16} />
-                </span>
-              </Link>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ol>
       ) : (
         <Card>

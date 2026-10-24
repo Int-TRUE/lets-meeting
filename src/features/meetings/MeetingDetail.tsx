@@ -1,3 +1,4 @@
+import { MeetingSummary } from '../../components/MeetingSummary';
 import { MeetingDelivery } from '../../components/MeetingDelivery';
 import { useState } from 'react';
 import { RoomDirections } from '../../components/RoomDirections';
@@ -12,6 +13,9 @@ import {
   MapPin,
   Pencil,
   X,
+  Plus,
+  Trash2,
+  BellRing,
 } from 'lucide-react';
 import type { Attachment } from '../../domain/models';
 import { fullDate, meetingStatus, time } from '../../domain/selectors';
@@ -36,7 +40,6 @@ export function MeetingDetail() {
   const meeting = data.meetings.find((m) => m.id === id);
   const topic = data.topics.find((t) => t.id === meeting?.topicId);
   const tab = params.get('tab') ?? 'info';
-  const [pendingTasks, setPendingTasks] = useState<Record<string, boolean>>({});
   const [deliveryRefresh, setDeliveryRefresh] = useState(0);
   const [reminderResult, setReminderResult] = useState('');
   const [reminderRequest, setReminderRequest] = useState(() => crypto.randomUUID());
@@ -354,55 +357,7 @@ export function MeetingDetail() {
               <span className="badge status-completed">
                 {meeting.completed ? '완료된 요약' : '임시 저장'}
               </span>
-              <h3>주요 논의 내용</h3>
-              <p>{meeting.summary.discussion || '작성된 내용이 없어요.'}</p>
-              <h3>결정 사항</h3>
-              <p>{meeting.summary.decisions || '작성된 내용이 없어요.'}</p>
-              <h3>후속 할 일</h3>
-              {summaryTasks(meeting.summary).length ? (
-                <ul className="followup-list">
-                  {summaryTasks(meeting.summary).map((task) => (
-                    <li key={task.id}>
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={pendingTasks[task.id] ?? task.done}
-                          disabled={!canSummarize || busy}
-                          onChange={async (e) => {
-                            setPendingTasks({ [task.id]: e.target.checked });
-                            const tasks = summaryTasks(meeting.summary).map((t) =>
-                              t.id === task.id ? { ...t, done: e.target.checked } : t,
-                            );
-                            setBusy(true);
-                            setError('');
-                            try {
-                              await run(() =>
-                                previewService.saveSummary(
-                                  data.user.id,
-                                  meeting.id,
-                                  { ...meeting.summary!, tasks },
-                                  false,
-                                  meeting.revision ?? 0,
-                                ),
-                              );
-                            } catch (e) {
-                              setError(e instanceof Error ? e.message : '저장하지 못했어요.');
-                            } finally {
-                              setBusy(false);
-                              setPendingTasks({});
-                            }
-                          }}
-                        />
-                        <span style={{ textDecoration: task.done ? 'line-through' : undefined }}>
-                          {task.text}
-                        </span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>후속 작업이 없어요.</p>
-              )}
+              <MeetingSummary meeting={meeting} />
             </div>
           ) : (
             <EmptyState
@@ -422,7 +377,7 @@ export function MeetingDetail() {
           ) : null}
         </Card>
       )}
-      <Card>
+      <Card className="meeting-delivery-card">
         <MeetingDelivery
           meetingId={meeting.id}
           revision={(meeting.revision ?? 0) + deliveryRefresh}
@@ -448,6 +403,7 @@ export function MeetingDetail() {
               }
             }}
           >
+            <BellRing size={17} aria-hidden="true" />
             리마인드 알람 보내기
           </Button>
         ) : null}
@@ -604,9 +560,15 @@ export function SummaryEditor() {
             />
           ))}
           <fieldset className="followup-editor">
-            <legend>후속 할 일</legend>
+            <legend>후속 작업</legend>
+            <p className="task-hint">
+              회의에서 정한 할 일을 하나씩 추가하고 완료 여부를 표시하세요.
+            </p>
+            {!summary.tasks.length ? (
+              <p className="summary-empty">아직 추가한 작업이 없어요.</p>
+            ) : null}
             {summary.tasks.map((task, index) => (
-              <div className="followup-row" key={task.id}>
+              <div className={`followup-row${task.done ? ' is-done' : ''}`} key={task.id}>
                 <input
                   type="checkbox"
                   aria-label={`후속 작업 ${index + 1} 완료`}
@@ -621,6 +583,8 @@ export function SummaryEditor() {
                   }
                 />
                 <input
+                  className="followup-input"
+                  placeholder="해야 할 일을 입력해주세요"
                   aria-label={`후속 작업 ${index + 1}`}
                   value={task.text}
                   onChange={(e) =>
@@ -639,7 +603,7 @@ export function SummaryEditor() {
                     setSummary((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== task.id) }))
                   }
                 >
-                  삭제
+                  <Trash2 size={18} aria-hidden="true" />
                 </Button>
               </div>
             ))}
@@ -652,6 +616,7 @@ export function SummaryEditor() {
                 }))
               }
             >
+              <Plus size={17} aria-hidden="true" />
               후속 작업 추가
             </Button>
           </fieldset>

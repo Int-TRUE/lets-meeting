@@ -36,9 +36,9 @@ test('explicit new meeting starts empty even when an earlier draft exists', asyn
   await page.getByRole('button', { name: '회의 생성', exact: true }).click();
   await expect(page.getByRole('heading', { name: '회의 생성이 완료되었어요!' })).toBeVisible();
   await page.getByRole('link', { name: 'Topic으로 이동', exact: true }).click();
-  await expect(page.locator('.flow-card')).toHaveCount(3);
+  await expect(page.locator('.history-card')).toHaveCount(3);
   await expect(
-    page.locator('.flow-card').filter({ hasText: '전산기기 교체 · 2차 실무 회의' }),
+    page.locator('.history-card').filter({ hasText: '전산기기 교체 · 2차 실무 회의' }),
   ).toBeVisible();
   await page.getByRole('link', { name: '회의 만들기', exact: true }).click();
   await expect(page.getByLabel(/^회의명/)).toHaveValue('');

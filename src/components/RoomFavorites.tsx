@@ -40,20 +40,31 @@ export function useRoomFavorites() {
 export function FavoriteRoomButton({
   roomId,
   favorites,
+  compact = false,
+  roomName,
 }: {
   roomId: string;
+  compact?: boolean;
+  roomName?: string;
   favorites: ReturnType<typeof useRoomFavorites>;
 }) {
   const selected = favorites.ids.includes(roomId);
   return (
     <Button
-      variant="secondary"
+      variant={compact ? 'text' : 'secondary'}
+      className={compact ? 'room-favorite-star' : 'room-favorite-heading-button'}
+      aria-label={
+        compact
+          ? `${roomName ?? '회의실'} ${selected ? '즐겨찾기 해제' : '즐겨찾기 지정'}`
+          : undefined
+      }
+      title={compact ? (selected ? '즐겨찾기 해제' : '즐겨찾기 지정') : undefined}
       aria-pressed={selected}
       disabled={favorites.busy}
       onClick={() => void favorites.toggle(roomId)}
     >
-      <Star size={16} fill={selected ? 'currentColor' : 'none'} />
-      {selected ? '자주 사용하는 회의실 해제' : '자주 사용하는 회의실로 지정'}
+      <Star size={compact ? 24 : 18} aria-hidden="true" fill={selected ? 'currentColor' : 'none'} />
+      {compact ? null : selected ? '즐겨찾기 해제' : '즐겨찾기 지정'}
     </Button>
   );
 }

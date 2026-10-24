@@ -5,11 +5,11 @@ test('favorite rooms are reusable in the wizard and reminder settings survive sa
 }) => {
   await page.goto('/rooms');
   await page.getByLabel('센터', { exact: true }).selectOption('분당');
-  await page.getByRole('button', { name: '자주 사용하는 회의실로 지정', exact: true }).click();
-  await expect(page.getByRole('button', { name: '자주 사용하는 회의실 해제' })).toBeEnabled();
+  await page.getByRole('button', { name: '즐겨찾기 지정', exact: true }).click();
+  await expect(page.getByRole('button', { name: '즐겨찾기 해제', exact: true })).toBeEnabled();
   await page.reload();
   await page.getByLabel('센터', { exact: true }).selectOption('분당');
-  await expect(page.getByRole('button', { name: '자주 사용하는 회의실 해제' })).toHaveAttribute(
+  await expect(page.getByRole('button', { name: '즐겨찾기 해제', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
@@ -17,7 +17,8 @@ test('favorite rooms are reusable in the wizard and reminder settings survive sa
   await page.getByLabel(/^회의명/).fill('즐겨찾기 회의');
   await page.getByLabel(/^회의 내용·안건/).fill('리마인드 검증');
   await page.getByRole('button', { name: '다음', exact: true }).click();
-  await page.getByLabel('자주 사용하는 회의실만 보기').check();
+  await expect(page.getByLabel('자주 사용하는 회의실만 보기')).toHaveCount(0);
+  await page.getByRole('button', { name: '분당', exact: true }).click();
   await expect(page.locator('.room-list-item')).toHaveCount(1);
   await page.locator('.room-list-item').click();
   await expect(page.getByRole('region', { name: '회의실 정보' })).toContainText('분당');
@@ -90,4 +91,24 @@ test('noncreator does not get the manual reminder action', async ({ page }) => {
   await page.addInitScript(() => sessionStorage.setItem('robot-butler:preview-user:v1', 'park'));
   await page.goto('/meetings/equipment');
   await expect(page.getByRole('button', { name: '리마인드 알람 보내기' })).toHaveCount(0);
+});
+
+test('favorite rooms stay first without changing the selected room', async ({ page }) => {
+  await page.goto('/rooms');
+  const rows = page.locator('.room-list-item');
+  await expect(rows.first()).toContainText('3층 회의실 A');
+  await page.getByRole('button', { name: '명동 12층 회의실 즐겨찾기 지정', exact: true }).click();
+  await expect(rows.first()).toContainText('12층 회의실');
+  await expect(page.getByRole('region', { name: '회의실 정보' })).toContainText('3층 회의실 A');
+  await page.reload();
+  await expect(rows.first()).toContainText('12층 회의실');
+  await rows.first().click();
+  await expect(
+    page
+      .locator('.room-directions-heading')
+      .getByRole('button', { name: '즐겨찾기 해제', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: '명동 12층 회의실 즐겨찾기 해제', exact: true }).click();
+  await expect(rows.first()).toContainText('3층 회의실 A');
+  await expect(page.getByRole('region', { name: '회의실 정보' })).toContainText('12층 회의실');
 });

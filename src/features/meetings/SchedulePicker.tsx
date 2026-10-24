@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { RoomDirections } from '../../components/RoomDirections';
 import { useRoomFavorites, FavoriteRoomButton } from '../../components/RoomFavorites';
 import { compareRooms } from '../../domain/selectors';
@@ -27,7 +26,6 @@ export function SchedulePicker({
 }) {
   const { rooms } = useWorkspace();
   const favorites = useRoomFavorites();
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const selectedRoom = rooms.find((r) => r.id === value.roomId);
   const location = selectedRoom?.location ?? '명동';
   const slots = Array.from(
@@ -78,54 +76,52 @@ export function SchedulePicker({
             </button>
           ))}
         </div>
-        <label>
-          <input
-            type="checkbox"
-            checked={favoritesOnly}
-            onChange={(e) => setFavoritesOnly(e.target.checked)}
-          />{' '}
-          자주 사용하는 회의실만 보기
-        </label>
         {favorites.error ? <p role="alert">{favorites.error}</p> : null}
         <div className="rooms-list">
           {rooms
-            .filter(
-              (r) =>
-                r.active &&
-                (favoritesOnly ? favorites.ids.includes(r.id) : r.location === location),
+            .filter((r) => r.active && r.location === location)
+            .toSorted(
+              (a, b) =>
+                Number(favorites.ids.includes(b.id)) - Number(favorites.ids.includes(a.id)) ||
+                compareRooms(a, b),
             )
-            .toSorted(compareRooms)
             .map((r) => (
-              <button
-                type="button"
-                className="room-list-item"
-                key={r.id}
-                aria-pressed={value.roomId === r.id}
-                onClick={() => roomChange(r)}
-              >
-                <MapPin size={24} />
-                <span>
-                  <strong>
-                    {favorites.ids.includes(r.id) ? '★ ' : ''}
-                    {r.location} · {r.name}
-                  </strong>
-                  <small>
-                    {r.floor} · 수용 {r.capacity}명
-                  </small>
-                </span>
-              </button>
+              <div className="room-list-row" key={r.id}>
+                <button
+                  type="button"
+                  className="room-list-item"
+                  aria-pressed={value.roomId === r.id}
+                  onClick={() => roomChange(r)}
+                >
+                  <MapPin size={24} />
+                  <span>
+                    <strong>
+                      {r.location} · {r.name}
+                    </strong>
+                    <small>
+                      {r.floor} · 수용 {r.capacity}명
+                    </small>
+                  </span>
+                </button>
+                <FavoriteRoomButton
+                  compact
+                  roomId={r.id}
+                  roomName={`${r.location} ${r.name}`}
+                  favorites={favorites}
+                />
+              </div>
             ))}
         </div>
-        {favoritesOnly && !favorites.ids.length ? (
-          <p>자주 사용하는 회의실을 지정하면 여기서 바로 선택할 수 있어요.</p>
-        ) : null}
         {selectedRoom ? (
           <Card className="room-details">
-            <RoomDirections room={selectedRoom} title="회의실 정보" />
+            <RoomDirections
+              room={selectedRoom}
+              title="회의실 정보"
+              actions={<FavoriteRoomButton roomId={selectedRoom.id} favorites={favorites} />}
+            />
             <p>
               {selectedRoom.floor} · 수용 {selectedRoom.capacity}명
             </p>
-            <FavoriteRoomButton roomId={selectedRoom.id} favorites={favorites} />
           </Card>
         ) : null}
       </section>

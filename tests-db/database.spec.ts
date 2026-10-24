@@ -49,6 +49,8 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
   await page.getByLabel(/^주제명/).fill('첫 회의 테스트');
   await page.getByLabel(/^한줄 설명/).fill('빈 상태에서 시작하는 회의 생성');
   await page.getByRole('checkbox', { name: /장우석/ }).check();
+  await page.getByRole('checkbox', { name: /김주영/ }).check();
+  await page.getByRole('checkbox', { name: /박성민/ }).check();
   await page.getByRole('button', { name: 'Topic 만들기', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: '첫 회의 테스트' })).toBeVisible();
   await page.getByRole('link', { name: '회의 만들기', exact: true }).click();
@@ -60,9 +62,9 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
   await page.getByRole('button', { name: '14:00 예약 가능', exact: true }).click();
   await page.getByRole('button', { name: '다음', exact: true }).click();
   const picker = page.locator('.people-picker');
-  await expect(picker.getByRole('checkbox')).toHaveCount(24);
+  await expect(picker.getByRole('checkbox')).toHaveCount(4);
   await picker.getByRole('searchbox').fill('CMS개발팀');
-  await expect(picker.getByRole('checkbox')).toHaveCount(5);
+  await expect(picker.getByRole('checkbox')).toHaveCount(1);
   await picker.getByRole('checkbox', { name: /김주영/ }).check();
   await picker.getByRole('searchbox').fill('박성민');
   await expect(picker.getByRole('checkbox')).toHaveCount(1);
@@ -99,6 +101,19 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
     path: 'test-results/clean-workspace/shared-meeting.png',
     fullPage: true,
   });
+  await other.goto('/rooms');
+  await other.locator('.room-list-item').filter({ hasText: '9층 대회의실' }).click();
+  await other.getByRole('button', { name: new RegExp(`^${date}, 회의`) }).click();
+  await expect(other.locator('.room-agenda')).toContainText('처음 만드는 회의');
+  await page.route('**/api/demo/roomSchedule', (route) =>
+    route.fulfill({ status: 500, json: { error: 'test' } }),
+  );
+  await page.goto('/rooms');
+  await expect(page.getByRole('alert')).toContainText('회의실 일정을 불러오지 못했어요');
+  await expect(page.locator('.room-agenda')).not.toContainText('표시할 예정 회의가 없어요');
+  await page.unroute('**/api/demo/roomSchedule');
+  await page.getByRole('button', { name: '다시 시도', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
   const forbidden = await request.post('/api/demo/snapshot', { data: ['employee-01'] });
   expect(forbidden.status()).toBe(400);
   await second.close();

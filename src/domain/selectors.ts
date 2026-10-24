@@ -1,4 +1,4 @@
-import type { Meeting, MeetingStatus, Topic, Workspace } from './models.js';
+import type { Meeting, MeetingStatus, Room, Topic, Workspace } from './models.js';
 export const TIME_ZONE = 'Asia/Seoul';
 export function meetingStatus(meeting: Meeting, now: string): MeetingStatus {
   if (meeting.cancelled) return 'cancelled';
@@ -98,4 +98,17 @@ export function searchWorkspace(data: Workspace, query: string) {
       ]),
     ),
   };
+}
+
+/** Numeric floor order, including basements; ties remain predictable across centers. */
+export function compareRooms(a: Room, b: Room) {
+  const floor = (value: string) => {
+    const number = Number(value.match(/\d+/)?.[0] ?? 0);
+    return /^(B|지하|-)/i.test(value.trim()) ? -number : number;
+  };
+  return (
+    floor(a.floor) - floor(b.floor) ||
+    a.location.localeCompare(b.location, 'ko') ||
+    a.name.localeCompare(b.name, 'ko', { numeric: true })
+  );
 }

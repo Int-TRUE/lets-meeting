@@ -118,7 +118,7 @@ test('normal users have no admin menu or fake unread count; required notificatio
   await expect(page.getByRole('switch', { name: /회의 생성|일시|회의 취소/ })).toHaveCount(0);
 });
 
-test('switching example users recalculates visibility and does not grant roles from attendance', async ({
+test('switching example users recalculates visibility without granting management to attendees', async ({
   page,
 }) => {
   await home(page);
@@ -130,8 +130,9 @@ test('switching example users recalculates visibility and does not grant roles f
   await expect(page.locator('.summary-notice')).toHaveCount(0);
   await page.getByLabel('예시 사용자').selectOption('park');
   await expect(page.getByRole('heading', { name: /박지우님/ })).toBeVisible();
-  await expect(page.locator('.topic-card')).toHaveCount(0);
-  await expect(page.locator('.timeline>li')).toHaveCount(0);
+  await expect(page.locator('.topic-card')).toHaveCount(1);
+  await expect(page.locator('.topic-card')).not.toContainText('관리자');
+  await expect(page.locator('.timeline>li')).toHaveCount(1);
 });
 test('menu and navigation work on each screen size', async ({ page }) => {
   await home(page);

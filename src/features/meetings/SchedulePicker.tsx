@@ -1,3 +1,4 @@
+import { compareRooms } from '../../domain/selectors';
 import { Check, Clock3, MapPin } from 'lucide-react';
 import type { Room } from '../../domain/models';
 import { previewPolicy } from '../../domain/workflows';
@@ -60,7 +61,7 @@ export function SchedulePicker({
     <div className="schedule-picker">
       <section>
         <h2>회의실 선택</h2>
-        <div className="segmented" role="group" aria-label="사업장">
+        <div className="segmented" role="group" aria-label="센터">
           {(['명동', '분당'] as const).map((name) => (
             <button
               type="button"
@@ -75,6 +76,7 @@ export function SchedulePicker({
         <div className="room-options">
           {rooms
             .filter((r) => r.location === location)
+            .toSorted(compareRooms)
             .map((r) => (
               <button
                 type="button"

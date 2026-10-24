@@ -60,6 +60,12 @@ try {
   await expect(page.getByRole('heading', { level: 1 })).toContainText('정수진');
   await page.locator('img').evaluateAll((images) => Promise.all(images.map((img) => img.decode())));
   await page.screenshot({ path: output + '/home.png', fullPage: true });
+  await page.goto('/rooms');
+  await expect(page.getByLabel('센터', { exact: true })).toBeVisible();
+  await expect(page.getByRole('group', { name: '회의실 일정 달력' })).toBeVisible();
+  await expect(page.locator('.room-agenda h3')).toContainText(/예정 회의 \d+개/);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await page.screenshot({ path: output + '/rooms.png', fullPage: true });
   if (process.env.DEPLOYMENT_WRITE_TEST === 'true') {
     // The caller must verify this is a Preview deployment before enabling writes.
     assert.notEqual(target.hostname, 'robot-butler.vercel.app');
@@ -68,7 +74,7 @@ try {
       {
         title: '배포 검증 ' + randomUUID().slice(0, 8),
         description: '빈 DB의 첫 회의·참가자·자료 검증',
-        managerIds: ['wooseok'],
+        managerIds: ['wooseok', 'jooyoung', 'employee-01'],
       },
       randomUUID(),
     ]);
@@ -80,7 +86,7 @@ try {
     await page.getByLabel('회의 일자 *').fill(date);
     await page.getByRole('button', { name: '14:00 예약 가능', exact: true }).click();
     await page.getByRole('button', { name: '다음', exact: true }).click();
-    await expect(page.locator('.people-picker').getByRole('checkbox')).toHaveCount(24);
+    await expect(page.locator('.people-picker').getByRole('checkbox')).toHaveCount(4);
     await page.getByRole('checkbox', { name: /김주영/ }).check();
     await page.getByRole('checkbox', { name: /박성민/ }).check();
     await page.screenshot({ path: output + '/staff-picker.png', fullPage: true });
@@ -102,6 +108,14 @@ try {
       output + '/created-records.json',
       JSON.stringify({ origin: target.origin, topicId, meetingId }),
     );
+    const outsiderRows = await rpc('roomSchedule', [
+      'taeheon',
+      catalog.rooms[0].id,
+      date.slice(0, 7),
+    ]);
+    assert.ok(outsiderRows.some((row) => row.id === meetingId && row.canOpen === false));
+    const outsiderSnapshot = await rpc('snapshot', ['taeheon']);
+    assert.ok(!outsiderSnapshot.meetings.some((row) => row.id === meetingId));
     const otherContext = await newContext('jooyoung');
     const other = await otherContext.newPage();
     other.setDefaultTimeout(30_000);

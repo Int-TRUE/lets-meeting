@@ -147,7 +147,9 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
       roomId: draft.schedule.roomId,
       start: isoTime(draft.schedule.date, draft.schedule.startTime),
       end: isoTime(draft.schedule.date, draft.schedule.endTime),
-      participantIds: draft.participantIds,
+      participantIds: draft.participantIds.filter((personId) =>
+        Object.hasOwn(topic!.roles, personId),
+      ),
       material: editing ? existing!.material : draft.material,
       attachments: editing ? (existing!.attachments ?? []) : attachments,
     };
@@ -181,6 +183,9 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
       setBusy(false);
     }
   }
+  const participantIds = draft.participantIds.filter((personId) =>
+    Object.hasOwn(topic.roles, personId),
+  );
   const selectedRoom = rooms.find((r) => r.id === draft.schedule.roomId)!;
   if (resultId)
     return (
@@ -206,9 +211,9 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
               </dd>
               <dt>참가자</dt>
               <dd>
-                {draft.participantIds.length}명 ·{' '}
+                {participantIds.length}명 ·{' '}
                 {directory
-                  .filter((p) => draft.participantIds.includes(p.id))
+                  .filter((p) => participantIds.includes(p.id))
                   .map((p) => p.name)
                   .join(', ')}
               </dd>
@@ -299,8 +304,8 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
             <div className="stack-form">
               <PeoplePicker
                 label="참가자"
-                people={directory}
-                value={draft.participantIds}
+                people={directory.filter((person) => Object.hasOwn(topic.roles, person.id))}
+                value={participantIds}
                 onChange={(participantIds) => patch({ participantIds })}
                 lockedIds={[editing ? existing!.creatorId : data.user.id]}
               />
@@ -394,9 +399,9 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
             </dd>
             <dt>참가자</dt>
             <dd>
-              {draft.participantIds.length}명 ·{' '}
+              {participantIds.length}명 ·{' '}
               {directory
-                .filter((p) => draft.participantIds.includes(p.id))
+                .filter((p) => participantIds.includes(p.id))
                 .map((p) => p.name)
                 .join(', ')}
             </dd>

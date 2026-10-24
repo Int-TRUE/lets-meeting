@@ -70,7 +70,7 @@ test('desktop reference captures across the approved screen flow', async ({
   await capture('04-empty');
   await open('/topics');
   await capture('05-topics');
-  await page.getByRole('link', { name: 'Topic 만들기', exact: true }).click();
+  await page.getByRole('link', { name: '토픽 만들기', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await capture('06-topic-create');
   await page.getByRole('button', { name: '닫기', exact: true }).click();

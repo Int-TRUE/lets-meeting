@@ -21,7 +21,7 @@ const rpc = async (method, args) => {
 const directoryResponse = await fetch(new URL('/api/demo/directory', target), { headers: auth });
 assert.equal(directoryResponse.status, 200);
 const catalog = await directoryResponse.json();
-assert.equal(catalog.people.length, 24);
+assert.equal(catalog.people.length, 4);
 assert.deepEqual(
   catalog.people
     .filter((p) => p.isTestAccount)
@@ -100,8 +100,10 @@ try {
     await page.getByLabel('회의 일자 *').fill(date);
     await page.getByRole('button', { name: '14:00 예약 가능', exact: true }).click();
     await page.getByRole('button', { name: '다음', exact: true }).click();
-    await expect(page.locator('.people-picker').getByRole('checkbox')).toHaveCount(4);
+    await expect(page.locator('.people-picker').getByRole('checkbox')).toHaveCount(0);
+    await page.getByLabel('참가자 검색').fill('김주영');
     await page.getByRole('checkbox', { name: /김주영/ }).check();
+    await page.getByLabel('참가자 검색').fill('박성민');
     await page.getByRole('checkbox', { name: /박성민/ }).check();
     await page.screenshot({ path: output + '/staff-picker.png', fullPage: true });
     await page.getByRole('button', { name: '다음', exact: true }).click();

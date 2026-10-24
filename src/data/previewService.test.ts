@@ -22,7 +22,7 @@ beforeEach(async () => {
   });
 });
 describe('transactional preview workflow', () => {
-  it('persists Topic creation and assigns Owner and Master without arbitrary limits', async () => {
+  it('persists 토픽 creation and assigns Owner and Master without arbitrary limits', async () => {
     const id = await previewService.createTopic(
       'kim',
       {
@@ -44,7 +44,7 @@ describe('transactional preview workflow', () => {
       ),
     ).toBe(id);
   });
-  it('enforces Topic owner editing and does not remove existing managers', async () => {
+  it('enforces 토픽 owner editing and does not remove existing managers', async () => {
     await expect(
       previewService.updateTopic('lee', 'system', {
         title: '변경',
@@ -210,14 +210,14 @@ describe('transactional preview workflow', () => {
   });
 });
 
-it('rejects outsiders on create and update without expanding Topic membership', async () => {
+it('rejects outsiders on create and update without expanding 토픽 membership', async () => {
   await expect(
     previewService.createMeeting('kim', input({ participantIds: ['ops'] }), 'outsider'),
-  ).rejects.toThrow('Topic에 포함된');
+  ).rejects.toThrow('토픽에 포함된');
   const id = await previewService.createMeeting('kim', input(), 'valid');
   await expect(
     previewService.updateMeeting('kim', id, input({ participantIds: ['ops'] }), 0),
-  ).rejects.toThrow('Topic에 포함된');
+  ).rejects.toThrow('토픽에 포함된');
   const snapshot = await previewService.snapshot('kim');
   expect(snapshot.topics.find((topic) => topic.id === 'system')?.roles.ops).toBeUndefined();
   expect(snapshot.meetings.find((meeting) => meeting.id === id)?.participantIds).toEqual([
@@ -284,7 +284,7 @@ it('lets attendees write and revise shared summaries, including after completion
   );
 });
 
-it('does not grant summary editing to a nonparticipant Topic manager', () => {
+it('does not grant summary editing to a nonparticipant 토픽 manager', () => {
   const db = initialDatabase();
   db.topics.find((topic) => topic.id === 'brand')!.roles.lee = 'Master';
   expect(() =>
@@ -312,12 +312,12 @@ it('persists favorites per user and preserves them when notification preferences
 it('stores meeting reminder choices and only permits the creator to send manual reminders idempotently', async () => {
   const id = await previewService.createMeeting(
     'kim',
-    input({ reminderMinutes: [30, 5, 3] }),
+    input({ reminderMinutes: [1440, 60, 30, 5, 3] }),
     'reminders',
   );
   expect(
     (await previewService.snapshot('kim')).meetings.find((m) => m.id === id)?.reminderMinutes,
-  ).toEqual([30, 5, 3]);
+  ).toEqual([1440, 60, 30, 5, 3]);
   await expect(previewService.sendReminder('lee', id, 'not-host')).rejects.toThrow('주최자');
   await previewService.sendReminder('kim', id, 'once');
   await previewService.sendReminder('kim', id, 'once');
@@ -347,4 +347,30 @@ it('stores checklist state, preserves completed status and rejects stale summary
   await expect(previewService.saveSummary('kim', 'strategy', summary, false, 1)).rejects.toThrow(
     '다른 창',
   );
+});
+
+it('deletes only the creator’s attachment with revision checks and restores pending material state', async () => {
+  const id = await previewService.createMeeting('kim', input(), 'delete-file');
+  const file = {
+    id: 'test-file',
+    name: '자료.txt',
+    type: 'text/plain',
+    size: 3,
+    authorId: '',
+    updatedAt: '',
+    blob: new Blob(['abc']),
+  };
+  await previewService.addFiles('kim', id, [file], 0);
+  await expect(previewService.deleteFile('park', id, file.id, 1)).rejects.toThrow('권한');
+  await expect(previewService.deleteFile('kim', id, file.id, 0)).rejects.toThrow();
+  await expect(previewService.download('kim', id, file.id)).resolves.toMatchObject({
+    name: file.name,
+  });
+  await previewService.deleteFile('kim', id, file.id, 1);
+  const meeting = (await previewService.snapshot('kim')).meetings.find((m) => m.id === id)!;
+  expect(meeting.attachments).toEqual([]);
+  expect(meeting.files).toEqual([]);
+  expect(meeting.material).toBe('pending');
+  await expect(previewService.download('kim', id, file.id)).rejects.toThrow();
+  await expect(previewService.deleteFile('kim', id, file.id, 2)).rejects.toThrow();
 });

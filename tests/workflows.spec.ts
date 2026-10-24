@@ -12,6 +12,7 @@ async function createMeeting(page: Page, title = '테스트 협업 회의', uplo
   await page.getByRole('button', { name: '14:00 예약 가능', exact: true }).click();
   await page.getByRole('button', { name: '14:30 예약 가능', exact: true }).click();
   await page.getByRole('button', { name: '다음', exact: true }).click();
+  await page.locator('.people-picker').getByRole('searchbox').fill('박지우');
   await page.getByRole('checkbox', { name: /박지우/ }).check();
   await page.getByRole('button', { name: '다음', exact: true }).click();
   if (upload) {
@@ -37,19 +38,20 @@ async function user(page: Page, id: string) {
   await page.getByLabel('예시 사용자').selectOption(id);
   await expect(page.getByRole('status', { name: '홈 정보를 불러오는 중' })).toHaveCount(0);
 }
-test('Topic creation, filters, owner editing and reload persistence', async ({ page }, info) => {
+test('토픽 creation, filters, owner editing and reload persistence', async ({ page }, info) => {
   await open(page);
-  await page.getByRole('link', { name: 'Topic 만들기', exact: true }).click();
+  await page.getByRole('link', { name: '토픽 만들기', exact: true }).click();
   await page.getByLabel(/^주제명/).fill('장기 협업 프로젝트');
   await page.getByLabel(/^한줄 설명/).fill('여러 회의를 하나의 흐름으로 관리합니다.');
+  await page.locator('.people-picker').getByRole('searchbox').fill('이서준');
   await page.getByRole('checkbox', { name: /이서준/ }).check();
-  await page.getByRole('button', { name: 'Topic 만들기', exact: true }).click();
+  await page.getByRole('button', { name: '토픽 만들기', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: '장기 협업 프로젝트' })).toBeVisible();
   await expect(page.getByText('Owner', { exact: true })).toBeVisible();
   const url = page.url();
   await page.reload();
   await expect(page.getByRole('heading', { level: 1, name: '장기 협업 프로젝트' })).toBeVisible();
-  await page.getByRole('link', { name: 'Topic 설정', exact: true }).click();
+  await page.getByRole('link', { name: '토픽 설정', exact: true }).click();
   await page.getByLabel(/^주제명/).fill('새 이름의 협업 프로젝트');
   await page.getByRole('button', { name: '변경 저장', exact: true }).click();
   await expect(
@@ -61,7 +63,7 @@ test('Topic creation, filters, owner editing and reload persistence', async ({ p
   await expect(page.locator('.topic-card')).toHaveCount(3);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
-test('Topic modal keeps inputs when discarding is declined', async ({ page }) => {
+test('토픽 modal keeps inputs when discarding is declined', async ({ page }) => {
   await open(page, '/topics/new');
   await page.getByLabel(/^주제명/).fill('저장 전 주제');
   await page.getByRole('button', { name: '닫기', exact: true }).click();
@@ -196,9 +198,7 @@ test('Attendee and other Master cannot access privileged creation or settings ro
   await expect(page.getByRole('heading', { name: '이 정보에 접근할 수 없어요' })).toBeVisible();
 });
 
-test('meeting edit, file registration and replacement respect actor permissions', async ({
-  page,
-}) => {
+test('meeting edit, file registration and deletion respect actor permissions', async ({ page }) => {
   const url = await createMeeting(page, '수정 전 회의');
   await page.getByRole('link', { name: '회의 수정', exact: true }).click();
   await page.getByLabel(/^회의명/).fill('수정된 회의');
@@ -217,12 +217,12 @@ test('meeting edit, file registration and replacement respect actor permissions'
     .setInputFiles({ name: '초안.txt', mimeType: 'text/plain', buffer: Buffer.from('draft') });
   await page.getByRole('button', { name: '자료 등록', exact: true }).click();
   await expect(page.getByRole('button', { name: '자료 1', exact: true })).toBeVisible();
-  await page
-    .getByLabel('초안.txt 교체', { exact: true })
-    .setInputFiles({ name: '최종안.txt', mimeType: 'text/plain', buffer: Buffer.from('final') });
-  await page.getByRole('button', { name: '교체 저장', exact: true }).click();
-  await expect(page.getByText('최종안.txt', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '초안.txt 삭제', exact: true }).click();
+  await page.getByRole('button', { name: '자료 삭제', exact: true }).click();
+  await expect(page.getByText('자료 등록 예정', { exact: true })).toBeVisible();
   await expect(page.getByText('초안.txt', { exact: true })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('button', { name: '자료 0', exact: true })).toBeVisible();
   await user(page, 'park');
   await expect(page.getByRole('heading', { level: 1, name: '수정된 회의' })).toBeVisible();
   await expect(page.getByRole('button', { name: '자료 등록', exact: true })).toHaveCount(0);

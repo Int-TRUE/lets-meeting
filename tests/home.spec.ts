@@ -72,7 +72,7 @@ test('empty meetings preserve existing Topics; fully empty home never fabricates
   await expect(page.getByRole('heading', { name: '아직 예정된 회의가 없어요' })).toBeVisible();
   await expect(page.locator('.topic-card')).toHaveCount(3);
   await setState(page, 'empty');
-  await expect(page.getByRole('heading', { name: '아직 참여 중인 Topic이 없어요' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '아직 참여 중인 토픽이 없어요' })).toBeVisible();
   await expect(page.locator('.topic-card')).toHaveCount(0);
   await page.screenshot({
     path: `test-results/empty-${test.info().project.name}.png`,
@@ -141,16 +141,16 @@ test('menu and navigation work on each screen size', async ({ page }) => {
     await expect(page.getByRole('dialog')).toBeVisible();
     await page
       .getByRole('navigation', { name: '모바일 메뉴' })
-      .getByRole('link', { name: 'Topic', exact: true })
+      .getByRole('link', { name: '토픽', exact: true })
       .click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
   } else {
     await page
       .getByRole('navigation', { name: '주 메뉴' })
-      .getByRole('link', { name: 'Topic', exact: true })
+      .getByRole('link', { name: '토픽', exact: true })
       .click();
   }
   await expect(page).toHaveURL(/\/topics$/);
-  await expect(page.getByRole('heading', { name: 'Topic', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '토픽', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

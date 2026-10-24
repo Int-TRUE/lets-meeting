@@ -17,7 +17,7 @@ import { Button, Modal } from '../components/ui';
 import type { Person } from '../domain/models';
 const baseNavItems = [
   { to: '/', label: '홈', icon: Home },
-  { to: '/topics', label: 'Topic', icon: FolderOpen },
+  { to: '/topics', label: '토픽', icon: FolderOpen },
   { to: '/rooms', label: '회의실', icon: CalendarDays },
   { to: '/settings/notifications', label: '알림 설정', icon: Bell },
 ];

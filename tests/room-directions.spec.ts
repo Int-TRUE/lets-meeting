@@ -31,6 +31,12 @@ test('registered room selection updates the uncropped route illustration and lab
     expect(await image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(1000);
   }
   await page.locator('.room-list-item').filter({ hasText: '9층 대회의실' }).click();
+  await expect(guide.getByText('대표사진 등록 예정')).toBeVisible();
+  await guide.getByRole('button', { name: '회의실 가는 법 크게 보기' }).click();
+  await expect(page.getByRole('dialog', { name: '회의실 가는 법', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(guide.getByRole('button', { name: '회의실 가는 법 크게 보기' })).toBeFocused();
   await page.screenshot({
     path: `test-results/room-directions-${testInfo.project.name}.png`,
     fullPage: true,

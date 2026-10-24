@@ -48,8 +48,8 @@ export function MeetingDetail() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [files, setFiles] = useState<Attachment[]>([]);
-  const [replacement, setReplacement] = useState<{ file: File; id: string }>();
-  useUnsavedChanges(files.length > 0 || Boolean(replacement));
+  const [deletingFile, setDeletingFile] = useState<Attachment>();
+  useUnsavedChanges(files.length > 0);
   if (!meeting || !topic) return <Denied />;
   const status = meetingStatus(meeting, data.now);
   const editable = canEditMeeting(topic, meeting, data.user.id) && status === 'scheduled';
@@ -99,30 +99,22 @@ export function MeetingDetail() {
       setError(e instanceof Error ? e.message : '다운로드하지 못했어요.');
     }
   }
-  async function replace(file: File, attachmentId: string) {
+  async function deleteFile() {
+    if (busy || !deletingFile) return;
     setBusy(true);
     setError('');
     try {
       await run(() =>
-        previewService.replaceFile(
+        previewService.deleteFile(
           data.user.id,
           meeting!.id,
-          attachmentId,
-          {
-            id: crypto.randomUUID(),
-            name: file.name,
-            type: file.type || '파일',
-            size: file.size,
-            authorId: data.user.id,
-            updatedAt: data.now,
-            blob: file,
-          },
+          deletingFile.id,
           meeting!.revision ?? 0,
         ),
       );
-      setReplacement(undefined);
+      setDeletingFile(undefined);
     } catch (e) {
-      setError(e instanceof Error ? e.message : '교체하지 못했어요. 원본은 유지됩니다.');
+      setError(e instanceof Error ? e.message : '삭제하지 못했어요. 다시 시도해주세요.');
     } finally {
       setBusy(false);
     }
@@ -143,7 +135,7 @@ export function MeetingDetail() {
       <PageHeading
         title={meeting.title}
         crumbs={[
-          { label: 'Topic', to: '/topics' },
+          { label: '토픽', to: '/topics' },
           { label: topic.title, to: `/topics/${topic.id}` },
         ]}
         actions={
@@ -287,19 +279,17 @@ export function MeetingDetail() {
                     다운로드
                   </Button>
                   {canUpload ? (
-                    <label className="replace-file">
-                      교체
-                      <input
-                        type="file"
-                        aria-label={`${file.name} 교체`}
-                        disabled={busy}
-                        onChange={(e) => {
-                          const f = e.target.files?.[0];
-                          if (f) setReplacement({ file: f, id: file.id });
-                          e.target.value = '';
-                        }}
-                      />
-                    </label>
+                    <Button
+                      variant="text"
+                      disabled={busy}
+                      aria-label={`${file.name} 삭제`}
+                      onClick={() => {
+                        setError('');
+                        setDeletingFile(file);
+                      }}
+                    >
+                      <Trash2 size={16} /> 삭제
+                    </Button>
                   ) : null}
                 </li>
               ))}
@@ -315,31 +305,21 @@ export function MeetingDetail() {
               }
             />
           )}{' '}
-          {replacement ? (
-            <div className="info-notice">
-              <p>교체할 파일: {replacement.file.name}</p>
-              <div className="form-actions">
-                <Button
-                  variant="secondary"
-                  onClick={() => setReplacement(undefined)}
-                  disabled={busy}
-                >
-                  교체 취소
-                </Button>
-                <Button
-                  onClick={() => void replace(replacement.file, replacement.id)}
-                  loading={busy}
-                >
-                  교체 저장
-                </Button>
-              </div>
-            </div>
+          {deletingFile ? (
+            <ConfirmDialog
+              title="회의 자료를 삭제할까요?"
+              description={`${deletingFile.name} 파일을 삭제합니다. 마지막 자료를 삭제하면 등록 예정으로 표시됩니다.`}
+              actionLabel="자료 삭제"
+              danger
+              busy={busy}
+              error={error}
+              onClose={() => setDeletingFile(undefined)}
+              onConfirm={() => void deleteFile()}
+            />
           ) : null}
           {canUpload ? (
             <div className="upload-section">
-              <p className="muted">
-                자료 편집 정책 확정 전, 미리보기에서는 회의 생성자만 등록·교체할 수 있습니다.
-              </p>
+              <p className="muted">회의 생성자가 자료를 등록하거나 삭제할 수 있어요.</p>
               <FilePicker value={files} onChange={setFiles} />
               <div className="form-actions">
                 <Button onClick={() => void upload()} loading={busy} disabled={!files.length}>
@@ -512,7 +492,7 @@ export function SummaryEditor() {
         title="회의 후 요약 작성"
         description={meeting.title}
         crumbs={[
-          { label: topic?.title ?? 'Topic', to: `/topics/${meeting.topicId}` },
+          { label: topic?.title ?? '토픽', to: `/topics/${meeting.topicId}` },
           { label: '회의 상세', to: `/meetings/${id}` },
         ]}
       />

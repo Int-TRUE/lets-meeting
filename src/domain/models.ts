@@ -72,6 +72,7 @@ export interface Attachment {
   downloadable?: boolean;
 }
 export interface Room {
+  photoUrl?: string;
   id: string;
   name: string;
   location: '명동' | '분당';

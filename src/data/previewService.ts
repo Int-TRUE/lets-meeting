@@ -116,6 +116,42 @@ async function transact<T>(
 const now = (data: PreviewDatabase) => data.now ?? fixture.now;
 const directory = (data: PreviewDatabase) => data.people ?? people;
 export const localService = {
+  searchPeople(userId: string, query: string, topicId?: string) {
+    return transact(
+      userId,
+      (data) => {
+        if (typeof query !== 'string') throw new RuleError('검색어를 확인해주세요.');
+        const term = query.trim().toLocaleLowerCase('ko-KR');
+        const topic = topicId ? requireTopic(data, topicId, userId) : undefined;
+        if (topic && !canCreateMeeting(topic, userId))
+          throw new RuleError('참가자를 검색할 권한이 없어요.');
+        if (!term) return { people: [], hasMore: false };
+        const matches = directory(data).filter(
+          (p) =>
+            (!topic || Object.hasOwn(topic.roles, p.id)) &&
+            `${p.name} ${p.team} ${p.position ?? ''}`.toLocaleLowerCase('ko-KR').includes(term),
+        );
+        return { people: matches.slice(0, 20), hasMore: matches.length > 20 };
+      },
+      false,
+    );
+  },
+  deleteFile(userId: string, id: string, attachmentId: string, revision: number) {
+    return transact(userId, (data) => {
+      const { meeting } = requireMeeting(data, id, userId);
+      requireRevision(meeting, revision);
+      if (meeting.creatorId !== userId || meeting.cancelled || meeting.completed)
+        throw new RuleError('자료를 삭제할 권한이 없어요.');
+      if (!meeting.attachments?.some((a) => a.id === attachmentId))
+        throw new RuleError('최신 자료 목록을 다시 확인해주세요.');
+      meeting.attachments = meeting.attachments.filter((a) => a.id !== attachmentId);
+      meeting.files = meeting.attachments.map((a) => a.name);
+      meeting.material = meeting.attachments.length ? 'uploaded' : 'pending';
+      meeting.revision = revision + 1;
+      recordEvent(data, meeting, 'materials', now(data));
+      return id;
+    });
+  },
   favoriteRooms(userId: string) {
     return transact(userId, (data) => data.preferences[userId]?.favoriteRoomIds ?? [], false);
   },
@@ -305,7 +341,7 @@ export const localService = {
   ) {
     return transact(userId, (data) => {
       const topic = requireTopic(data, id, userId);
-      if (topic.roles[userId] !== 'Owner') throw new RuleError('Topic 소유자만 변경할 수 있어요.');
+      if (topic.roles[userId] !== 'Owner') throw new RuleError('토픽 소유자만 변경할 수 있어요.');
       if (!input.title.trim() || !input.description.trim())
         throw new RuleError('주제명과 설명을 입력해주세요.');
       if (
@@ -332,7 +368,7 @@ export const localService = {
         throw new RuleError('회의 관리자만 회의를 만들 수 있어요.');
       validateInput(input, data);
       if (input.participantIds.some((id) => !Object.hasOwn(topic.roles, id)))
-        throw new RuleError('Topic에 포함된 사람만 참가자로 선택할 수 있어요.');
+        throw new RuleError('토픽에 포함된 사람만 참가자로 선택할 수 있어요.');
       validateSchedule(data, input.roomId, input.start, input.end, now(data));
       input.attachments.forEach(validateAttachment);
       const id = crypto.randomUUID();
@@ -379,7 +415,7 @@ export const localService = {
         throw new RuleError('이 회의를 수정할 수 없어요.');
       validateInput(input, data);
       if (input.participantIds.some((id) => !Object.hasOwn(topic.roles, id)))
-        throw new RuleError('Topic에 포함된 사람만 참가자로 선택할 수 있어요.');
+        throw new RuleError('토픽에 포함된 사람만 참가자로 선택할 수 있어요.');
       const ongoing = Date.parse(meeting.start) <= Date.parse(now(data));
       if (
         ongoing &&

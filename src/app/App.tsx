@@ -181,7 +181,21 @@ export function App() {
         />
       ) : result.data ? (
         <>
-          <WorkspaceContext key={userId} value={{ data: result.data, directory, rooms, run }}>
+          <WorkspaceContext
+            key={userId}
+            value={{
+              data: result.data,
+              directory: [
+                ...new Map([...directory, ...result.data.people].map((p) => [p.id, p])).values(),
+              ],
+              rememberPeople: (people) =>
+                setDirectory((current) => [
+                  ...new Map([...current, ...people].map((p) => [p.id, p])).values(),
+                ]),
+              rooms,
+              run,
+            }}
+          >
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/" element={<HomePage workspace={result.data} />} />

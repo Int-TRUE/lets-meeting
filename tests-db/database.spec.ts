@@ -11,7 +11,7 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
       sessionStorage.setItem('robot-butler:preview-user:v1', 'me');
   });
   const catalog = await (await request.get('/api/demo/directory')).json();
-  expect(catalog.people).toHaveLength(24);
+  expect(catalog.people).toHaveLength(4);
   expect(catalog.people.filter((p: { isTestAccount?: boolean }) => p.isTestAccount)).toHaveLength(
     4,
   );
@@ -25,7 +25,7 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
     await page.getByRole('button', { name: `${name}으로 시작` }).click();
     await expect(page.getByRole('heading', { level: 1 })).toContainText(name);
     await expect(page.getByText('아직 예정된 회의가 없어요')).toBeVisible();
-    await expect(page.getByText('아직 참여 중인 Topic이 없어요')).toBeVisible();
+    await expect(page.getByText('아직 참여 중인 토픽이 없어요')).toBeVisible();
     await expect(page.getByRole('link', { name: '관리자 관리', exact: true })).toHaveCount(
       name === '김태헌' ? 1 : 0,
     );
@@ -45,13 +45,16 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
   await page.getByRole('button', { name: '정수진으로 시작' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('정수진');
   await page.screenshot({ path: 'test-results/clean-workspace/empty-home.png', fullPage: true });
-  await page.getByRole('link', { name: 'Topic 만들기', exact: true }).first().click();
+  await page.getByRole('link', { name: '토픽 만들기', exact: true }).first().click();
   await page.getByLabel(/^주제명/).fill('첫 회의 테스트');
   await page.getByLabel(/^한줄 설명/).fill('빈 상태에서 시작하는 회의 생성');
+  await page.locator('.people-picker').getByRole('searchbox').fill('장우석');
   await page.getByRole('checkbox', { name: /장우석/ }).check();
+  await page.locator('.people-picker').getByRole('searchbox').fill('김주영');
   await page.getByRole('checkbox', { name: /김주영/ }).check();
+  await page.locator('.people-picker').getByRole('searchbox').fill('박성민');
   await page.getByRole('checkbox', { name: /박성민/ }).check();
-  await page.getByRole('button', { name: 'Topic 만들기', exact: true }).click();
+  await page.getByRole('button', { name: '토픽 만들기', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: '첫 회의 테스트' })).toBeVisible();
   await page.getByRole('link', { name: '회의 만들기', exact: true }).click();
   await page.getByLabel(/^회의명/).fill('처음 만드는 회의');
@@ -62,7 +65,7 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
   await page.getByRole('button', { name: '14:00 예약 가능', exact: true }).click();
   await page.getByRole('button', { name: '다음', exact: true }).click();
   const picker = page.locator('.people-picker');
-  await expect(picker.getByRole('checkbox')).toHaveCount(4);
+  await expect(picker.getByRole('checkbox')).toHaveCount(0);
   await picker.getByRole('searchbox').fill('CMS개발팀');
   await expect(picker.getByRole('checkbox')).toHaveCount(1);
   await picker.getByRole('checkbox', { name: /김주영/ }).check();

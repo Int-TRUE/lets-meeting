@@ -6,6 +6,7 @@ test('favorite rooms are reusable in the wizard and reminder settings survive sa
   await page.goto('/rooms');
   await page.getByLabel('센터', { exact: true }).selectOption('분당');
   await page.getByRole('button', { name: '자주 사용하는 회의실로 지정', exact: true }).click();
+  await expect(page.getByRole('button', { name: '자주 사용하는 회의실 해제' })).toBeEnabled();
   await page.reload();
   await page.getByLabel('센터', { exact: true }).selectOption('분당');
   await expect(page.getByRole('button', { name: '자주 사용하는 회의실 해제' })).toHaveAttribute(
@@ -27,6 +28,7 @@ test('favorite rooms are reusable in the wizard and reminder settings survive sa
   await expect(page.getByLabel('자동 리마인드 켜기')).toHaveCount(0);
   await expect(page.getByRole('radio', { name: '자료 없음', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '회의 생성', exact: true })).toHaveCount(0);
+  await page.locator('.people-picker').getByRole('searchbox').fill('박지우');
   await page.getByRole('checkbox', { name: /박지우/ }).check();
   await page.getByRole('button', { name: '다음', exact: true }).click();
   await expect(page.getByRole('heading', { name: '4. 자료·알람 설정' })).toBeVisible();
@@ -34,7 +36,10 @@ test('favorite rooms are reusable in the wizard and reminder settings survive sa
   await page.getByRole('radio', { name: '자료 없음', exact: true }).check();
   await page.getByLabel('자동 리마인드 켜기').check();
   await page.getByLabel('5분 전', { exact: true }).check();
+  await page.getByLabel('하루 전', { exact: true }).check();
+  await page.getByLabel('1시간 전', { exact: true }).check();
   await page.getByRole('button', { name: '이전', exact: true }).click();
+  await page.getByLabel('참가자 검색').fill('박지우');
   await expect(page.getByRole('checkbox', { name: /박지우/ })).toBeChecked();
   await page.getByRole('button', { name: '다음', exact: true }).click();
   await expect(page.getByRole('radio', { name: '자료 없음', exact: true })).toBeChecked();
@@ -55,6 +60,8 @@ test('favorite rooms are reusable in the wizard and reminder settings survive sa
   await expect(page.getByLabel('30분 전', { exact: true })).toBeChecked();
   await expect(page.getByLabel('5분 전', { exact: true })).toBeChecked();
   await expect(page.getByLabel('3분 전', { exact: true })).not.toBeChecked();
+  await expect(page.getByLabel('하루 전', { exact: true })).toBeChecked();
+  await expect(page.getByLabel('1시간 전', { exact: true })).toBeChecked();
   await page.screenshot({
     path: `test-results/reminder-settings-${test.info().project.name}.png`,
     fullPage: true,

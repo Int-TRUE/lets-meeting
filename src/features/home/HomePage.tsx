@@ -39,10 +39,10 @@ export function HomePage({ workspace }: { workspace: Workspace }) {
                 description="새로운 주제로 좋은 대화를 시작해보세요."
               >
                 <Link className="button button-secondary" to="/topics">
-                  Topic 둘러보기
+                  토픽 둘러보기
                 </Link>
                 <Link className="button button-primary" to="/topics/new">
-                  Topic 만들기
+                  토픽 만들기
                   <Plus size={16} />
                 </Link>
               </EmptyState>
@@ -114,7 +114,7 @@ export function HomePage({ workspace }: { workspace: Workspace }) {
       <section className="topics-section" aria-labelledby="topics-heading">
         <div className="section-heading">
           <h2 id="topics-heading">
-            나의 Topic<span className="section-note">진행 중인 주제에서 이어보세요.</span>
+            나의 토픽<span className="section-note">진행 중인 주제에서 이어보세요.</span>
           </h2>
           <Link to="/topics" className="text-link">
             전체 보기
@@ -130,7 +130,7 @@ export function HomePage({ workspace }: { workspace: Workspace }) {
               <span className="create-topic-icon">
                 <Plus size={25} />
               </span>
-              <h3>Topic 만들기</h3>
+              <h3>토픽 만들기</h3>
               <p>
                 새로운 주제로
                 <br />
@@ -142,11 +142,11 @@ export function HomePage({ workspace }: { workspace: Workspace }) {
           <Card>
             <EmptyState
               compact
-              title="아직 참여 중인 Topic이 없어요"
-              description="관심 있는 주제를 둘러보거나 새로운 Topic을 만들어보세요."
+              title="아직 참여 중인 토픽이 없어요"
+              description="관심 있는 주제를 둘러보거나 새로운 토픽을 만들어보세요."
             >
               <Link className="button button-primary" to="/topics/new">
-                Topic 만들기
+                토픽 만들기
                 <Plus size={16} />
               </Link>
             </EmptyState>

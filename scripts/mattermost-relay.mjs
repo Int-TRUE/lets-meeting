@@ -1,5 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
-import { mkdirSync, chmodSync } from 'node:fs';
+import { mkdirSync, chmodSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { createServer } from 'node:net';
 import { randomUUID } from 'node:crypto';
@@ -147,6 +147,10 @@ async function main() {
       let busy = false;
       try {
         busy = await tick();
+        if (process.env.MATTERMOST_RELAY_HEARTBEAT)
+          writeFileSync(process.env.MATTERMOST_RELAY_HEARTBEAT, new Date().toISOString(), {
+            mode: 0o600,
+          });
         if (failures) console.log('중계 연결 복구');
         failures = 0;
       } catch {

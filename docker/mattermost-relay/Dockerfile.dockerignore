@@ -1,0 +1,10 @@
+**
+!package.json
+!scripts/
+!scripts/mattermost-relay.mjs
+!server/
+!server/mattermost.ts
+!docker/
+!docker/mattermost-relay/
+!docker/mattermost-relay/Dockerfile
+!docker/mattermost-relay/Dockerfile.dockerignore

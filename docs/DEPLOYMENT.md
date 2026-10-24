@@ -44,3 +44,5 @@
 실제 발송은 Mac의 Vite/SQLite 서버에서만 활성화한다. Vercel에는 봇 비밀값을 추가하지 않으며 상태 조회·표시만 반영한다. Mac 서버를 외부에 노출하거나 Production의 가짜 세션으로 DM을 발송하지 않는다. 구성·검증·실패 처리는 [Mattermost 안내](MATTERMOST.md)를 따른다.
 
 2026-10-24 중계 기능 후속: `api/mattermost-relay.ts`가 인증된 claim/ack를 제공하고 `api/demo.ts`는 활성화된 환경에서만 기존 PostgreSQL의 JSON 발송 기록에 대기를 저장한다. 스키마 변경은 없다. Production은 시연 참가자 허용 목록과 별도 중계 Secret을 사용하며 실제 봇 토큰은 Mac에만 보관한다. Preview는 `task/mattermost-relay`에 한정한 별도 Secret으로 검증한다. 기동·장애 복구는 [Mattermost 안내](MATTERMOST.md)를 따른다.
+
+2026-10-24 Docker 중계기 전환: 기존 Vercel 중계 API·인증값은 유지한다. Mac의 중계기를 `relay` 컨테이너로 옮기고 매터모스트·DB와 함께 `restart: always`를 적용한다. `relay_state` 볼륨에 발송 기록을 보존하고, 정상 서버 조회 후 갱신하는 heartbeat로 Docker 건강 상태를 표시한다. 시작 파일은 Compose 실행 후 종료되며 터미널 유지가 필요 없다.

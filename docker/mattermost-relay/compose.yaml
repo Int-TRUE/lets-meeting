@@ -1,0 +1,36 @@
+# Use after the Mac's private base compose file. Relative paths resolve from that file.
+services:
+  postgres:
+    restart: always
+  mattermost:
+    restart: always
+  relay:
+    image: robot-butler-mattermost-relay:local
+    build:
+      context: ..
+      dockerfile: docker/mattermost-relay/Dockerfile
+    restart: always
+    init: true
+    stop_grace_period: 90s
+    depends_on:
+      mattermost:
+        condition: service_started
+    env_file:
+      - relay.env
+    environment:
+      MATTERMOST_DOCKER_NETWORK: 'true'
+      MATTERMOST_URL: http://mattermost:8065
+      MATTERMOST_RELAY_JOURNAL: /state/relay.sqlite
+      MATTERMOST_RELAY_HEARTBEAT: /state/heartbeat
+    volumes:
+      - relay_state:/state
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      options:
+        max-size: '5m'
+        max-file: '2'
+volumes:
+  relay_state:

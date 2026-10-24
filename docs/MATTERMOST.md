@@ -38,12 +38,18 @@ Vercel은 Mac의 `localhost`에 직접 접속하지 않는다. 사용자 요청�
 
 ### 시연 시작과 종료
 
-1. Mac에서 프로젝트의 `start-mattermost-demo.command`를 더블 클릭한다. Docker Desktop을 열고 기존 Mattermost/PostgreSQL 컨테이너를 시작한 다음 중계기를 실행한다.
-2. 터미널의 `로봇집사 중계 시작` 메시지를 확인하고 창을 켜둔다. 중계 중에는 유휴 잠자기를 방지한다. 덮개를 닫거나 강제 잠자기로 전환하면 중계는 중단된다.
-3. https://robot-butler.vercel.app 에서 회의를 생성·변경·취소한다. http://localhost:8065 의 `robot-butler` DM에서 확인한다. 정수진은 기존 `inttrue` 계정이다. 발송 결과는 회의 화면의 새로고침으로 확인한다.
-4. Ctrl+C로 중계기를 종료한다. 컨테이너도 필요 없으면 Docker Desktop에서 정지한다. 볼륨과 `data/mattermost-relay.sqlite`는 삭제하지 않는다.
+현재 시연 구성은 Docker Desktop의 `robot-butler-mattermost` 그룹 아래 `postgres`, `mattermost`, `relay` 세 컨테이너다. **Docker Desktop을 시작하면 세 컨테이너가 자동으로 다시 시작된다.** 수동으로 정지한 상태에서 Docker를 계속 실행 중이라면 그룹의 시작 버튼을 누른다. 컨테이너를 삭제한 경우에는 아래 시작 파일로 다시 생성한다. 볼륨은 삭제하지 않는다.
 
-터미널로 시작하려면 프로젝트 폴더에서 `npm run mattermost:relay`를 실행한다. 로컬 로봇집사 개발 서버는 필요 없다. Node.js 22.14 이상을 사용한다. 중계기는 이 맥의 127.0.0.1:8066 포트를 잠금 용도로 사용해 중복 실행을 막고, 해당 포트로 요청을 처리하지 않는다.
+1. 처음 설치하거나 코드를 갱신한 뒤에는 프로젝트의 `start-mattermost-demo.command`를 더블 클릭한다. Docker Desktop을 열고 세 컨테이너를 생성·갱신한다. Mac에 Node.js를 별도로 실행할 필요가 없다.
+2. Docker Desktop에서 `relay`가 실행 중이고 건강 상태가 healthy인지 확인한다. 정상적인 인증·서버 조회에 성공하면 건강 상태가 갱신된다. 시작 직후에는 starting으로 표시될 수 있다.
+3. https://robot-butler.vercel.app 에서 회의를 생성·변경·취소한다. http://localhost:8065 의 `robot-butler` DM에서 확인한다. 정수진은 기존 `inttrue` 계정이다. 발송 결과는 회의 화면의 새로고침으로 확인한다.
+4. 시작 파일의 터미널 창은 닫아도 된다. 종료하려면 Docker Desktop에서 그룹 전체를 정지하거나 Docker Desktop을 종료한다. Mac의 잠자기·덮개 닫힘 상태에서는 중계도 중단되므로 시연 중에는 맥을 깨어 있게 둔다.
+
+Docker의 `restart: always` 정책을 사용하므로 수동 정지한 컨테이너도 다음 Docker 재시작 때 다시 시작된다. macOS 로그인 시 Docker 자체를 자동 실행하는 설정까지 변경한 것은 아니다. [Docker 재시작 정책](https://docs.docker.com/engine/containers/start-containers-automatically/) 참고.
+
+구성은 비공개 `.env.mattermost-local/compose.yaml`에 저장된 기존 서버 설정과 `docker/mattermost-relay/compose.yaml`의 중계 설정을 함께 사용한다. 발송 기록은 `robot-butler-mattermost_relay_state` Docker 볼륨에 유지한다. 이미지에는 두 개의 실행 소스와 package.json만 포함하고 비밀값은 실행 시 주입한다. 외부 포트와 Docker 소켓을 중계기에 공개하지 않는다.
+
+개발용으로 `npm run mattermost:relay`도 남아 있지만 Docker 중계기와 동시에 실행하지 않는다. 컨테이너와 호스트의 발송 기록은 서로 다른 저장소이며, 전환 시 기존 중계기를 먼저 정상 종료하고 기록을 이관해야 한다. 기존 Mac 기록은 `data/relay-production.sqlite`에 보존한다.
 
 ### 설정
 
@@ -57,6 +63,6 @@ Vercel은 Mac의 `localhost`에 직접 접속하지 않는다. 사용자 요청�
 - 평상시 약 5초마다 확인하고, 대기 작업이 있으면 연속으로 처리한다. 네트워크 실패 시 최대 30초 간격으로 재접속한다.
 - Mac·Docker가 꺼져 있으면 아직 가져가지 않은 알림은 서버에 대기한다. 재실행 시 순서대로 처리한다. 미연결 상태로 기록된 과거 알림은 소급 발송하지 않는다.
 - 서버 DB 잠금으로 한 번에 한 작업만 선점한다. 여러 중계기가 실행돼도 동일 작업을 동시에 가져가지 않는다. 선점 응답을 잃으면 같은 요청 ID로 복구한다.
-- Mac의 SQLite 기록에 발송 시도 전 상태와 발송 후 결과를 저장한다. 결과 보고가 실패하면 결과만 다시 올리며 DM은 재전송하지 않는다.
+- 중계기 SQLite 기록(Docker 볼륨)에 발송 시도 전 상태와 발송 후 결과를 저장한다. 결과 보고가 실패하면 결과만 다시 올리며 DM은 재전송하지 않는다.
 - DM 전송 중 종료·타임아웃처럼 실제 도착 여부를 확정할 수 없으면 `결과 확인 필요`로 기록한다. 2분간 결과가 없는 선점은 다음 조회 때 같은 상태로 전환한다. 자동 재전송하지 않으므로 실제 DM 확인이 필요하다. 이는 외부 전송과 DB 기록 사이의 장애로 인한 중복을 피하기 위한 처리다.
 - 생성·변경·취소만 지원한다. 자료·요약·리마인드와 실패 DM의 수동 재전송은 기존 미정 정책을 유지한다.

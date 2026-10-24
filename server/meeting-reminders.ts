@@ -77,6 +77,7 @@ export function scheduleReminders(db: PreviewDatabase, now: number) {
       m.cancelled ||
       m.completed ||
       now >= Date.parse(m.end) ||
+      (log.event === 'start-check' && now >= Date.parse(m.start) + 5 * 60000) ||
       m.start !== log.payload?.start ||
       (log.event === 'end-reminder' && m.end !== log.payload?.end) ||
       (log.event === 'late' && !m.participantIds.includes(log.recipientId))

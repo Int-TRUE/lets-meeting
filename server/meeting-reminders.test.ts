@@ -140,3 +140,12 @@ test('text stays accessible, banners are limited, tickets cannot be altered or u
   expect(() => verifyInteraction(ticket, 'wrong')).toThrow();
   expect(() => verifyInteraction(signInteraction({ expires: 0 }, 'secret'), 'secret')).toThrow();
 });
+
+test('a queued start prompt expires when the relay backlog exceeds five minutes', () => {
+  const db = fixture();
+  scheduleReminders(db, at('10:00'));
+  db.logs[0].result = 'pending';
+  scheduleReminders(db, at('10:06'));
+  expect(db.logs[0].result).toBe('failed');
+  expect(db.logs).toHaveLength(1);
+});

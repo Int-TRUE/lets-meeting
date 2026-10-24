@@ -185,7 +185,14 @@ export function notificationProps(log: DeliveryLog, config: MattermostConfig) {
       });
     if (log.event === 'end-reminder')
       for (const minutes of log.payload?.extensions ?? [])
-        actions.push(action(`extend${minutes}`, `${minutes}분 연장하기`, 'extend', { minutes }));
+        actions.push(
+          action(
+            `extend${minutes}`,
+            minutes === 60 ? '1시간 연장하기' : '30분 연장하기',
+            'extend',
+            { minutes },
+          ),
+        );
   }
   return {
     robot_butler_delivery_id: log.id,

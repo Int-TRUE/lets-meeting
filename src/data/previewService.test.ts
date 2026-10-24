@@ -108,9 +108,18 @@ describe('transactional preview workflow', () => {
     await expect(
       previewService.createMeeting('kim', input({ topicId: 'team' }), 'a'),
     ).rejects.toThrow('관리자');
-    const other = await previewService.createMeeting('choi', input({ topicId: 'brand' }), 'other');
+    const other = await previewService.createMeeting(
+      'choi',
+      input({ topicId: 'brand', participantIds: ['kim', 'choi'] }),
+      'other',
+    );
     await expect(
-      previewService.updateMeeting('kim', other, input({ topicId: 'brand' }), 0),
+      previewService.updateMeeting(
+        'kim',
+        other,
+        input({ topicId: 'brand', participantIds: ['kim', 'choi'] }),
+        0,
+      ),
     ).rejects.toThrow('수정');
     await expect(previewService.cancelMeeting('lee', 'equipment', 1)).rejects.toThrow(
       '변경되었습니다',
@@ -199,4 +208,44 @@ describe('transactional preview workflow', () => {
       previewService.savePreferences('park', { ...saved, reminders: ['임의'] }),
     ).rejects.toThrow('리마인드');
   });
+});
+
+it('rejects outsiders on create and update without expanding Topic membership', async () => {
+  await expect(
+    previewService.createMeeting('kim', input({ participantIds: ['ops'] }), 'outsider'),
+  ).rejects.toThrow('Topic에 포함된');
+  const id = await previewService.createMeeting('kim', input(), 'valid');
+  await expect(
+    previewService.updateMeeting('kim', id, input({ participantIds: ['ops'] }), 0),
+  ).rejects.toThrow('Topic에 포함된');
+  const snapshot = await previewService.snapshot('kim');
+  expect(snapshot.topics.find((topic) => topic.id === 'system')?.roles.ops).toBeUndefined();
+  expect(snapshot.meetings.find((meeting) => meeting.id === id)?.participantIds).toEqual([
+    'kim',
+    'park',
+  ]);
+});
+it('exposes room schedule summaries to nonmembers without disclosing meeting contents', async () => {
+  const rows = await previewService.roomSchedule('ops', 'md-9', '2026-10');
+  expect(rows.find((meeting) => meeting.id === 'equipment')).toMatchObject({
+    title: '전산기기 교체 · 2차 실무 회의',
+    hostName: '이서준',
+    canOpen: false,
+  });
+  expect(
+    rows.every(
+      (meeting) =>
+        !('description' in meeting) &&
+        !('attachments' in meeting) &&
+        !('participantIds' in meeting),
+    ),
+  ).toBe(true);
+  expect((await previewService.snapshot('ops')).meetings).toHaveLength(0);
+  await previewService.cancelMeeting('lee', 'equipment', 0);
+  expect(
+    (await previewService.roomSchedule('ops', 'md-9', '2026-10')).some(
+      (meeting) => meeting.id === 'equipment',
+    ),
+  ).toBe(false);
+  expect(await previewService.roomSchedule('ops', 'md-9', '2026-11')).toEqual([]);
 });

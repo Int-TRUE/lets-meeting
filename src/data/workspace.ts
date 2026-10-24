@@ -28,7 +28,14 @@ export const fixture: Workspace = {
       description: '더 나은 업무 환경을 위한\n전산 장비 교체 프로젝트',
       icon: 'monitor',
       tone: 'blue',
-      roles: { kim: 'Owner', lee: 'Master' },
+      roles: {
+        kim: 'Owner',
+        lee: 'Master',
+        park: 'Attendee',
+        choi: 'Attendee',
+        jung: 'Attendee',
+        yoon: 'Attendee',
+      },
     },
     {
       id: 'brand',
@@ -36,7 +43,7 @@ export const fixture: Workspace = {
       description: '우리다운 브랜드를 함께 만드는\n2026 브랜드 리뉴얼 프로젝트',
       icon: 'chart',
       tone: 'mint',
-      roles: { kim: 'Master', choi: 'Owner' },
+      roles: { kim: 'Master', choi: 'Owner', jung: 'Attendee' },
     },
     {
       id: 'team',

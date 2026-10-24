@@ -8,8 +8,9 @@ import type {
   Summary,
   Workspace,
 } from '../domain/models.js';
-import { visibleWorkspace } from '../domain/selectors.js';
+import { dateKey, meetingStatus, visibleWorkspace } from '../domain/selectors.js';
 import {
+  canReadMeeting,
   canCreateMeeting,
   canEditMeeting,
   defaultPreferences,
@@ -114,6 +115,40 @@ async function transact<T>(
 const now = (data: PreviewDatabase) => data.now ?? fixture.now;
 const directory = (data: PreviewDatabase) => data.people ?? people;
 export const localService = {
+  roomSchedule(userId: string, roomId: string, month: string) {
+    return transact(
+      userId,
+      (data) => {
+        const room = (data.rooms ?? rooms).find((item) => item.id === roomId);
+        if (!room || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month))
+          throw new RuleError('회의실과 조회 월을 확인해주세요.');
+        return data.meetings
+          .filter(
+            (meeting) =>
+              (meeting.roomId
+                ? meeting.roomId === roomId
+                : meeting.room === `${room.location} · ${room.name}`) &&
+              dateKey(meeting.start).startsWith(month) &&
+              meetingStatus(meeting, now(data)) === 'scheduled',
+          )
+          .toSorted((a, b) => Date.parse(a.start) - Date.parse(b.start))
+          .map((meeting) => {
+            const topic = data.topics.find((item) => item.id === meeting.topicId);
+            return {
+              id: meeting.id,
+              title: meeting.title,
+              start: meeting.start,
+              end: meeting.end,
+              hostName:
+                directory(data).find((person) => person.id === meeting.creatorId)?.name ??
+                '알 수 없음',
+              canOpen: Boolean(topic && canReadMeeting(topic, meeting, userId)),
+            };
+          });
+      },
+      false,
+    );
+  },
   availability(userId: string, roomId: string, date: string, exceptId?: string) {
     return transact(
       userId,
@@ -251,6 +286,8 @@ export const localService = {
       if (!canCreateMeeting(topic, userId))
         throw new RuleError('회의 관리자만 회의를 만들 수 있어요.');
       validateInput(input, data);
+      if (input.participantIds.some((id) => !Object.hasOwn(topic.roles, id)))
+        throw new RuleError('Topic에 포함된 사람만 참가자로 선택할 수 있어요.');
       validateSchedule(data, input.roomId, input.start, input.end, now(data));
       input.attachments.forEach(validateAttachment);
       const id = crypto.randomUUID();
@@ -277,7 +314,6 @@ export const localService = {
         cancelled: false,
         revision: 0,
       };
-      for (const id of meeting.participantIds) if (!topic.roles[id]) topic.roles[id] = 'Attendee';
       data.meetings.push(meeting);
       recordEvent(data, meeting, 'created', now(data));
       data.requests[`${userId}:${requestId}`] = id;
@@ -296,6 +332,8 @@ export const localService = {
       )
         throw new RuleError('이 회의를 수정할 수 없어요.');
       validateInput(input, data);
+      if (input.participantIds.some((id) => !Object.hasOwn(topic.roles, id)))
+        throw new RuleError('Topic에 포함된 사람만 참가자로 선택할 수 있어요.');
       validateSchedule(data, input.roomId, input.start, input.end, now(data), id);
       const previous = meeting.participantIds;
       Object.assign(meeting, {
@@ -308,7 +346,6 @@ export const localService = {
         participantIds: [...new Set([meeting.creatorId, ...input.participantIds])],
         revision: revision + 1,
       });
-      for (const id of meeting.participantIds) if (!topic.roles[id]) topic.roles[id] = 'Attendee';
       recordEvent(data, meeting, 'changed', now(data), previous);
       return id;
     });

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import { RoomSchedule } from '../meetings/RoomSchedule';
 import { RoomDirections } from '../../components/RoomDirections';
 import { Link } from 'react-router-dom';
 import { CalendarDays, MapPin, Users } from 'lucide-react';
 import type { DeliveryLog } from '../../domain/models';
-import { dateKey, fullDate, time } from '../../domain/selectors';
+import { compareRooms, dateKey, fullDate, time } from '../../domain/selectors';
 import { previewService } from '../../data/previewService';
 import { useWorkspace } from '../../app/WorkspaceContext';
 import { Button, Card, EmptyState, Field, Modal } from '../../components/ui';
@@ -184,13 +185,16 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
   const { data, rooms } = useWorkspace();
   const [location, setLocation] = useState('all');
   const [query, setQuery] = useState('');
-  const [selected, setSelected] = useState(rooms[0]);
+  const [selectedId, setSelectedId] = useState('');
   if (admin && !data.user.isAdmin) return <Denied />;
-  const filtered = rooms.filter(
-    (room) =>
-      (location === 'all' || room.location === location) &&
-      `${room.location} ${room.name}`.includes(query),
-  );
+  const filtered = rooms
+    .filter(
+      (room) =>
+        (location === 'all' || room.location === location) &&
+        `${room.location} ${room.floor} ${room.name}`.includes(query),
+    )
+    .toSorted(compareRooms);
+  const selected = filtered.find((room) => room.id === selectedId) ?? filtered[0];
   return (
     <div className="workflow-page rooms-page">
       <PageHeading
@@ -212,7 +216,7 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
           onChange={(e) => setQuery(e.target.value)}
         />
         <div className="field">
-          <label htmlFor="room-location">사업장</label>
+          <label htmlFor="room-location">센터</label>
           <select id="room-location" value={location} onChange={(e) => setLocation(e.target.value)}>
             <option value="all">전체</option>
             <option>명동</option>
@@ -226,9 +230,9 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
             {filtered.map((room) => (
               <button
                 className="room-list-item"
-                aria-pressed={selected.id === room.id}
+                aria-pressed={selected?.id === room.id}
                 key={room.id}
-                onClick={() => setSelected(room)}
+                onClick={() => setSelectedId(room.id)}
               >
                 <span className="topic-icon tone-blue">
                   <MapPin size={24} />
@@ -248,42 +252,47 @@ export function RoomsPage({ admin = false }: { admin?: boolean }) {
               <EmptyState
                 compact
                 title="회의실 검색 결과가 없어요"
-                description="다른 이름이나 사업장으로 검색해주세요."
+                description="다른 이름이나 센터로 검색해주세요."
               />
             ) : null}
           </div>
         </Card>
-        <Card className="room-details">
-          <RoomDirections room={selected} />
-          <h2>
-            {selected.location} · {selected.name}
-          </h2>
-          <p>
-            <MapPin size={18} />
-            {selected.location} · {selected.floor}
-          </p>
-          <p>
-            <Users size={18} />
-            수용 {selected.capacity}명
-          </p>
-          <p>
-            <CalendarDays size={18} />
-            연계 출처 · 로컬 미리보기
-          </p>
-          <p className="detail-note">
-            실제 회의실 정보·안내 경로·원텔 예약은 연결되지 않았습니다.
-            {admin ? ' 추가·수정·비활성은 외부 연동과 승인 정책 확정 후 제공됩니다.' : ''}
-          </p>
-          {admin ? (
-            <Button variant="secondary" disabled>
-              회의실 수정 준비 중
-            </Button>
-          ) : (
-            <Link to="/topics" className="button button-primary">
-              Topic에서 회의 만들기
-            </Link>
-          )}
-        </Card>
+        {selected ? (
+          <div className="room-selection-details">
+            <RoomSchedule room={selected} />
+            <Card className="room-details">
+              <RoomDirections room={selected} />
+              <h2>
+                {selected.location} · {selected.name}
+              </h2>
+              <p>
+                <MapPin size={18} />
+                {selected.location} · {selected.floor}
+              </p>
+              <p>
+                <Users size={18} />
+                수용 {selected.capacity}명
+              </p>
+              <p>
+                <CalendarDays size={18} />
+                연계 출처 · 로컬 미리보기
+              </p>
+              <p className="detail-note">
+                실제 회의실 정보·안내 경로·원텔 예약은 연결되지 않았습니다.
+                {admin ? ' 추가·수정·비활성은 외부 연동과 승인 정책 확정 후 제공됩니다.' : ''}
+              </p>
+              {admin ? (
+                <Button variant="secondary" disabled>
+                  회의실 수정 준비 중
+                </Button>
+              ) : (
+                <Link to="/topics" className="button button-primary">
+                  Topic에서 회의 만들기
+                </Link>
+              )}
+            </Card>
+          </div>
+        ) : null}
       </div>
     </div>
   );

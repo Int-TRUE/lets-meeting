@@ -211,7 +211,7 @@ export function notificationProps(log: DeliveryLog, config: MattermostConfig) {
               ? [
                   {
                     fallback: labels[log.event],
-                    image_url: `${config.appUrl}/notification-banners/${['created', 'reminder'].includes(log.event) ? 'comic-v3' : 'comic-v2'}/${log.event}.jpg`,
+                    image_url: `${config.appUrl}/notification-banners/${log.event === 'reminder' ? 'comic-v4' : log.event === 'created' ? 'comic-v3' : 'comic-v2'}/${log.event}.jpg`,
                   },
                 ]
               : []),

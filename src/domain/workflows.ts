@@ -1,3 +1,4 @@
+import { createId } from './id';
 import { people } from '../data/workspace.js';
 import type {
   DeliveryLog,
@@ -165,7 +166,7 @@ export function recordEvent(
   previousParticipants: string[] = [],
   previousMeeting?: Meeting,
 ) {
-  const batchId = crypto.randomUUID();
+  const batchId = createId();
   for (const id of new Set([...meeting.participantIds, ...previousParticipants])) {
     const preferences = db.preferences[id] ?? defaultPreferences;
     if (
@@ -174,7 +175,7 @@ export function recordEvent(
     )
       continue;
     db.logs.push({
-      id: crypto.randomUUID(),
+      id: createId(),
       meetingId: meeting.id,
       event,
       recipientId: id,

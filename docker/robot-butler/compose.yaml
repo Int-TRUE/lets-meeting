@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
     init: true
     stop_grace_period: 30s
-    ports: ['127.0.0.1:8088:8080']
+    ports: ['${ROBOT_BUTLER_BIND_IP:-127.0.0.1}:8088:8080']
     env_file: ../../.env.selfhost
     environment:
       DATABASE_URL: postgresql://butler:${POSTGRES_PASSWORD}@db:5432/robot_butler?sslmode=disable

@@ -1,3 +1,4 @@
+import { createId } from '../../domain/id';
 import { ReminderSettings } from '../../components/ReminderSettings';
 import successArt from '../../assets/meeting-success.png';
 import { useEffect, useRef, useState } from 'react';
@@ -54,7 +55,7 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
         endTime: existing?.end.slice(11, 16) ?? '',
       },
       step: 0,
-      requestId: crypto.randomUUID(),
+      requestId: createId(),
     };
     if (editing) return fallback;
     try {

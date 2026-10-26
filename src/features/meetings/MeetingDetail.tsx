@@ -1,3 +1,4 @@
+import { createId } from '../../domain/id';
 import { MeetingSummary } from '../../components/MeetingSummary';
 import { useState } from 'react';
 import { RoomDirections } from '../../components/RoomDirections';
@@ -40,7 +41,7 @@ export function MeetingDetail() {
   const topic = data.topics.find((t) => t.id === meeting?.topicId);
   const tab = params.get('tab') ?? 'info';
   const [reminderResult, setReminderResult] = useState('');
-  const [reminderRequest, setReminderRequest] = useState(() => crypto.randomUUID());
+  const [reminderRequest, setReminderRequest] = useState(() => createId());
   const [cancel, setCancel] = useState(false);
   const [cancelAcknowledged, setCancelAcknowledged] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -368,7 +369,7 @@ export function MeetingDetail() {
                   await run(() =>
                     previewService.sendReminder(data.user.id, meeting.id, reminderRequest),
                   );
-                  setReminderRequest(crypto.randomUUID());
+                  setReminderRequest(createId());
                   setReminderResult('참가자에게 리마인드 발송을 요청했어요.');
                 } catch (e) {
                   setError(e instanceof Error ? e.message : '알림을 요청하지 못했어요.');
@@ -585,7 +586,7 @@ export function SummaryEditor() {
               onClick={() =>
                 setSummary((s) => ({
                   ...s,
-                  tasks: [...s.tasks, { id: crypto.randomUUID(), text: '', done: false }],
+                  tasks: [...s.tasks, { id: createId(), text: '', done: false }],
                 }))
               }
             >

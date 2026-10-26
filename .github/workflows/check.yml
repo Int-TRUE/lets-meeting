@@ -35,6 +35,8 @@ jobs:
       - run: npm run build
       - run: npm test
       - run: npm run test:selfhost
+      - run: npm run test:selfhost:http
+      - run: python3 scripts/selfhost-network.test.py
       - name: Verify preinstalled browser
         run: google-chrome --version
       - run: npm run test:e2e

@@ -4,6 +4,7 @@ COPY package.json ./
 COPY scripts/mattermost-relay.mjs ./scripts/mattermost-relay.mjs
 COPY scripts/mattermost-interactions.mjs ./scripts/mattermost-interactions.mjs
 COPY server/mattermost.ts ./server/mattermost.ts
+COPY server/app-origin.ts ./server/app-origin.ts
 RUN mkdir /state && chown node:node /state
 USER node
 HEALTHCHECK --interval=15s --timeout=5s --start-period=90s --retries=3 CMD node -e "const fs=require('node:fs');process.exit(Date.now()-fs.statSync('/state/heartbeat').mtimeMs<90000?0:1)"

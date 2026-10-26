@@ -1,3 +1,4 @@
+import { createId } from '../domain/id';
 import { fixture, people } from './workspace.js';
 import { encodeWire, decodeWire } from './wire.js';
 import type {
@@ -328,7 +329,7 @@ export const localService = {
         throw new RuleError('주제명과 한줄 설명을 입력해주세요.');
       if (input.managerIds.some((id) => !directory(data).some((p) => p.id === id)))
         throw new RuleError('관리자를 다시 선택해주세요.');
-      const id = crypto.randomUUID();
+      const id = createId();
       const roles: Record<string, 'Owner' | 'Master'> = { [userId]: 'Owner' };
       input.managerIds.forEach((id) => {
         if (id !== userId) roles[id] = 'Master';
@@ -382,7 +383,7 @@ export const localService = {
         throw new RuleError('토픽에 포함된 사람만 참가자로 선택할 수 있어요.');
       validateSchedule(data, input.roomId, input.start, input.end, now(data));
       input.attachments.forEach(validateAttachment);
-      const id = crypto.randomUUID();
+      const id = createId();
       const attachments = input.attachments.map((a) => ({
         ...a,
         authorId: userId,

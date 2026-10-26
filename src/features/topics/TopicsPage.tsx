@@ -1,3 +1,4 @@
+import { createId } from '../../domain/id';
 import { MeetingSummary } from '../../components/MeetingSummary';
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -105,7 +106,7 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [discard, setDiscard] = useState(false);
-  const requestId = useRef(crypto.randomUUID());
+  const requestId = useRef(createId());
   const dirty =
     title !== (editing ? (topic?.title ?? '') : '') ||
     description !== (editing ? (topic?.description ?? '') : '') ||

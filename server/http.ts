@@ -41,7 +41,7 @@ export async function handleDemoRequest(
       !request.headers.get('content-type')?.startsWith('application/json')
     )
       return json(405, { error: 'JSON POST가 필요합니다.' });
-    if (!Object.hasOwn(localService, method))
+    if (['meetingDelivery', 'adminLogs'].includes(method) || !Object.hasOwn(localService, method))
       return json(404, { error: '지원하지 않는 요청입니다.' });
     const reader = request.body?.getReader();
     const chunks: Uint8Array[] = [];

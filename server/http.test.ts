@@ -48,6 +48,13 @@ test('rejects cross-origin, invalid methods and oversized payloads before DB acc
   ).toBe(413);
   expect(calls).toBe(0);
 });
+
+test('delivery history endpoints are unavailable even to administrators', async () => {
+  for (const method of ['meetingDelivery', 'adminLogs']) {
+    const response = await handleDemoRequest(request(method, ['ops', 'equipment']), async () => db);
+    expect(response.status).toBe(404);
+  }
+});
 test('keeps local host restrictions and hides connection credentials on failure', async () => {
   expect((await handleDemoRequest(request('snapshot', ['me']), async () => db, true)).status).toBe(
     403,

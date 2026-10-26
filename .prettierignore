@@ -5,3 +5,6 @@ playwright-report
 docs/design
 src/app/tokens.css
 package-lock.json
+
+output/
+build/

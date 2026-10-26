@@ -1,5 +1,4 @@
 import { ReminderSettings } from '../../components/ReminderSettings';
-import { MeetingDelivery } from '../../components/MeetingDelivery';
 import successArt from '../../assets/meeting-success.png';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
@@ -281,9 +280,6 @@ export function MeetingWizard({ editing = false }: { editing?: boolean }) {
                 <p>
                   {draft.schedule.date} {draft.schedule.startTime} – {draft.schedule.endTime}
                 </p>
-              </Card>
-              <Card>
-                <MeetingDelivery meetingId={resultId} />
               </Card>
             </div>
           </div>

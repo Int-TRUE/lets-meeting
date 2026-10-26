@@ -44,10 +44,7 @@ test('history selection shows a shared panel and persists checklist state', asyn
   });
   await panel.getByRole('link', { name: '회의 상세 보기', exact: true }).click();
   await expect(page).toHaveURL(/\/meetings\/strategy$/);
-  const delivery = page.getByRole('region', { name: '매터모스트 발송 결과' });
-  await expect(delivery.getByRole('button', { name: '발송 결과 새로고침' })).toBeEnabled();
-  await delivery.getByRole('button', { name: '발송 결과 새로고침' }).click();
-  await expect(delivery.getByRole('status')).not.toContainText('확인 중');
+  await expect(page.getByRole('region', { name: '매터모스트 발송 결과' })).toHaveCount(0);
   await page.screenshot({
     path: `test-results/polished-delivery-${info.project.name}.png`,
     fullPage: true,

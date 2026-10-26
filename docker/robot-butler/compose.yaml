@@ -1,0 +1,52 @@
+name: robot-butler-direct
+services:
+  db:
+    image: postgres:18-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: butler
+      POSTGRES_DB: robot_butler
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run setup first}
+    volumes:
+      - database:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U butler -d robot_butler']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging:
+      options: { max-size: 5m, max-file: '2' }
+  app:
+    image: robot-butler-direct:local
+    build:
+      context: ../..
+      dockerfile: docker/robot-butler/Dockerfile
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
+    ports: ['127.0.0.1:8088:8080']
+    env_file: ../../.env.selfhost
+    environment:
+      DATABASE_URL: postgresql://butler:${POSTGRES_PASSWORD}@db:5432/robot_butler?sslmode=disable
+      SELFHOST_SCHEMA: butler_selfhost
+      MATTERMOST_ENABLED: 'true'
+      MATTERMOST_URL: http://mattermost:8065
+      MATTERMOST_DOCKER_NETWORK: 'true'
+    depends_on:
+      db: { condition: service_healthy }
+    networks:
+      default:
+      mattermost:
+        aliases: [robot-butler]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    logging:
+      options: { max-size: 5m, max-file: '2' }
+volumes:
+  database:
+networks:
+  mattermost:
+    external: true
+    name: ${MATTERMOST_NETWORK:?Run setup first}

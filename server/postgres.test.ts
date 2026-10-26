@@ -42,6 +42,7 @@ describe.skipIf(!process.env.POSTGRES_TEST_URL)('real PostgreSQL transactions', 
       description: '재연결 보존',
       managerIds: ['jin', 'yoseop'],
     });
+
     const another = openPostgresDatabase(url, schema, url, 'reference');
     try {
       await another.seed();
@@ -63,6 +64,60 @@ describe.skipIf(!process.env.POSTGRES_TEST_URL)('real PostgreSQL transactions', 
       await another.close();
     }
   }, 60_000);
+  it('notification-only transactions preserve attachment bytes and do not write when idle', async () => {
+    const inspect = new Pool({ connectionString: url });
+    const readFiles = async () =>
+      (
+        await inspect.query(
+          `SELECT id, xmin::text, encode(bytes,'hex') AS bytes FROM "${schema}".attachments ORDER BY id`,
+        )
+      ).rows;
+    const readMeetings = async () =>
+      (await inspect.query(`SELECT id, xmin::text FROM "${schema}".meetings ORDER BY id`)).rows;
+    try {
+      const files = await readFiles();
+      const meetings = await readMeetings();
+      await db.notificationTransaction(
+        'me',
+        (state) => {
+          expect(state.meetings.flatMap((m) => m.attachments ?? []).every((a) => !a.blob)).toBe(
+            true,
+          );
+        },
+        true,
+      );
+      expect(await readFiles()).toEqual(files);
+      expect(await readMeetings()).toEqual(meetings);
+      await db.notificationTransaction(
+        'me',
+        (state) => {
+          state.meetings[0].end = '2026-10-26T12:30:00+09:00';
+          state.requests['direct-notification-test'] = 'done';
+        },
+        true,
+      );
+      expect(await readFiles()).toEqual(files);
+      const request = await inspect.query(
+        `SELECT result FROM "${schema}".requests WHERE id='direct-notification-test'`,
+      );
+      expect(request.rows[0].result).toBe('done');
+    } finally {
+      await inspect.end();
+    }
+  });
+
+  it('holds one notification worker per schema and allows a replacement only after release', async () => {
+    const other = openPostgresDatabase(url, schema, url, 'reference');
+    const release = await db.acquireNotificationLock(() => {});
+    try {
+      await expect(other.acquireNotificationLock(() => {})).rejects.toThrow('Another');
+      await release();
+      const replacement = await other.acquireNotificationLock(() => {});
+      await replacement();
+    } finally {
+      await other.close();
+    }
+  });
   it('serializes competing reservations across pools and rolls back rejected changes', async () => {
     const input = {
       topicId: 'equipment-2026',

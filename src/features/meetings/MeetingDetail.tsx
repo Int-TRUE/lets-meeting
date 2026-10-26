@@ -1,5 +1,4 @@
 import { MeetingSummary } from '../../components/MeetingSummary';
-import { MeetingDelivery } from '../../components/MeetingDelivery';
 import { useState } from 'react';
 import { RoomDirections } from '../../components/RoomDirections';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -40,7 +39,6 @@ export function MeetingDetail() {
   const meeting = data.meetings.find((m) => m.id === id);
   const topic = data.topics.find((t) => t.id === meeting?.topicId);
   const tab = params.get('tab') ?? 'info';
-  const [deliveryRefresh, setDeliveryRefresh] = useState(0);
   const [reminderResult, setReminderResult] = useState('');
   const [reminderRequest, setReminderRequest] = useState(() => crypto.randomUUID());
   const [cancel, setCancel] = useState(false);
@@ -357,38 +355,35 @@ export function MeetingDetail() {
           ) : null}
         </Card>
       )}
-      <Card className="meeting-delivery-card">
-        <MeetingDelivery
-          meetingId={meeting.id}
-          revision={(meeting.revision ?? 0) + deliveryRefresh}
-        />
-        {meeting.creatorId === data.user.id && status === 'scheduled' ? (
-          <Button
-            disabled={busy}
-            onClick={async () => {
-              setBusy(true);
-              setError('');
-              setReminderResult('');
-              try {
-                await run(() =>
-                  previewService.sendReminder(data.user.id, meeting.id, reminderRequest),
-                );
-                setReminderRequest(crypto.randomUUID());
-                setDeliveryRefresh((n) => n + 1);
-                setReminderResult('참가자에게 리마인드 발송을 요청했어요.');
-              } catch (e) {
-                setError(e instanceof Error ? e.message : '알림을 요청하지 못했어요.');
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            <BellRing size={17} aria-hidden="true" />
-            리마인드 알람 보내기
-          </Button>
-        ) : null}
-        {reminderResult ? <p role="status">{reminderResult}</p> : null}
-      </Card>
+      {meeting.creatorId === data.user.id && status === 'scheduled' ? (
+        <Card className="meeting-delivery-card">
+          {meeting.creatorId === data.user.id && status === 'scheduled' ? (
+            <Button
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setError('');
+                setReminderResult('');
+                try {
+                  await run(() =>
+                    previewService.sendReminder(data.user.id, meeting.id, reminderRequest),
+                  );
+                  setReminderRequest(crypto.randomUUID());
+                  setReminderResult('참가자에게 리마인드 발송을 요청했어요.');
+                } catch (e) {
+                  setError(e instanceof Error ? e.message : '알림을 요청하지 못했어요.');
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              <BellRing size={17} aria-hidden="true" />
+              리마인드 알람 보내기
+            </Button>
+          ) : null}
+          {reminderResult ? <p role="status">{reminderResult}</p> : null}
+        </Card>
+      ) : null}
       {cancel ? (
         <Modal
           className="cancel-confirm-modal"
@@ -401,9 +396,7 @@ export function MeetingDetail() {
             <TriangleAlert /> 이 회의를 취소하시겠습니까?
           </h3>
           <ul className="cancel-consequences">
-            <li>
-              참가자에게 취소 알림을 요청합니다. 계정 연결과 발송 결과는 취소 후 확인할 수 있습니다.
-            </li>
+            <li>참가자에게 회의 취소를 알립니다.</li>
             <li>이 회의의 데모 예약이 해제됩니다.</li>
             <li>첨부된 자료와 회의 정보는 보관됩니다.</li>
           </ul>

@@ -24,7 +24,7 @@ import { MeetingWizard } from '../features/meetings/MeetingWizard';
 import { MeetingDetail, SummaryEditor } from '../features/meetings/MeetingDetail';
 import { MeetingsPage } from '../features/meetings/MeetingsPage';
 import { NotificationSettingsPage } from '../features/settings/NotificationSettingsPage';
-import { AdminNotificationsPage, RoomsPage } from '../features/admin/AdminPages';
+import { RoomsPage } from '../features/admin/AdminPages';
 export function App() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
@@ -224,8 +224,8 @@ export function App() {
               <Route path="/meetings/:id/summary" element={<SummaryEditor />} />
               <Route path="/rooms" element={<RoomsPage />} />
               <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
-              <Route path="/admin" element={<Navigate to="/admin/notifications" replace />} />
-              <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
+              <Route path="/admin" element={<Navigate to="/admin/rooms" replace />} />
+              <Route path="/admin/notifications" element={<Navigate to="/admin/rooms" replace />} />
               <Route path="/admin/rooms" element={<RoomsPage admin />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>

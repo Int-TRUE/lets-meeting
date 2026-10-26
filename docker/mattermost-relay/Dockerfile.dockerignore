@@ -4,6 +4,7 @@
 !scripts/mattermost-relay.mjs
 !server/
 !server/mattermost.ts
+!server/app-origin.ts
 !docker/
 !docker/mattermost-relay/
 !docker/mattermost-relay/Dockerfile

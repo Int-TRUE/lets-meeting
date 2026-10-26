@@ -17,6 +17,7 @@
     "test:db": "playwright test --config playwright.database.config.ts",
     "mattermost:relay": "node --experimental-strip-types --env-file=.env.mattermost-local/relay.env scripts/mattermost-relay.mjs",
     "build:server": "node scripts/build-server.mjs",
+    "test:selfhost:http": "npm run build:server && SELFHOST_TEST_HTTP=1 node scripts/selfhost-smoke.mjs",
     "test:selfhost": "npm run build:server && node scripts/selfhost-smoke.mjs"
   },
   "dependencies": {

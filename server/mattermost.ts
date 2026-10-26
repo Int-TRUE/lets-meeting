@@ -1,6 +1,7 @@
 import type { DeliveryLog } from '../src/domain/models';
 import type { TransactionAdapter } from '../src/data/previewService';
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { allowedHttpAppOrigin } from './app-origin.ts';
 
 export interface MattermostConfig {
   baseUrl: string;
@@ -25,6 +26,7 @@ export function mattermostConfig(
       url.hash ||
       !(
         url.protocol === 'https:' ||
+        (url === app && allowedHttpAppOrigin(app.href, env.ROBOT_BUTLER_HTTP_ORIGIN)) ||
         (url.protocol === 'http:' &&
           (['localhost', '127.0.0.1'].includes(url.hostname) ||
             (url === base &&

@@ -2,18 +2,19 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 import { Readable } from 'node:stream';
+import { allowedHttpAppOrigin } from './app-origin.ts';
 
-export function createWebServer({ origin, root, demo, relay, health }) {
+export function createWebServer({ origin, httpOrigin, root, demo, relay, health }) {
   const base = new URL(origin);
   if (
-    base.protocol !== 'https:' ||
+    (base.protocol !== 'https:' && !allowedHttpAppOrigin(base.href, httpOrigin)) ||
     base.pathname !== '/' ||
     base.search ||
     base.hash ||
     base.username ||
     base.password
   )
-    throw new Error('PUBLIC_ORIGIN must be an HTTPS origin');
+    throw new Error('PUBLIC_ORIGIN must be HTTPS or the configured Tailscale HTTP origin');
   const publicRoot = resolve(root);
   const types = {
     '.html': 'text/html; charset=utf-8',

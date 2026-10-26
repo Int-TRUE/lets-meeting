@@ -72,6 +72,7 @@ async function main() {
   const store = { directory: db.directory, rooms: db.rooms, transaction: worker.transaction };
   const app = createWebServer({
     origin,
+    httpOrigin: process.env.ROBOT_BUTLER_HTTP_ORIGIN,
     root: 'dist',
     demo: (request) => handleDemoRequest(request, async () => store),
     relay: () => new Response(null, { status: 404 }),

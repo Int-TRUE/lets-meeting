@@ -6,18 +6,18 @@
 
 - Compose 프로젝트: `robot-butler-direct`; 기존 `robot-butler-mattermost`와 분리.
 - 새 DB: PostgreSQL 18, `robot_butler` / `butler_selfhost`, 전용 볼륨. 호스트에 DB 포트 공개 안 함.
-- 앱: 호스트 `127.0.0.1:8088` → 컨테이너 8080. 기존 매터모스트 Docker 네트워크에 함께 연결.
+- 앱: 호스트 Tailscale IP `100.123.150.118:8088` → 컨테이너 8080. 기존 매터모스트 Docker 네트워크에 함께 연결.
 - 알림: 앱이 매터모스트 API에 직접 DM 전송. 내부 콜백 `http://robot-butler:8066`은 호스트 포트에 공개하지 않는다.
-- 사이트: Tailscale Serve의 내부 전용 HTTPS 주소. 이용자 기기도 Tailscale 연결과 서버 접근 권한 필요.
+- 사이트: Tailscale IP의 HTTP 주소. Serve·HTTPS 관리 계정 승인은 필요 없다. 이용자 기기도 Tailscale 연결과 서버 접근 권한 필요.
 - 데이터: 로그인 테스트 계정 4명, 참가 직원 목록, 기본 회의실. 토픽·회의·첨부파일은 빈 상태. 기존 계정 선택 방식은 유지하며 직원 SSO가 새로 추가되는 것은 아니다.
 
 ## 1. 맥에서 설치 묶음 복사
 
-Codex가 제공한 `output/robot-butler-direct-20261026.tar.gz`와 `.sha256` 파일을 사용한다. Git으로 직접 만들 경우에는 검증된 커밋에서만 `git archive`로 만든다. `.env`, `.vercel`, 개인 데이터는 포함하지 않는다.
+Codex가 제공한 `output/robot-butler-http-20261026.tar.gz`와 `.sha256` 파일을 사용한다. Git으로 직접 만들 경우에는 검증된 커밋에서만 `git archive`로 만든다. `.env`, `.vercel`, 개인 데이터는 포함하지 않는다.
 
 ```bash
 cd "/Users/sujin/Documents/ChatGPT/바코챌 2"
-scp output/robot-butler-direct-20261026.tar.gz output/robot-butler-direct-20261026.tar.gz.sha256 mattermost-admin@100.123.150.118:~/
+scp output/robot-butler-http-20261026.tar.gz output/robot-butler-http-20261026.tar.gz.sha256 mattermost-admin@100.123.150.118:~/
 ssh mattermost-admin@100.123.150.118
 ```
 
@@ -27,9 +27,9 @@ SSH가 실패하면 여기서 멈춘다. 서버 Tailscale 연결·SSH 접근을 
 
 ```bash
 cd ~
-sha256sum -c robot-butler-direct-20261026.tar.gz.sha256
+sha256sum -c robot-butler-http-20261026.tar.gz.sha256
 mkdir robot-butler-direct-20261026
-tar -xzf robot-butler-direct-20261026.tar.gz -C robot-butler-direct-20261026
+tar -xzf robot-butler-http-20261026.tar.gz -C robot-butler-direct-20261026
 cd ~/robot-butler-direct-20261026
 ```
 
@@ -41,7 +41,7 @@ cd ~/robot-butler-direct-20261026
 python3 scripts/selfhost-setup.py
 ```
 
-기존 `~/mattermost-transfer/.env.mattermost-local/relay.env`에서 봇 ID·토큰·사용자 매핑을 가져온다. 실제 Docker 네트워크와 Tailscale 주소를 확인해 `.env.selfhost`에 저장하고 새 DB 암호·콜백 서명 키를 생성한다. 파일 권한은 600이다. 비밀값을 화면에 출력하지 않는다. `SETUP OK`와 새 `https://…ts.net` 주소를 확인한다.
+기존 `~/mattermost-transfer/.env.mattermost-local/relay.env`에서 봇 ID·토큰·사용자 매핑을 가져온다. 실제 Docker 네트워크와 Tailscale 주소를 확인해 `.env.selfhost`에 저장하고 새 DB 암호·콜백 서명 키를 생성한다. 파일 권한은 600이다. 비밀값을 화면에 출력하지 않는다. `SETUP OK`와 새 `http://100.123.150.118:8088` 주소를 확인한다.
 
 `.env.selfhost`는 한 번만 생성하며, 재실행 때 기존 파일과 DB 암호를 보존한다. 기존 파일이 있다는 안내는 비밀번호를 다시 만들라는 뜻이 아니다. 이 파일을 대화·Git에 올리지 않는다.
 
@@ -69,8 +69,8 @@ python3 scripts/selfhost-cutover.py
 ```bash
 sudo ./butler up -d --wait app
 sudo ./butler ps
-curl --fail --show-error http://127.0.0.1:8088/healthz
-curl --fail --show-error http://127.0.0.1:8088/api/demo/directory
+curl --fail --show-error http://100.123.150.118:8088/healthz
+curl --fail --show-error http://100.123.150.118:8088/api/demo/directory
 ```
 
 `{"ok":true}`와 계정·회의실 목록이 나오면 DB 연결까지 정상이다. 처음 실행 때만 빈 DB에 기본 데이터를 넣으며 재시작해도 작성한 내용을 보존한다. 기존 스키마 버전이 다르면 초기화하지 않고 시작을 거절한다.
@@ -83,20 +83,9 @@ sudo ./butler logs --tail=80 app
 
 ## 7. 사이트 주소 연결
 
-```bash
-sudo tailscale serve status
-```
+Tailscale에 연결된 기기에서 [로봇집사](http://100.123.150.118:8088)를 연다. 매터모스트 주소는 `http://100.123.150.118:8065` 그대로다. Tailscale Serve 활성화나 관리 페이지 로그인은 필요 없다. 네트워크 접근 정책에서 서버의 8088 포트 접근이 허용되어 있어야 한다.
 
-기존 HTTPS 443 서비스가 없을 때 실행한다. 이미 같은 `127.0.0.1:8088`을 가리키면 유지한다. 다른 서비스가 사용 중이면 덮어쓰지 않고 먼저 확인한다.
-
-```bash
-sudo tailscale serve --bg http://127.0.0.1:8088
-sudo tailscale serve status
-```
-
-HTTPS 활성화 링크가 출력되면 해당 Tailscale 관리 계정으로 열어 승인하고 다시 실행한다. 설정 변경 권한이 없다면 관리자가 처리해야 한다. Funnel은 사용하지 않는다. [Tailscale Serve 공식 문서](https://tailscale.com/docs/features/tailscale-serve).
-
-출력된 HTTPS 주소를 브라우저에서 연다. `.env.selfhost`의 `PUBLIC_ORIGIN`과 같아야 한다. 주소를 변경했다면 `sudo ./butler up -d --no-deps --force-recreate app`으로 반영한다.
+서버가 실제 가진 Tailscale IP에만 포트를 연결한다. HTTP 주소는 명시적으로 허용한 주소와 일치해야 하며 일반 인터넷 HTTP 주소는 허용하지 않는다. HTTPS 전용 브라우저 기능인 `randomUUID` 대신 HTTP에서도 가능한 `getRandomValues`로 고유번호를 생성한다. 전송 경로는 Tailscale을 사용하지만 브라우저에는 HTTP로 표시된다.
 
 ## 8. 실제 동작 확인
 
@@ -137,3 +126,30 @@ docker stop --time 90 robot-butler-mattermost-relay-1
 ```
 
 기존 Vercel 사이트와 Neon은 새 서비스와 분리해 보존한다. 이 설치는 Vercel 일시 중지를 해제하거나 Neon 데이터를 삭제하지 않는다.
+
+## 이미 설치한 서버를 HTTP로 업데이트
+
+기존 `~/robot-butler-direct-20261026/.env.selfhost`와 DB를 그대로 사용한다. 새 설치용 setup 또는 cutover를 다시 실행하지 않는다. 먼저 맥에서 새 묶음을 복사한다.
+
+```bash
+cd "/Users/sujin/Documents/ChatGPT/바코챌 2"
+scp output/robot-butler-http-20261026.tar.gz output/robot-butler-http-20261026.tar.gz.sha256 mattermost-admin@100.123.150.118:~/
+ssh mattermost-admin@100.123.150.118
+```
+
+서버에서 다음 순서대로 실행한다. 각 단계가 성공한 뒤 다음 명령을 실행한다.
+
+```bash
+cd ~
+sha256sum -c robot-butler-http-20261026.tar.gz.sha256
+cd ~/robot-butler-direct-20261026
+tar -xzf ~/robot-butler-http-20261026.tar.gz
+sudo ./butler build app
+python3 scripts/selfhost-http.py
+sudo ./butler up -d --no-deps --force-recreate --wait app
+curl --fail --show-error http://100.123.150.118:8088/healthz
+```
+
+묶음에는 `.env.selfhost`가 없다. 변경 스크립트는 기존 설정을 권한 600의 `.env.selfhost.before-http-<시간>`에 백업하고 공개 주소·HTTP 허용 주소·바인딩 IP 세 항목만 바꾼다. DB 비밀번호·봇 토큰·사용자 매핑·서명 키·DB 볼륨은 보존한다. `.env.selfhost`가 없으면 중단하며 임의로 새 비밀번호를 만들지 않는다.
+
+새 주소에서는 브라우저의 로그인 선택을 다시 한다. 기존 회의와 첨부파일은 유지된다. 새로 보내는 알림 링크부터 HTTP 주소가 적용되며 이미 보낸 메시지의 링크는 자동 수정하지 않는다. 기존 Tailscale Serve 설정을 일괄 초기화하지 않는다.

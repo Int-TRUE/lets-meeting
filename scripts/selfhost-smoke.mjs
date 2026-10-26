@@ -4,6 +4,8 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { randomUUID } from 'node:crypto';
 import pg from 'pg';
+import { chromium } from '@playwright/test';
+const httpMode = process.env.SELFHOST_TEST_HTTP === '1';
 
 const database = process.env.POSTGRES_TEST_URL;
 if (!database || !['localhost', '127.0.0.1'].includes(new URL(database).hostname))
@@ -49,7 +51,8 @@ const env = {
   ...process.env,
   DATABASE_URL: database,
   SELFHOST_SCHEMA: schema,
-  PUBLIC_ORIGIN: 'https://validation.ts.net',
+  PUBLIC_ORIGIN: httpMode ? 'http://100.123.150.118:8088' : 'https://validation.ts.net',
+  ROBOT_BUTLER_HTTP_ORIGIN: httpMode ? 'http://100.123.150.118:8088' : '',
   PORT: '18088',
   MATTERMOST_ENABLED: 'true',
   MATTERMOST_URL: `http://127.0.0.1:${mm.address().port}`,
@@ -123,6 +126,48 @@ try {
       ).status,
       404,
     );
+  if (httpMode) {
+    const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome' });
+    try {
+      const page = await browser.newPage();
+      const errors = [];
+      page.on('pageerror', (e) => errors.push(e.message));
+      await page.route('**/*', async (route) => {
+        const url = new URL(route.request().url());
+        if (url.origin !== env.PUBLIC_ORIGIN) return route.abort();
+        const response = await route.fetch({
+          url: 'http://127.0.0.1:18088' + url.pathname + url.search,
+        });
+        await route.fulfill({ response });
+      });
+      await page.goto(env.PUBLIC_ORIGIN + '/login');
+      assert.equal(await page.evaluate(() => isSecureContext), false);
+      assert.equal(await page.evaluate(() => typeof crypto.randomUUID), 'undefined');
+      await page.getByRole('button', { name: '김태헌으로 시작' }).click();
+      await page.getByRole('link', { name: '토픽 만들기', exact: true }).first().click();
+      await page.getByLabel(/^주제명/).fill('HTTP browser topic');
+      await page
+        .getByLabel(/^한줄 설명/)
+        .fill('Insecure context ID and real database verification');
+      await page.getByRole('button', { name: '토픽 만들기', exact: true }).click();
+      await page.getByRole('heading', { name: 'HTTP browser topic', exact: true }).waitFor();
+      await page.reload();
+      await page.getByRole('heading', { name: 'HTTP browser topic', exact: true }).waitFor();
+      assert.deepEqual(errors, []);
+      assert.equal(
+        (
+          await fetch('http://127.0.0.1:18088/api/demo/createTopic', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', origin: 'http://100.100.100.100:8088' },
+            body: '[]',
+          })
+        ).status,
+        403,
+      );
+    } finally {
+      await browser.close();
+    }
+  }
   const topic = await api('createTopic', [
     'taeheon',
     { title: 'Standalone test', description: 'Isolated test', managerIds: ['sujin'] },

@@ -1,3 +1,4 @@
+import { createId } from '../domain/id';
 import { useEffect, useId, useState, type ReactNode, type TextareaHTMLAttributes } from 'react';
 import { ChevronRight, Search, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -361,7 +362,7 @@ export function FilePicker({
         multiple
         onChange={(e) => {
           const files = [...(e.target.files ?? [])].map((file) => ({
-            id: crypto.randomUUID(),
+            id: createId(),
             name: file.name,
             type: file.type || '파일',
             size: file.size,

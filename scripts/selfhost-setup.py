@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import secrets
 import subprocess
+from selfhost_network import http_settings
 
 root = Path(__file__).resolve().parents[1]
 target = root / '.env.selfhost'
@@ -32,16 +33,14 @@ networks = [name for name, value in container['NetworkSettings']['Networks'].ite
             if 'mattermost' in (value.get('Aliases') or [])]
 if len(networks) != 1 or not re.fullmatch(r'[a-zA-Z0-9_.-]+', networks[0]):
     raise SystemExit('Could not uniquely identify the Mattermost Compose network.')
-status = json.loads(subprocess.check_output(['tailscale', 'status', '--json']))
-hostname = status['Self']['DNSName'].rstrip('.')
-if not re.fullmatch(r'[a-zA-Z0-9.-]+\.ts\.net', hostname):
-    raise SystemExit('Connect Tailscale and enable MagicDNS first.')
-origin = 'https://' + hostname
+settings = http_settings()
 os.umask(0o077)
 with target.open('x') as f:
-    f.write(f'POSTGRES_PASSWORD={secrets.token_hex(32)}\nPUBLIC_ORIGIN={origin}\n')
+    f.write(f'POSTGRES_PASSWORD={secrets.token_hex(32)}\n')
+    for key, value in settings.items():
+        f.write(f'{key}={value}\n')
     f.write(f'MATTERMOST_NETWORK={networks[0]}\nMATTERMOST_BOT_ID={bot_id}\nMATTERMOST_BOT_TOKEN={token}\n')
     f.write("MATTERMOST_USER_MAP='" + json.dumps(users, separators=(',', ':')) + "'\n")
     f.write(f'MATTERMOST_INTERACTION_SECRET={secrets.token_hex(32)}\n')
 print('SETUP OK — new database, existing Mattermost account mappings preserved.')
-print('Site: ' + origin)
+print('Site: ' + settings['PUBLIC_ORIGIN'])

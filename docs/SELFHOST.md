@@ -1,0 +1,139 @@
+# 로봇집사 서버 설치 — 새 DB · 매터모스트 직접 연결
+
+2026-10-26 사용자 승인: 기존 Neon은 보존하고 새 PostgreSQL로 시작한다. 사이트와 알림 작업을 매터모스트 서버에서 실행하며 별도 중계기는 중지한다. 이전 `server-migration-20261026` 백업·복원 절차는 이번 설치에 사용하지 않는다.
+
+## 구성
+
+- Compose 프로젝트: `robot-butler-direct`; 기존 `robot-butler-mattermost`와 분리.
+- 새 DB: PostgreSQL 18, `robot_butler` / `butler_selfhost`, 전용 볼륨. 호스트에 DB 포트 공개 안 함.
+- 앱: 호스트 `127.0.0.1:8088` → 컨테이너 8080. 기존 매터모스트 Docker 네트워크에 함께 연결.
+- 알림: 앱이 매터모스트 API에 직접 DM 전송. 내부 콜백 `http://robot-butler:8066`은 호스트 포트에 공개하지 않는다.
+- 사이트: Tailscale Serve의 내부 전용 HTTPS 주소. 이용자 기기도 Tailscale 연결과 서버 접근 권한 필요.
+- 데이터: 로그인 테스트 계정 4명, 참가 직원 목록, 기본 회의실. 토픽·회의·첨부파일은 빈 상태. 기존 계정 선택 방식은 유지하며 직원 SSO가 새로 추가되는 것은 아니다.
+
+## 1. 맥에서 설치 묶음 복사
+
+Codex가 제공한 `output/robot-butler-direct-20261026.tar.gz`와 `.sha256` 파일을 사용한다. Git으로 직접 만들 경우에는 검증된 커밋에서만 `git archive`로 만든다. `.env`, `.vercel`, 개인 데이터는 포함하지 않는다.
+
+```bash
+cd "/Users/sujin/Documents/ChatGPT/바코챌 2"
+scp output/robot-butler-direct-20261026.tar.gz output/robot-butler-direct-20261026.tar.gz.sha256 mattermost-admin@100.123.150.118:~/
+ssh mattermost-admin@100.123.150.118
+```
+
+SSH가 실패하면 여기서 멈춘다. 서버 Tailscale 연결·SSH 접근을 먼저 복구한다.
+
+## 2. 서버에서 압축 확인·풀기
+
+```bash
+cd ~
+sha256sum -c robot-butler-direct-20261026.tar.gz.sha256
+mkdir robot-butler-direct-20261026
+tar -xzf robot-butler-direct-20261026.tar.gz -C robot-butler-direct-20261026
+cd ~/robot-butler-direct-20261026
+```
+
+폴더가 이미 있으면 덮어쓰지 않는다. 오류가 난 단계에서 멈추고 기존 상태를 확인한다. 이후 명령은 별도 표시가 없으면 서버에서 실행한다.
+
+## 3. 서버 설정 생성
+
+```bash
+python3 scripts/selfhost-setup.py
+```
+
+기존 `~/mattermost-transfer/.env.mattermost-local/relay.env`에서 봇 ID·토큰·사용자 매핑을 가져온다. 실제 Docker 네트워크와 Tailscale 주소를 확인해 `.env.selfhost`에 저장하고 새 DB 암호·콜백 서명 키를 생성한다. 파일 권한은 600이다. 비밀값을 화면에 출력하지 않는다. `SETUP OK`와 새 `https://…ts.net` 주소를 확인한다.
+
+`.env.selfhost`는 한 번만 생성하며, 재실행 때 기존 파일과 DB 암호를 보존한다. 기존 파일이 있다는 안내는 비밀번호를 다시 만들라는 뜻이 아니다. 이 파일을 대화·Git에 올리지 않는다.
+
+## 4. 새 DB와 앱 이미지 준비
+
+```bash
+sudo ./butler up -d --wait db
+sudo ./butler build app
+```
+
+Docker가 서버에서 Linux x86_64용 이미지를 빌드한다. Neon 접속·백업·복원은 필요 없다. 여기까지는 기존 중계기와 매터모스트를 변경하지 않는다.
+
+## 5. 중계기 중지·직접 연결 전환
+
+```bash
+python3 scripts/selfhost-cutover.py
+```
+
+먼저 봇·매핑된 계정의 유효성을 실제 매터모스트에서 확인한다. 성공 후 기존 중계기를 중지하고 자동 재시작을 해제한다. 기존 Compose 파일을 백업한 후 중계기를 `legacy-relay` 프로필로 격리해 일반 `dc up`으로 재시작되지 않게 한다. 매터모스트의 내부 연결 허용 목록에 `robot-butler`를 추가하고 매터모스트 컨테이너만 재생성한다. 이때 매터모스트가 잠시 재시작되며 기존 DB·계정·대화·볼륨은 유지한다.
+
+`CUTOVER READY`가 나와야 계속한다. 기존 중계기의 대기·발송 기록은 남지만 새 DB로 가져오지 않는다. 예전 회의의 알림 버튼은 새 회의로 연결되지 않는다. 새 서버에서 만든 회의로 확인한다.
+
+## 6. 앱 실행
+
+```bash
+sudo ./butler up -d --wait app
+sudo ./butler ps
+curl --fail --show-error http://127.0.0.1:8088/healthz
+curl --fail --show-error http://127.0.0.1:8088/api/demo/directory
+```
+
+`{"ok":true}`와 계정·회의실 목록이 나오면 DB 연결까지 정상이다. 처음 실행 때만 빈 DB에 기본 데이터를 넣으며 재시작해도 작성한 내용을 보존한다. 기존 스키마 버전이 다르면 초기화하지 않고 시작을 거절한다.
+
+실패하면 아래 로그를 확인하고 다음 단계로 넘어가지 않는다. 비밀값이 있는 `.env.selfhost` 또는 `docker inspect` 전체 출력 대신 앱 오류 부분만 공유한다.
+
+```bash
+sudo ./butler logs --tail=80 app
+```
+
+## 7. 사이트 주소 연결
+
+```bash
+sudo tailscale serve status
+```
+
+기존 HTTPS 443 서비스가 없을 때 실행한다. 이미 같은 `127.0.0.1:8088`을 가리키면 유지한다. 다른 서비스가 사용 중이면 덮어쓰지 않고 먼저 확인한다.
+
+```bash
+sudo tailscale serve --bg http://127.0.0.1:8088
+sudo tailscale serve status
+```
+
+HTTPS 활성화 링크가 출력되면 해당 Tailscale 관리 계정으로 열어 승인하고 다시 실행한다. 설정 변경 권한이 없다면 관리자가 처리해야 한다. Funnel은 사용하지 않는다. [Tailscale Serve 공식 문서](https://tailscale.com/docs/features/tailscale-serve).
+
+출력된 HTTPS 주소를 브라우저에서 연다. `.env.selfhost`의 `PUBLIC_ORIGIN`과 같아야 한다. 주소를 변경했다면 `sudo ./butler up -d --no-deps --force-recreate app`으로 반영한다.
+
+## 8. 실제 동작 확인
+
+1. 계정 4명으로 로그인하고 기존 회의가 없는 빈 상태를 확인한다.
+2. 매터모스트 계정이 연결된 참가자끼리 토픽·회의를 만들고 초대 DM을 확인한다.
+3. 상세에서 수동 리마인드를 보내고 DM의 회의 링크가 새 사이트를 여는지 확인한다.
+4. 시작 전 자동 리마인드, 시작 시 참석 확인, 지각자 선택·응답을 확인한다.
+5. 종료 5분 전 연장 버튼을 확인한다. 가능한 시간만 연장되고 참가자에게 변경을 알린다.
+6. 앱 재시작 후 회의·파일이 남고 이미 보낸 DM이 다시 발송되지 않는지 확인한다.
+
+발송 현황·관리자 발송 이력은 없다. 중복 방지를 위한 내부 기록은 유지한다. 전송 중 끊겨 실제 발송 여부를 확인할 수 없는 경우에는 중복 방지를 우선해 자동 재전송하지 않는다. 서버 중단 동안 놓친 오래된 예약 알림을 몰아서 보내지 않는 기존 규칙을 유지한다.
+
+## 운영·백업·실패 시 복구
+
+```bash
+cd ~/robot-butler-direct-20261026
+sudo ./butler logs --tail=80 app
+sudo ./butler restart app
+```
+
+새 DB 백업(서버 밖에도 복사해 보관):
+
+```bash
+umask 077
+mkdir -p backup
+sudo ./butler exec -T db pg_dump -U butler -d robot_butler -Fc > "backup/robot-butler-$(date +%Y%m%d-%H%M%S).dump"
+```
+
+`down -v`는 사용하지 않는다. `.env.selfhost`와 DB 백업을 함께 보관한다. 업데이트는 같은 Compose 프로젝트·볼륨·암호를 사용한다.
+
+새 앱 문제로 중지할 때는 `sudo ./butler stop app`만 실행하고 새 DB와 기존 Neon을 모두 보존한다. 옛 중계기 재시작은 Neon 접속이 복구되고 옛 사이트를 다시 사용하기로 정한 경우에만 별도로 진행한다. 두 DB는 자동 동기화되지 않는다. 새 데이터가 생긴 뒤 무조건 옛 사이트로 되돌리지 않는다.
+
+설치가 끝나면 맥에도 예전 중계기가 자동 시작되지 않도록 확인한다. Docker Desktop이 실행 중일 때만:
+
+```bash
+docker update --restart=no robot-butler-mattermost-relay-1
+docker stop --time 90 robot-butler-mattermost-relay-1
+```
+
+기존 Vercel 사이트와 Neon은 새 서비스와 분리해 보존한다. 이 설치는 Vercel 일시 중지를 해제하거나 Neon 데이터를 삭제하지 않는다.

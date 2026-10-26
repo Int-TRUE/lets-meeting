@@ -270,9 +270,6 @@
 .creation-delivery .card:first-child {
   background: #f0faf5;
 }
-.creation-delivery .card:last-child {
-  background: #f3f6ff;
-}
 .creation-delivery p {
   margin-top: 8px;
   font-size: 14px;

@@ -112,7 +112,7 @@ test('desktop reference captures across the approved screen flow', async ({
   await page.getByLabel('예시 사용자').selectOption('ops');
   await expect(page.getByRole('status', { name: '홈 정보를 불러오는 중' })).toHaveCount(0);
   await open('/admin/notifications');
-  await expect(page.getByRole('heading', { name: '관리자 발송 이력' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '관리자 회의실 관리' })).toBeVisible();
   await capture('19-admin');
   await open('/admin/rooms');
   await capture('20-rooms');

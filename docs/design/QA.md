@@ -72,3 +72,8 @@ Markdown 내부 링크, 필수 20개 화면 ID, 토큰 JSON, 이미지 존재·�
 - 토픽 생성의 직원 검색은 검색어 입력 후 최대 20명 표시 정책을 유지한다. 검색 안내·빈 결과는 카드 전체 너비에 가운데 정렬한다.
 - 장소·시간 단계의 취소·이전·다음 및 오류 안내는 시간 선택 요약 바로 아래에 표시한다.
 - 토픽 구성원 조회는 회의 생성 권한을 검사한다. 참가자 목록·전체 추가·검색·주최자 잠금·외부 직원 제외와 기존 전 직원 검색을 검증한다.
+
+
+## 2026-10-26 - Approved standalone server and delivery UI removal
+
+User approved replacing the relay with direct delivery in the standalone server and starting a fresh PostgreSQL database, leaving Neon untouched. Screens 12 and 13 no longer show delivery status or refresh controls; the creator's manual reminder remains. Screen 19 delivery history is removed, and its old URL redirects to permission-checked room administration. Public delivery-history APIs are disabled. Internal send intents and receipts remain for duplicate prevention. Verify scheduled reminders, signed late/extension actions, reservation conflicts, restart ambiguity, attachment preservation, and the absence of delivery UI.

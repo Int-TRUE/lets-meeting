@@ -204,7 +204,7 @@ export function openPostgresDatabase(
     return ready;
   }
 
-  async function load(client: PoolClient): Promise<PreviewDatabase> {
+  async function load(client: PoolClient, includeBytes = true): Promise<PreviewDatabase> {
     const topics = (
       await client.query<{ id: string; data: Omit<Topic, 'roles'> }>(
         `SELECT * FROM ${table('topics')} ORDER BY id`,
@@ -227,7 +227,7 @@ export function openPostgresDatabase(
     ).rows;
     const files = (
       await client.query<{ meeting_id: string; data: Attachment; bytes: Buffer | null }>(
-        `SELECT * FROM ${table('attachments')}`,
+        `SELECT ${includeBytes ? '*' : 'id, meeting_id, data'} FROM ${table('attachments')}`,
       )
     ).rows;
     const preferences = (await client.query(`SELECT * FROM ${table('preferences')}`)).rows;
@@ -269,37 +269,90 @@ export function openPostgresDatabase(
       requests: Object.fromEntries(requests.map((r) => [r.id, r.result])),
     };
   }
-  const transaction: TransactionAdapter = async (actor, mutate, write) => {
-    await seed();
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [schema]);
-      if (
-        !(
-          await client.query(
-            `SELECT id FROM ${table('people')} WHERE id=$1 AND ($2 OR data->>'isTestAccount'='true')`,
-            [actor, profile === 'reference'],
-          )
-        ).rowCount
-      )
-        throw new RuleError('데모 사용자를 다시 선택해주세요.');
-      const data = await load(client);
-      const result = mutate(data);
-      if (write) await persist(client, data);
-      await client.query('COMMIT');
-      return result;
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
-  };
+  const makeTransaction =
+    (notificationsOnly = false): TransactionAdapter =>
+    async (actor, mutate, write) => {
+      await seed();
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [schema]);
+        if (
+          !(
+            await client.query(
+              `SELECT id FROM ${table('people')} WHERE id=$1 AND ($2 OR data->>'isTestAccount'='true')`,
+              [actor, profile === 'reference'],
+            )
+          ).rowCount
+        )
+          throw new RuleError('데모 사용자를 다시 선택해주세요.');
+        const data = await load(client, !notificationsOnly);
+        const before = notificationsOnly ? structuredClone(data) : undefined;
+        const result = mutate(data);
+        if (write) {
+          if (!before) await persist(client, data);
+          else {
+            // Notification work never touches attachments or rewrites unrelated application tables.
+            for (const meeting of data.meetings) {
+              const old = before.meetings.find((m) => m.id === meeting.id);
+              if (JSON.stringify(old) === JSON.stringify(meeting)) continue;
+              const { attachments: _a, participantIds: _p, files: _f, ...value } = meeting;
+              await client.query(`UPDATE ${table('meetings')} SET data=$2 WHERE id=$1`, [
+                meeting.id,
+                JSON.stringify(value),
+              ]);
+            }
+            for (const log of data.logs) {
+              if (JSON.stringify(before.logs.find((l) => l.id === log.id)) === JSON.stringify(log))
+                continue;
+              await client.query(
+                `INSERT INTO ${table('delivery_logs')} VALUES ($1,$2) ON CONFLICT(id) DO UPDATE SET data=excluded.data`,
+                [log.id, JSON.stringify(log)],
+              );
+            }
+            for (const [id, value] of Object.entries(data.requests)) {
+              if (before.requests[id] === value) continue;
+              await client.query(
+                `INSERT INTO ${table('requests')} VALUES ($1,$2) ON CONFLICT(id) DO UPDATE SET result=excluded.result`,
+                [id, value],
+              );
+            }
+          }
+        }
+        await client.query('COMMIT');
+        return result;
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    };
   return {
     schema,
     seed,
-    transaction,
+    transaction: makeTransaction(),
+    notificationTransaction: makeTransaction(true),
+    async acquireNotificationLock(onLost: () => void) {
+      const client = await pool.connect();
+      const key = schema + ':direct-notifications';
+      const result = await client.query('SELECT pg_try_advisory_lock(hashtext($1)) AS locked', [
+        key,
+      ]);
+      if (!result.rows[0].locked) {
+        client.release();
+        throw new Error('Another notification worker is running');
+      }
+      client.on('error', onLost);
+      return async () => {
+        client.removeListener('error', onLost);
+        try {
+          await client.query('SELECT pg_advisory_unlock(hashtext($1))', [key]);
+        } finally {
+          client.release();
+        }
+      };
+    },
     async directory() {
       await seed();
       return (await pool.query(`SELECT data FROM ${table('people')} ORDER BY id`)).rows.map(

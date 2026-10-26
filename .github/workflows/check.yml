@@ -34,6 +34,7 @@ jobs:
       - run: npm run tokens:check
       - run: npm run build
       - run: npm test
+      - run: npm run test:selfhost
       - name: Verify preinstalled browser
         run: google-chrome --version
       - run: npm run test:e2e

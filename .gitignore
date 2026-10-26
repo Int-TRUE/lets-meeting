@@ -14,3 +14,5 @@ data/*.sqlite*
 .agents/skills/neon/
 .agents/skills/neon-postgres/
 skills-lock.json
+
+build/

@@ -8,7 +8,7 @@ import {
   type MeetingInteraction,
 } from './meeting-reminders.js';
 
-const events = new Set([
+export const directNotificationEvents = new Set([
   'created',
   'changed',
   'cancelled',
@@ -20,7 +20,7 @@ const events = new Set([
 ]);
 function queueNew(state: PreviewDatabase, existing: Set<string>) {
   for (const log of state.logs) {
-    if (existing.has(log.id) || !log.payload || !events.has(log.event)) continue;
+    if (existing.has(log.id) || !log.payload || !directNotificationEvents.has(log.event)) continue;
     log.result = 'pending';
     log.detail = '발송 대기';
   }
@@ -76,7 +76,8 @@ export function createDirectNotifications({
             scheduleReminders(state, now());
             queueNew(state, existing);
             const log = state.logs.find(
-              (log) => log.result === 'pending' && log.payload && events.has(log.event),
+              (log) =>
+                log.result === 'pending' && log.payload && directNotificationEvents.has(log.event),
             );
             if (!log) return;
             if (log.event === 'end-reminder') {

@@ -198,6 +198,11 @@ try {
     meeting,
     JSON.stringify({ start: startTime, end: endTime }),
   ]);
+  // External SQL changes bypass application write events. Restart to reload
+  // deadlines, as required by the event-driven scheduler's operating contract.
+  await stop();
+  start();
+  await ready();
   await until(() =>
     posts.some((p) =>
       p.props.attachments?.some((a) => a.actions?.some((a) => a.id === 'attendees')),

@@ -74,18 +74,26 @@ export function TextareaField({
 }
 export function PeoplePicker({
   label,
+  labelDescription,
   people,
   value,
   onChange,
   lockedIds = [],
+  excludedIds = [],
   topicId,
+  renderRole,
+  disabled = false,
 }: {
   label: string;
   people: Person[];
   value: string[];
   onChange: (value: string[]) => void;
   lockedIds?: string[];
+  excludedIds?: string[];
+  labelDescription?: string;
   topicId?: string;
+  renderRole?: (person: Person, selected: boolean) => ReactNode;
+  disabled?: boolean;
 }) {
   const id = useId();
   const { data, rememberPeople } = useWorkspace();
@@ -150,7 +158,7 @@ export function PeoplePicker({
     };
   }, [term, topicId, data.user.id, retry]);
   const loading = !topicId && Boolean(term && search.query !== term);
-  const matches = topicId
+  const searchMatches = topicId
     ? availablePeople.filter((person) =>
         `${person.name} ${person.team} ${person.position ?? ''}`
           .toLocaleLowerCase()
@@ -159,6 +167,7 @@ export function PeoplePicker({
     : term && !loading
       ? search.people
       : [];
+  const matches = searchMatches.filter((person) => !excludedIds.includes(person.id));
   function select(p: Person, checked: boolean) {
     if (checked) rememberPeople([p]);
     if (checked)
@@ -166,8 +175,20 @@ export function PeoplePicker({
     onChange(checked ? [...new Set([...value, p.id])] : value.filter((id) => id !== p.id));
   }
   return (
-    <fieldset className="people-picker">
-      <legend>{label}</legend>
+    <fieldset
+      className={`people-picker${renderRole ? ' people-picker-roles' : ''}`}
+      disabled={disabled}
+      aria-labelledby={`${id}-label`}
+      aria-describedby={labelDescription ? `${id}-description` : undefined}
+    >
+      <legend>
+        <span id={`${id}-label`}>{label}</span>
+        {labelDescription ? (
+          <span className="picker-label-description" id={`${id}-description`}>
+            {labelDescription}
+          </span>
+        ) : null}
+      </legend>
       <label htmlFor={id} className="picker-search">
         <Search size={18} />
         <span className="sr-only">{label} 검색</span>
@@ -209,9 +230,12 @@ export function PeoplePicker({
           return p ? (
             <span className="person-chip" key={pid}>
               <PersonAvatar person={p} />
-              {p.name}
+              <span className="person-chip-name">{p.name}</span>
+              {renderRole?.(p, true)}
               {lockedIds.includes(pid) ? (
-                <small>유지</small>
+                renderRole ? null : (
+                  <small>유지</small>
+                )
               ) : (
                 <button
                   type="button"
@@ -227,22 +251,25 @@ export function PeoplePicker({
       </div>
       <div className="people-options">
         {matches.map((p) => (
-          <label className="person-option" key={p.id}>
-            <input
-              type="checkbox"
-              checked={value.includes(p.id)}
-              disabled={lockedIds.includes(p.id)}
-              onChange={(e) => select(p, e.target.checked)}
-            />
-            <PersonAvatar person={p} />
-            <span>
-              <strong>{p.name}</strong>
-              <small>
-                {p.team}
-                {p.position ? ` · ${p.position}` : ''}
-              </small>
-            </span>
-          </label>
+          <div className="person-result" key={p.id}>
+            <label className="person-option">
+              <input
+                type="checkbox"
+                checked={value.includes(p.id)}
+                disabled={lockedIds.includes(p.id)}
+                onChange={(e) => select(p, e.target.checked)}
+              />
+              <PersonAvatar person={p} />
+              <span>
+                <strong>{p.name}</strong>
+                <small>
+                  {p.team}
+                  {p.position ? ` · ${p.position}` : ''}
+                </small>
+              </span>
+            </label>
+            {renderRole?.(p, false)}
+          </div>
         ))}
         <div className="people-search-status" role="status">
           {topicId && topicLoading ? (

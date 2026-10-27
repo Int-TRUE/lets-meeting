@@ -333,7 +333,12 @@ export const localService = {
   },
   createTopic(
     userId: string,
-    input: { title: string; description: string; managerIds: string[] },
+    input: {
+      title: string;
+      description: string;
+      managerIds: string[];
+      roles?: Record<string, Role>;
+    },
     requestId: string,
   ) {
     return transact(userId, (data) => {
@@ -343,10 +348,27 @@ export const localService = {
       if (input.managerIds.some((id) => !directory(data).some((p) => p.id === id)))
         throw new RuleError('관리자를 다시 선택해주세요.');
       const id = createId();
-      const roles: Record<string, 'Owner' | 'Master'> = { [userId]: 'Owner' };
+      let roles: Record<string, Role> = { [userId]: 'Owner' };
       input.managerIds.forEach((id) => {
         if (id !== userId) roles[id] = 'Master';
       });
+      if (input.roles !== undefined) {
+        const entries = Object.entries(input.roles);
+        if (
+          input.roles[userId] !== 'Owner' ||
+          entries.filter(([, role]) => role === 'Owner').length !== 1
+        )
+          throw new RuleError('토픽 생성자만 Owner가 될 수 있어요.');
+        if (
+          entries.some(
+            ([pid, role]) =>
+              !directory(data).some((p) => p.id === pid) ||
+              !['Owner', 'Master', 'Attendee'].includes(role),
+          )
+        )
+          throw new RuleError('직원과 권한을 다시 확인해주세요.');
+        roles = Object.fromEntries(entries);
+      }
       data.topics.push({
         id,
         title: input.title.trim(),

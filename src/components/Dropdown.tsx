@@ -164,7 +164,7 @@ export function Dropdown({
                 </button>
               ))}
             </div>,
-            document.body,
+            trigger.current?.closest('dialog') ?? document.body,
           )
         : null}
     </>

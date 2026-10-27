@@ -252,7 +252,7 @@ export function saveSummary(
     !summary.tasks?.length
   )
     throw new RuleError(
-      '빈 요약 완료 기준은 아직 정해지지 않았어요. 내용을 작성하거나 임시 저장해주세요.',
+      '빈 요약 완료 기준은 아직 정해지지 않았어요. 내용을 작성하거나 요약을 저장해주세요.',
     );
   meeting.summary = {
     ...summary,

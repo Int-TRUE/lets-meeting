@@ -128,3 +128,11 @@ Topic 생성/선택 → 기본 정보 → 장소·시간 → 참가자 선택 �
 ## 2026-10-26 - Approved standalone server and delivery UI removal
 
 User approved replacing the relay with direct delivery in the standalone server and starting a fresh PostgreSQL database, leaving Neon untouched. Screens 12 and 13 no longer show delivery status or refresh controls; the creator's manual reminder remains. Screen 19 delivery history is removed, and its old URL redirects to permission-checked room administration. Public delivery-history APIs are disabled. Internal send intents and receipts remain for duplicate prevention. Verify scheduled reminders, signed late/extension actions, reservation conflicts, restart ambiguity, attachment preservation, and the absence of delivery UI.
+
+## 2026-10-27 — 토픽 설정 조직도·권한 편집
+
+- 화면 08은 검색어 입력 전에도 저장된 직원의 팀별 조직도를 표시한다. 토픽 생성의 기존 검색 정책은 유지한다. 실제 조직 계층 API를 가정하지 않고 등록된 팀 정보로 묶으며 인원수를 계산한다.
+- Owner만 조직도 조회·구성원 추가/제외·Master와 Attendee 간 역할 변경을 할 수 있다. 생성자의 Owner 1명은 고정하며 위임 정책은 기존 미정 상태를 유지한다.
+- 새 구성원은 Attendee로 선택한다. Owner·Master는 토픽의 모든 회의를 조회하고 Attendee는 토픽 구성원이면서 개별 회의 참가자인 경우만 조회한다. 구성원 제외 시 과거 참가 기록은 보존하되 접근은 거부한다. 제외 후 다시 추가하면 기존 참가 기록에 따른 조회 권한이 복구된다.
+- 저장은 서버 트랜잭션에서 기존 역할 스냅샷과 비교하여 동시 변경을 거부한다. 존재하는 직원·허용 역할·Owner 유지 조건을 검증하며 실패 시 기존 정보와 편집 입력을 보존한다.
+- 제공 캡처의 조직도 왼쪽/직원 오른쪽, 검색·선택 칩·역할 배지를 따른다. 모바일은 조직도를 위로 배치하고 표 안에서만 가로 스크롤한다. 임의 부서·직책·인원수를 만들지 않는다.

@@ -382,3 +382,121 @@ it('lists all topic members including attendees and rejects unauthorized readers
   await expect(previewService.topicPeople('ops', 'system')).rejects.toThrow();
   await expect(previewService.topicPeople('park', 'system')).rejects.toThrow();
 });
+
+describe('topic organization and role changes', () => {
+  const getTopic = async () =>
+    (await previewService.snapshot('kim')).topics.find((t) => t.id === 'system')!;
+  it('only the Owner can inspect the organization or change roles', async () => {
+    expect((await previewService.topicOrganization('kim', 'system')).length).toBeGreaterThan(6);
+    for (const user of ['lee', 'park', 'ops']) {
+      await expect(previewService.topicOrganization(user, 'system')).rejects.toThrow();
+      const topic = await getTopic();
+      await expect(
+        previewService.updateTopic(user, 'system', {
+          ...topic,
+          managerIds: [],
+          expectedRoles: topic.roles,
+        }),
+      ).rejects.toThrow();
+    }
+  });
+  it('applies membership and role changes to lists and attachment access immediately', async () => {
+    const meetingId = await previewService.createMeeting(
+      'kim',
+      input({
+        attachments: [
+          {
+            id: 'role-file',
+            name: '권한검증.txt',
+            type: 'text/plain',
+            size: 4,
+            blob: new Blob(['test']),
+            authorId: 'kim',
+            updatedAt: '2026-10-20T13:30:00+09:00',
+          },
+        ],
+        material: 'uploaded',
+      }),
+      'role-meeting',
+    );
+    const topic = await getTopic();
+    const roles = { ...topic.roles, lee: 'Attendee' as const, ops: 'Attendee' as const };
+    await previewService.updateTopic('kim', 'system', {
+      ...topic,
+      managerIds: [],
+      roles,
+      expectedRoles: topic.roles,
+    });
+    expect((await previewService.snapshot('lee')).meetings.some((m) => m.id === meetingId)).toBe(
+      false,
+    );
+    expect((await previewService.snapshot('park')).meetings.some((m) => m.id === meetingId)).toBe(
+      true,
+    );
+    expect((await previewService.snapshot('ops')).meetings.some((m) => m.id === meetingId)).toBe(
+      false,
+    );
+    await expect(previewService.download('lee', meetingId, 'role-file')).rejects.toThrow();
+    expect((await previewService.download('park', meetingId, 'role-file')).name).toBe(
+      '권한검증.txt',
+    );
+    await previewService.updateTopic('kim', 'system', {
+      ...topic,
+      managerIds: [],
+      roles: { ...roles, lee: 'Master' },
+      expectedRoles: roles,
+    });
+    expect((await previewService.snapshot('lee')).meetings.some((m) => m.id === meetingId)).toBe(
+      true,
+    );
+    expect((await previewService.download('lee', meetingId, 'role-file')).name).toBe(
+      '권한검증.txt',
+    );
+    const current = await getTopic();
+    const removed = { ...current.roles };
+    delete removed.park;
+    await previewService.updateTopic('kim', 'system', {
+      ...current,
+      managerIds: [],
+      roles: removed,
+      expectedRoles: current.roles,
+    });
+    expect((await previewService.snapshot('park')).meetings.some((m) => m.id === meetingId)).toBe(
+      false,
+    );
+    await expect(previewService.download('park', meetingId, 'role-file')).rejects.toThrow();
+  });
+  it('rejects stale edits, Owner removal, duplicate owners, unknown people and invalid roles atomically', async () => {
+    const topic = await getTopic();
+    for (const roles of [
+      { ...topic.roles, kim: 'Attendee' },
+      { ...topic.roles, lee: 'Owner' },
+      { ...topic.roles, unknown: 'Master' },
+      { ...topic.roles, lee: 'Admin' },
+    ]) {
+      await expect(
+        previewService.updateTopic('kim', 'system', {
+          ...topic,
+          title: '변경되면 안 됨',
+          managerIds: [],
+          roles: roles as typeof topic.roles,
+          expectedRoles: topic.roles,
+        }),
+      ).rejects.toThrow();
+      expect((await getTopic()).title).toBe(topic.title);
+    }
+    await previewService.updateTopic('kim', 'system', {
+      ...topic,
+      managerIds: [],
+      roles: { ...topic.roles, lee: 'Attendee' },
+      expectedRoles: topic.roles,
+    });
+    await expect(
+      previewService.updateTopic('kim', 'system', {
+        ...topic,
+        managerIds: [],
+        expectedRoles: topic.roles,
+      }),
+    ).rejects.toThrow('새로고침');
+  });
+});

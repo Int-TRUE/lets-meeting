@@ -1,3 +1,5 @@
+import { TopicRoleEditor } from './TopicRoleEditor';
+import type { Role } from '../../domain/models';
 import { createId } from '../../domain/id';
 import { MeetingSummary } from '../../components/MeetingSummary';
 import { useRef, useState } from 'react';
@@ -103,6 +105,8 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
       ? Object.keys(topic.roles).filter((pid) => topic.roles[pid] !== 'Attendee')
       : [data.user.id];
   const [managerIds, setManagerIds] = useState(managers);
+  const [roles, setRoles] = useState<Record<string, Role>>({ ...topic?.roles });
+  const [rolesReady, setRolesReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [discard, setDiscard] = useState(false);
@@ -110,7 +114,8 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
   const dirty =
     title !== (editing ? (topic?.title ?? '') : '') ||
     description !== (editing ? (topic?.description ?? '') : '') ||
-    managerIds.join() !== managers.join();
+    managerIds.join() !== managers.join() ||
+    (editing && JSON.stringify(roles) !== JSON.stringify(topic?.roles));
   const allowLeave = useUnsavedChanges(dirty);
   if (editing && (!topic || topic.roles[data.user.id] !== 'Owner')) return <Denied />;
   function close() {
@@ -119,7 +124,7 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
     else navigate(editing ? `/topics/${id}` : '/topics');
   }
   async function save() {
-    if (busy) return;
+    if (busy || (editing && !rolesReady)) return;
     if (!title.trim() || !description.trim()) {
       setError('주제명과 한줄 설명을 입력해주세요.');
       document.getElementById('topic-title')?.focus();
@@ -131,7 +136,11 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
       const input = { title, description, managerIds };
       const topicId = await run(() =>
         editing
-          ? previewService.updateTopic(data.user.id, id!, input)
+          ? previewService.updateTopic(data.user.id, id!, {
+              ...input,
+              roles,
+              expectedRoles: topic!.roles,
+            })
           : previewService.createTopic(data.user.id, input, requestId.current),
       );
       allowLeave();
@@ -144,7 +153,7 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
   }
   const form = (
     <form
-      className="stack-form"
+      className="stack-form topic-editor-form"
       onSubmit={(e) => {
         e.preventDefault();
         void save();
@@ -163,22 +172,35 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
-      <PeoplePicker
-        label="회의 관리자"
-        people={directory}
-        value={managerIds}
-        onChange={setManagerIds}
-        lockedIds={editing ? managers : [data.user.id]}
-      />
-      <p className="info-notice">
-        토픽을 만든 사람은 Owner가 됩니다. 선택한 회의 관리자는 Master 권한을 가집니다.
-      </p>
+      {editing ? (
+        <TopicRoleEditor
+          topicId={id!}
+          user={data.user}
+          roles={roles}
+          onChange={setRoles}
+          disabled={busy}
+          onReady={setRolesReady}
+        />
+      ) : (
+        <>
+          <PeoplePicker
+            label="토픽 참가자"
+            people={directory}
+            value={managerIds}
+            onChange={setManagerIds}
+            lockedIds={editing ? managers : [data.user.id]}
+          />
+          <p className="info-notice">
+            토픽을 만든 사람은 Owner가 됩니다. 선택한 회의 관리자는 Master 권한을 가집니다.
+          </p>
+        </>
+      )}
       <FormMessage error={error} />
       <div className="form-actions">
         <Button type="button" variant="secondary" onClick={close} disabled={busy}>
           취소
         </Button>
-        <Button type="submit" loading={busy}>
+        <Button type="submit" loading={busy} disabled={editing && !rolesReady}>
           {editing ? '변경 저장' : '토픽 만들기'}
         </Button>
       </div>
@@ -190,7 +212,7 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
         <div className="workflow-page topic-settings-page">
           <PageHeading
             title="토픽 설정"
-            description="주제 정보와 회의 관리자를 관리하세요."
+            description="주제 정보와 토픽 참가자의 권한을 관리하세요."
             crumbs={[{ label: topic!.title, to: `/topics/${id}` }]}
           />
           <div className="settings-grid">

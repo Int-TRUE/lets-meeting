@@ -3,6 +3,7 @@ import { fixture, people } from './workspace.js';
 import { encodeWire, decodeWire } from './wire.js';
 import type {
   Attachment,
+  Role,
   Meeting,
   NotificationSettings,
   PreviewDatabase,
@@ -117,6 +118,18 @@ async function transact<T>(
 const now = (data: PreviewDatabase) => data.now ?? fixture.now;
 const directory = (data: PreviewDatabase) => data.people ?? people;
 export const localService = {
+  topicOrganization(userId: string, topicId: string) {
+    return transact(
+      userId,
+      (data) => {
+        const topic = requireTopic(data, topicId, userId);
+        if (topic.roles[userId] !== 'Owner')
+          throw new RuleError('토픽 소유자만 조직도를 조회할 수 있어요.');
+        return directory(data);
+      },
+      false,
+    );
+  },
   topicPeople(userId: string, topicId: string) {
     return transact(
       userId,
@@ -349,13 +362,46 @@ export const localService = {
   updateTopic(
     userId: string,
     id: string,
-    input: { title: string; description: string; managerIds: string[] },
+    input: {
+      title: string;
+      description: string;
+      managerIds: string[];
+      roles?: Record<string, Role>;
+      expectedRoles?: Record<string, Role>;
+    },
   ) {
     return transact(userId, (data) => {
       const topic = requireTopic(data, id, userId);
       if (topic.roles[userId] !== 'Owner') throw new RuleError('토픽 소유자만 변경할 수 있어요.');
       if (!input.title.trim() || !input.description.trim())
         throw new RuleError('주제명과 설명을 입력해주세요.');
+      if (input.roles !== undefined) {
+        const entries = Object.entries(input.roles);
+        const expected = input.expectedRoles;
+        if (
+          !expected ||
+          Object.keys(expected).length !== Object.keys(topic.roles).length ||
+          Object.entries(topic.roles).some(([pid, role]) => expected[pid] !== role)
+        )
+          throw new RuleError('구성원 권한이 변경되었어요. 새로고침 후 다시 확인해주세요.');
+        if (
+          entries.filter(([, role]) => role === 'Owner').length !== 1 ||
+          input.roles[userId] !== 'Owner'
+        )
+          throw new RuleError('토픽 생성자의 Owner 권한은 유지해야 해요.');
+        if (
+          entries.some(
+            ([pid, role]) =>
+              !directory(data).some((p) => p.id === pid) ||
+              !['Owner', 'Master', 'Attendee'].includes(role),
+          )
+        )
+          throw new RuleError('직원과 권한을 다시 확인해주세요.');
+        topic.roles = Object.fromEntries(entries);
+        topic.title = input.title.trim();
+        topic.description = input.description.trim();
+        return id;
+      }
       if (
         Object.keys(topic.roles).some(
           (id) => topic.roles[id] === 'Master' && !input.managerIds.includes(id),

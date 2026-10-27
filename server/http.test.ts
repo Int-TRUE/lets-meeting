@@ -99,3 +99,21 @@ test('staff search returns no initial list, bounded matches and only eligible to
   expect((await search('검색직원249')).people[0].id).toBe('staff-249');
   expect((await search('검색직원', 'system')).people).toHaveLength(0);
 });
+
+test('organization and role writes enforce ownership over HTTP and reject stale role edits', async () => {
+  const call = (method: string, args: unknown[]) =>
+    handleDemoRequest(request(method, args), async () => db);
+  expect((await call('topicOrganization', ['lee', 'system'])).status).toBe(400);
+  expect((await call('topicOrganization', ['kim', 'system'])).status).toBe(200);
+  const snapshot = (await (await call('snapshot', ['kim'])).json()).result;
+  const topic = snapshot.topics.find((t: { id: string }) => t.id === 'system');
+  const input = {
+    ...topic,
+    managerIds: [],
+    roles: { ...topic.roles, lee: 'Attendee' },
+    expectedRoles: topic.roles,
+  };
+  expect((await call('updateTopic', ['lee', 'system', input])).status).toBe(400);
+  expect((await call('updateTopic', ['kim', 'system', input])).status).toBe(200);
+  expect((await call('updateTopic', ['kim', 'system', input])).status).toBe(400);
+});

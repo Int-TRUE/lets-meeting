@@ -47,7 +47,7 @@ export function Dropdown({
   }
   function close(restore = false) {
     setPosition(undefined);
-    if (restore) trigger.current?.focus();
+    if (restore) trigger.current?.focus({ preventScroll: true });
   }
   useEffect(() => {
     if (!open) return;
@@ -57,7 +57,7 @@ export function Dropdown({
         0,
         options.findIndex((option) => option.value === value),
       )
-    ]?.focus();
+    ]?.focus({ preventScroll: true });
     const outside = (event: PointerEvent) => {
       if (
         !menu.current?.contains(event.target as Node) &&
@@ -66,7 +66,7 @@ export function Dropdown({
         setPosition(undefined);
     };
     const reposition = (event: Event) => {
-      if (!menu.current?.contains(event.target as Node)) setPosition(undefined);
+      if (!menu.current?.contains(event.target as Node)) show();
     };
     document.addEventListener('pointerdown', outside);
     window.addEventListener('resize', reposition);
@@ -138,7 +138,7 @@ export function Dropdown({
                         ? buttons.length - 1
                         : (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) %
                           buttons.length;
-                  buttons[next]?.focus();
+                  buttons[next]?.focus({ preventScroll: true });
                 }
               }}
             >

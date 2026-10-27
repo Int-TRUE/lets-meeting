@@ -1,6 +1,7 @@
 import { beforeEach, afterEach, test, expect, vi } from 'vitest';
 import { openDemoDatabase } from './database';
 import { createDirectNotifications } from './direct-notifications';
+import { createNotificationScheduler, nextNotificationAt } from './notification-scheduler';
 import { recordEvent } from '../src/domain/workflows';
 import type { MattermostConfig } from './mattermost';
 import type { TransactionAdapter } from '../src/data/previewService';
@@ -190,4 +191,62 @@ test('network-ambiguous sends are not retried and cancelled reminders are suppre
   clock = Date.parse('2026-10-26T10:00:10+09:00');
   await w.tick();
   expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith('/posts'))).toHaveLength(calls);
+});
+
+test('event scheduler sends reservation once, resumes after restart, and stays idle after cancellation', async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(Date.parse('2026-10-26T09:00:00+09:00'));
+  let transactions = 0;
+  const tx: TransactionAdapter = (...args) => {
+    transactions++;
+    return db.transaction(...args);
+  };
+  const make = async () => {
+    const w = createDirectNotifications({
+      transaction: db.transaction,
+      notificationTransaction: tx,
+      config,
+      fetcher,
+    });
+    await w.recover();
+    const scheduler = createNotificationScheduler({
+      process: async () => {
+        const started = Date.now();
+        await w.tick();
+        return tx('taeheon', (state) => nextNotificationAt(state, started), false);
+      },
+    });
+    scheduler.wake();
+    return { w, scheduler };
+  };
+  let runtime = await make();
+  try {
+    await vi.advanceTimersByTimeAsync(1);
+    const initialReads = transactions;
+    await vi.advanceTimersByTimeAsync(29 * 60_000);
+    expect(transactions).toBe(initialReads);
+    expect(posts).toHaveLength(0);
+    await runtime.scheduler.stop();
+    await runtime.w.stop();
+    runtime = await make();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(posts).toHaveLength(2);
+    await runtime.w.transaction(
+      'taeheon',
+      (state) => {
+        state.meetings[0].cancelled = true;
+      },
+      true,
+    );
+    runtime.scheduler.wake();
+    await vi.advanceTimersByTimeAsync(1);
+    const cancelledReads = transactions;
+    await vi.advanceTimersByTimeAsync(86_400_000);
+    expect(transactions).toBe(cancelledReads);
+    expect(posts).toHaveLength(2);
+  } finally {
+    await runtime.scheduler.stop();
+    await runtime.w.stop();
+    vi.useRealTimers();
+  }
 });

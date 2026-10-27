@@ -622,3 +622,15 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Keep the home search aligned with the greeting at every desktop width. */
+@media (min-width: 768px) {
+  .app-content:has(.home-page) .topbar {
+    padding-left: max(24px, calc((100% - 1184px) / 2));
+  }
+}
+@media (min-width: 1200px) {
+  .app-content:has(.home-page) .topbar {
+    padding-left: max(32px, calc((100% - 1176px) / 2));
+  }
+}

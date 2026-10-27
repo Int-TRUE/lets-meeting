@@ -1,4 +1,5 @@
 import pg from 'pg';
+import { createNotificationScheduler, nextNotificationAt } from './notification-scheduler.ts';
 import { createServer } from 'node:http';
 import { openPostgresDatabase } from './postgres.ts';
 import { TEST_SEED_VERSION } from './seed.ts';
@@ -69,7 +70,27 @@ async function main() {
     config,
   });
   await worker.recover();
-  const store = { directory: db.directory, rooms: db.rooms, transaction: worker.transaction };
+  const scheduler = createNotificationScheduler({
+    process: async () => {
+      const passStartedAt = Date.now();
+      await worker.tick();
+      return db.notificationTransaction(
+        'taeheon',
+        (state) => nextNotificationAt(state, passStartedAt),
+        false,
+      );
+    },
+    onError: () => console.error('Notification processing failed; retry scheduled with backoff'),
+  });
+  const store = {
+    directory: db.directory,
+    rooms: db.rooms,
+    transaction: async (...args) => {
+      const result = await worker.transaction(...args);
+      if (args[2]) scheduler.wake();
+      return result;
+    },
+  };
   const app = createWebServer({
     origin,
     httpOrigin: process.env.ROBOT_BUTLER_HTTP_ORIGIN,
@@ -77,8 +98,7 @@ async function main() {
     demo: (request) => handleDemoRequest(request, async () => store),
     relay: () => new Response(null, { status: 404 }),
     health: async () => {
-      if (!worker.healthy()) throw new Error('Worker unhealthy');
-      await db.rooms();
+      if (!scheduler.healthy()) throw new Error('Notification scheduler unhealthy');
     },
   });
   const callbacks = createServer(
@@ -87,7 +107,9 @@ async function main() {
         config,
         rpc: async (input) => {
           try {
-            return await worker.interact(input);
+            const result = await worker.interact(input);
+            if (input.command !== 'options') scheduler.wake();
+            return result;
           } catch (error) {
             if (error instanceof RuleError) error.publicMessage = error.message;
             throw error;
@@ -106,24 +128,20 @@ async function main() {
       callbacks.listen(8066, '0.0.0.0', resolve);
     }),
   ]);
-  const tick = () =>
-    worker
-      .tick()
-      .catch(() => console.error('Notification processing paused: check database connectivity'));
-  const timer = setInterval(tick, 5000);
-  void tick();
+  scheduler.wake();
   console.log('Robot Butler ready: direct Mattermost notifications enabled');
   let stopping = false;
   for (const signal of ['SIGTERM', 'SIGINT'])
     process.on(signal, async () => {
       if (stopping) return;
       stopping = true;
-      clearInterval(timer);
+
       setTimeout(() => process.exit(1), 25000).unref();
       await Promise.all([
         new Promise((r) => app.close(r)),
         new Promise((r) => callbacks.close(r)),
         worker.stop(),
+        scheduler.stop(),
       ]);
       await release();
       await db.close();

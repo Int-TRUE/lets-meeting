@@ -1,3 +1,4 @@
+import { Mascot } from '../../components/Brand';
 import { createId } from '../../domain/id';
 import { MeetingSummary } from '../../components/MeetingSummary';
 import { useState } from 'react';
@@ -357,32 +358,53 @@ export function MeetingDetail() {
         </Card>
       )}
       {meeting.creatorId === data.user.id && status === 'scheduled' ? (
-        <Card className="meeting-delivery-card">
-          {meeting.creatorId === data.user.id && status === 'scheduled' ? (
-            <Button
-              disabled={busy}
-              onClick={async () => {
-                setBusy(true);
-                setError('');
-                setReminderResult('');
-                try {
-                  await run(() =>
-                    previewService.sendReminder(data.user.id, meeting.id, reminderRequest),
-                  );
-                  setReminderRequest(createId());
-                  setReminderResult('참가자에게 리마인드 발송을 요청했어요.');
-                } catch (e) {
-                  setError(e instanceof Error ? e.message : '알림을 요청하지 못했어요.');
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              <BellRing size={17} aria-hidden="true" />
-              리마인드 알람 보내기
-            </Button>
-          ) : null}
-          {reminderResult ? <p role="status">{reminderResult}</p> : null}
+        <Card className="meeting-delivery-card meeting-reminder-card">
+          <div className="meeting-reminder-copy">
+            <span className="meeting-reminder-eyebrow">
+              <BellRing size={14} aria-hidden="true" /> 함께 준비하는 회의
+            </span>
+            <h2>회의 준비, 잊지 않도록.</h2>
+            <p className="meeting-reminder-description">
+              시간과 장소를 다시 알려드릴게요.
+              <br />
+              참가자에게 매터모스트 알림을 보내보세요.
+            </p>
+            {meeting.creatorId === data.user.id && status === 'scheduled' ? (
+              <Button
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  setError('');
+                  setReminderResult('');
+                  try {
+                    await run(() =>
+                      previewService.sendReminder(data.user.id, meeting.id, reminderRequest),
+                    );
+                    setReminderRequest(createId());
+                    setReminderResult('참가자에게 리마인드 발송을 요청했어요.');
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : '알림을 요청하지 못했어요.');
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                <BellRing size={17} aria-hidden="true" />
+                리마인드 알람 보내기
+              </Button>
+            ) : null}
+            {reminderResult ? (
+              <p className="meeting-reminder-result" role="status">
+                {reminderResult}
+              </p>
+            ) : null}
+          </div>
+          <div className="meeting-reminder-mascot" aria-hidden="true">
+            <span className="meeting-reminder-bubble">
+              회의에서 만나요! <span>✦</span>
+            </span>
+            <Mascot pose="home" />
+          </div>
         </Card>
       ) : null}
       {cancel ? (

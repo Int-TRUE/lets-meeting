@@ -80,7 +80,7 @@ test('follow-up checklist can be added and checked with persistent state', async
   await page.getByRole('button', { name: '후속 작업 추가' }).click();
   const fields = page.getByRole('textbox', { name: /^후속 작업 \d+$/ });
   await fields.last().fill('체크리스트 공유');
-  await page.getByRole('button', { name: '임시 저장', exact: true }).click();
+  await page.getByRole('button', { name: '요약 저장', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('요약을 저장했어요');
   await page.goto('/meetings/strategy?tab=summary');
   await page.getByLabel('체크리스트 공유', { exact: true }).check();

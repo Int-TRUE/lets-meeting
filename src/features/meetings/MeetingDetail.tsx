@@ -334,7 +334,7 @@ export function MeetingDetail() {
           {meeting.summary ? (
             <div className="summary-read">
               <span className="badge status-completed">
-                {meeting.completed ? '완료된 요약' : '임시 저장'}
+                {meeting.completed ? '완료된 요약' : '저장된 요약'}
               </span>
               <MeetingSummary meeting={meeting} />
             </div>
@@ -598,7 +598,7 @@ export function SummaryEditor() {
         <FormMessage error={!confirm ? error : undefined} success={success} />
         <div className="form-actions">
           <Button variant="secondary" onClick={() => void save(false)} loading={busy}>
-            {meeting.completed ? '변경 저장' : '임시 저장'}
+            요약 저장
           </Button>
           {canComplete ? (
             <Button
@@ -608,7 +608,7 @@ export function SummaryEditor() {
               }}
               disabled={busy}
             >
-              요약 저장 및 완료
+              요약 저장 및 회의 완료
             </Button>
           ) : null}
         </div>

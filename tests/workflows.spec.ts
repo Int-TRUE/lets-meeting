@@ -141,13 +141,13 @@ test('ended meeting summary draft is not completion; explicit completion persist
     .fill('기존 방향을 유지하고 세부안을 보완합니다.');
   await page.getByRole('button', { name: '후속 작업 추가' }).click();
   await page.getByLabel('후속 작업 1', { exact: true }).fill('다음 회의 전 자료 공유');
-  await page.getByRole('button', { name: '임시 저장', exact: true }).click();
+  await page.getByRole('button', { name: '요약 저장', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('아직 완료되지');
   await page.reload();
   await expect(page.getByLabel('주요 논의 내용', { exact: true })).toHaveValue(
     '프로젝트의 핵심 가치를 정리했습니다.',
   );
-  await page.getByRole('button', { name: '요약 저장 및 완료', exact: true }).click();
+  await page.getByRole('button', { name: '요약 저장 및 회의 완료', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: '저장 및 완료', exact: true }).click();
   await expect(page.locator('.status-completed').first()).toContainText('완료');
   await expect(page.getByText('회의실 가는 길', { exact: true })).toHaveCount(0);

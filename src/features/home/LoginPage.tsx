@@ -18,11 +18,7 @@ export function LoginPage({
         <Mascot pose="welcome" />
         <strong>로봇집사</strong>
         <span>ROBOT BUTLER</span>
-        <h2>
-          좋은 대화가
-          <br />
-          좋은 일을 만듭니다.
-        </h2>
+        <h2>내 회의 한 눈에</h2>
         <p>
           회의의 시작부터 끝까지,
           <br />더 집중할 수 있도록 도와드려요.

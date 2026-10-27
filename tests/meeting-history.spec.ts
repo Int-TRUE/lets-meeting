@@ -16,7 +16,7 @@ test('history selection shows a shared panel and persists checklist state', asyn
     path: `test-results/polished-editor-${info.project.name}.png`,
     fullPage: true,
   });
-  await page.getByRole('button', { name: '임시 저장', exact: true }).click();
+  await page.getByRole('button', { name: '요약 저장', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('요약을 저장했어요');
   await page.goto('/topics/brand');
   const card = page.locator('.history-card').filter({ hasText: '브랜드 방향성 정리' });

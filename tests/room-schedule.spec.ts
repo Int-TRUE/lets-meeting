@@ -69,7 +69,10 @@ test('new 토픽 participant picker excludes outsiders and stale draft selection
   await page.goto('/topics/new');
   await page.getByLabel(/^주제명/).fill('구성원 제한');
   await page.getByLabel(/^한줄 설명/).fill('토픽 구성원만 선택');
-  await page.locator('.people-picker').getByRole('searchbox').fill('이서준');
+  await page
+    .getByRole('group', { name: 'Master', exact: true })
+    .getByRole('searchbox')
+    .fill('이서준');
   await page.getByRole('checkbox', { name: /이서준/ }).check();
   await page.getByRole('button', { name: '토픽 만들기', exact: true }).click();
   await page.getByRole('link', { name: '회의 만들기', exact: true }).click();

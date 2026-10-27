@@ -1,42 +1,53 @@
 import { expect, test } from '@playwright/test';
 
-test('organization, role editing, persistence and responsive layout', async ({ page }, info) => {
+test('settings searches separate role groups and moves a person without duplicates', async ({
+  page,
+}) => {
   await page.goto('/topics/system/settings');
-  await expect(page.getByRole('heading', { name: '토픽 참가자', exact: true })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: '조직도 부서' })).toBeVisible();
-  await expect(page.getByLabel('김하늘 권한', { exact: true })).toBeDisabled();
-  await page.getByRole('combobox', { name: '부서 정렬' }).focus();
-  await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('listbox', { name: '부서 정렬' })).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('combobox', { name: '부서 정렬' })).toBeFocused();
-  await page.getByRole('button', { name: /전체 조직/ }).click();
-  await page.getByLabel('이서준 권한', { exact: true }).click();
-  await page.getByRole('option', { name: /^Attendee/ }).click();
-  await page.getByLabel('박지우 권한', { exact: true }).click();
-  await page.getByRole('option', { name: /^Master/ }).click();
-  await page.getByRole('searchbox', { name: '이름, 팀, 직책으로 검색' }).fill('운영관리자');
-  await page.getByLabel('운영관리자 토픽 구성원', { exact: true }).check();
-  await page.getByRole('searchbox').fill('없는직원');
-  await expect(
-    page.getByText('검색 결과가 없어요. 이름, 팀, 직책을 다시 확인해주세요.'),
-  ).toBeVisible();
-  await page.getByRole('searchbox').fill('');
+  const master = page.getByRole('group', { name: 'Master', exact: true });
+  const attendee = page.getByRole('group', { name: 'Attendee', exact: true });
+  await expect(master).toBeVisible();
+  await expect(page.locator('.people-options').getByRole('checkbox')).toHaveCount(0);
+  await expect(page.getByLabel('Owner', { exact: true })).toContainText('김하늘');
+  await attendee.getByRole('searchbox').fill('이서준');
+  await attendee.getByRole('checkbox', { name: /이서준/ }).check();
+  await expect(master.locator('.selected-people')).not.toContainText('이서준');
+  await expect(attendee.locator('.selected-people')).toContainText('이서준');
+  await master.getByRole('searchbox').fill('박지우');
+  await master.getByRole('checkbox', { name: /박지우/ }).check();
+  await expect(attendee.locator('.selected-people')).not.toContainText('박지우');
+  await master.getByRole('searchbox').fill('김하늘');
+  await expect(master.getByRole('checkbox')).toHaveCount(0);
   await page.getByRole('button', { name: '변경 저장', exact: true }).click();
   await expect(page).toHaveURL(/\/topics\/system$/);
   await page.goto('/topics/system/settings');
-  await page.getByRole('button', { name: /전체 조직/ }).click();
-  await expect(page.getByLabel('이서준 권한', { exact: true })).toContainText('Attendee');
-  await expect(page.getByLabel('박지우 권한', { exact: true })).toContainText('Master');
-  await expect(page.getByLabel('운영관리자 토픽 구성원', { exact: true })).toBeChecked();
+  await expect(master.locator('.selected-people')).toContainText('박지우');
+  await expect(attendee.locator('.selected-people')).toContainText('이서준');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({
-    path: `test-results/topic-roles-${info.project.name}.png`,
-    fullPage: true,
-  });
-  await page.getByRole('searchbox').focus();
-  await page.keyboard.press('Tab');
-  await expect(
-    page.getByRole('button', { name: '이서준 토픽에서 제외', exact: true }),
-  ).toBeFocused();
+});
+
+test('creation saves participants with the role of their search section', async ({ page }) => {
+  await page.goto('/topics/new');
+  await page.getByLabel(/^주제명/).fill('권한별 참가자 검색');
+  await page.getByLabel(/^한줄 설명/).fill('Master와 Attendee 영역에서 추가');
+  const master = page.getByRole('group', { name: 'Master', exact: true });
+  const attendee = page.getByRole('group', { name: 'Attendee', exact: true });
+  await master.getByRole('searchbox').fill('이서준');
+  await master.getByRole('checkbox', { name: /이서준/ }).check();
+  await attendee.getByRole('searchbox').fill('박지우');
+  await attendee.getByRole('checkbox', { name: /박지우/ }).check();
+  await expect(master.locator('.selected-people')).toContainText('이서준');
+  await expect(attendee.locator('.selected-people')).toContainText('박지우');
+  await expect(page.getByRole('combobox')).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('button', { name: '토픽 만들기', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '권한별 참가자 검색' })).toBeVisible();
+  await page.getByRole('link', { name: '토픽 설정', exact: true }).click();
+  await expect(master.locator('.selected-people')).toContainText('이서준');
+  await expect(attendee.locator('.selected-people')).toContainText('박지우');
+  await page.reload();
+  await expect(master.locator('.selected-people')).toContainText('이서준');
+  await expect(attendee.locator('.selected-people')).toContainText('박지우');
+  await attendee.getByRole('button', { name: '박지우 선택 해제' }).click();
+  await expect(attendee.locator('.selected-people')).not.toContainText('박지우');
 });

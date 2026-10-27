@@ -24,7 +24,6 @@ import {
   Denied,
   FormMessage,
   PageHeading,
-  PeoplePicker,
   TextareaField,
 } from '../../components/workflow-ui';
 export function TopicsPage() {
@@ -94,19 +93,17 @@ export function TopicsPage() {
   );
 }
 export function TopicForm({ editing = false }: { editing?: boolean }) {
-  const { data, directory, run } = useWorkspace();
+  const { data, run } = useWorkspace();
   const { id } = useParams();
   const navigate = useNavigate();
   const topic = data.topics.find((t) => t.id === id);
   const [title, setTitle] = useState(editing ? (topic?.title ?? '') : '');
   const [description, setDescription] = useState(editing ? (topic?.description ?? '') : '');
-  const managers =
-    editing && topic
-      ? Object.keys(topic.roles).filter((pid) => topic.roles[pid] !== 'Attendee')
-      : [data.user.id];
-  const [managerIds, setManagerIds] = useState(managers);
-  const [roles, setRoles] = useState<Record<string, Role>>({ ...topic?.roles });
-  const [rolesReady, setRolesReady] = useState(false);
+  const initialRoles = useRef<Record<string, Role>>(
+    editing && topic ? { ...topic.roles } : { [data.user.id]: 'Owner' },
+  );
+  const [roles, setRoles] = useState<Record<string, Role>>(initialRoles.current);
+  const [rolesReady, setRolesReady] = useState(!editing);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [discard, setDiscard] = useState(false);
@@ -114,8 +111,7 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
   const dirty =
     title !== (editing ? (topic?.title ?? '') : '') ||
     description !== (editing ? (topic?.description ?? '') : '') ||
-    managerIds.join() !== managers.join() ||
-    (editing && JSON.stringify(roles) !== JSON.stringify(topic?.roles));
+    JSON.stringify(roles) !== JSON.stringify(initialRoles.current);
   const allowLeave = useUnsavedChanges(dirty);
   if (editing && (!topic || topic.roles[data.user.id] !== 'Owner')) return <Denied />;
   function close() {
@@ -133,13 +129,18 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
     setBusy(true);
     setError('');
     try {
-      const input = { title, description, managerIds };
+      const input = {
+        title,
+        description,
+        roles,
+        managerIds: Object.keys(roles).filter((pid) => roles[pid] !== 'Attendee'),
+      };
       const topicId = await run(() =>
         editing
           ? previewService.updateTopic(data.user.id, id!, {
               ...input,
               roles,
-              expectedRoles: topic!.roles,
+              expectedRoles: initialRoles.current,
             })
           : previewService.createTopic(data.user.id, input, requestId.current),
       );
@@ -172,29 +173,14 @@ export function TopicForm({ editing = false }: { editing?: boolean }) {
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
-      {editing ? (
-        <TopicRoleEditor
-          topicId={id!}
-          user={data.user}
-          roles={roles}
-          onChange={setRoles}
-          disabled={busy}
-          onReady={setRolesReady}
-        />
-      ) : (
-        <>
-          <PeoplePicker
-            label="토픽 참가자"
-            people={directory}
-            value={managerIds}
-            onChange={setManagerIds}
-            lockedIds={editing ? managers : [data.user.id]}
-          />
-          <p className="info-notice">
-            토픽을 만든 사람은 Owner가 됩니다. 선택한 회의 관리자는 Master 권한을 가집니다.
-          </p>
-        </>
-      )}
+      <TopicRoleEditor
+        topicId={editing ? id : undefined}
+        user={data.user}
+        roles={roles}
+        onChange={setRoles}
+        disabled={busy}
+        onReady={setRolesReady}
+      />
       <FormMessage error={error} />
       <div className="form-actions">
         <Button type="button" variant="secondary" onClick={close} disabled={busy}>

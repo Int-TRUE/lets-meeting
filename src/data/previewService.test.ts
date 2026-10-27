@@ -479,7 +479,7 @@ describe('topic organization and role changes', () => {
           ...topic,
           title: '변경되면 안 됨',
           managerIds: [],
-          roles: roles as typeof topic.roles,
+          roles: roles as unknown as typeof topic.roles,
           expectedRoles: topic.roles,
         }),
       ).rejects.toThrow();
@@ -499,4 +499,41 @@ describe('topic organization and role changes', () => {
       }),
     ).rejects.toThrow('새로고침');
   });
+});
+
+it('creates explicit topic participants without promoting Attendees to Master', async () => {
+  const id = await previewService.createTopic(
+    'kim',
+    {
+      title: '역할 지정',
+      description: '생성 권한',
+      managerIds: ['kim', 'lee'],
+      roles: { kim: 'Owner', lee: 'Master', park: 'Attendee' },
+    },
+    'explicit-roles',
+  );
+  const topic = (await previewService.snapshot('park')).topics.find((t) => t.id === id)!;
+  expect(topic.roles).toEqual({ kim: 'Owner', lee: 'Master', park: 'Attendee' });
+  await expect(
+    previewService.createMeeting('park', input({ topicId: id }), 'attendee-create'),
+  ).rejects.toThrow('관리자');
+  for (const roles of [
+    { kim: 'Attendee', lee: 'Owner' },
+    { kim: 'Owner', lee: 'Owner' },
+    { kim: 'Owner', unknown: 'Attendee' },
+    { kim: 'Owner', lee: 'Admin' },
+  ]) {
+    await expect(
+      previewService.createTopic(
+        'kim',
+        {
+          title: '거부',
+          description: '잘못된 역할',
+          managerIds: [],
+          roles: roles as unknown as typeof topic.roles,
+        },
+        JSON.stringify(roles),
+      ),
+    ).rejects.toThrow();
+  }
 });

@@ -3,221 +3,106 @@
 }
 .topic-role-editor {
   display: grid;
-  gap: 20px;
+  gap: 16px;
   min-width: 0;
 }
-.topic-role-editor h2,
-.topic-role-editor h3 {
-  margin: 0;
-}
-.role-search {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid var(--control-border);
-  border-radius: 12px;
-  padding: 0 16px;
-}
-.role-search input {
-  width: 100%;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  padding: 14px 0;
-  font: inherit;
-}
-.role-selected,
-.role-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.role-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 12px;
-  background: var(--primary-soft);
-}
-.role-chip button {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-}
-.topic-role {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.role-owner {
-  background: var(--warning-soft);
-  color: var(--warning-text);
-}
-.role-master {
-  background: var(--primary-soft);
-  color: var(--primary);
-}
-.role-attendee {
-  background: var(--completed-soft);
-  color: var(--text-secondary);
-}
-.role-legend > span {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-}
-.organization-panel {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-}
-.organization-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 24px;
-  padding: 16px;
-  border-bottom: 1px solid var(--border);
-}
-.organization-toolbar > span {
-  display: flex;
-  gap: 10px;
-  font-weight: 600;
-}
-.organization-toolbar select {
-  padding: 10px;
-  border: 1px solid var(--control-border);
-  border-radius: 10px;
-  background: var(--surface);
-  font: inherit;
-}
-.organization-columns {
-  display: grid;
-  grid-template-columns: minmax(210px, 28%) minmax(0, 1fr);
-  min-height: 340px;
-}
-.organization-teams {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px;
-  border-right: 1px solid var(--border);
-  max-height: 540px;
-  overflow: auto;
-}
-.organization-teams button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-}
-.organization-teams button[aria-pressed='true'] {
-  color: var(--primary);
-  background: var(--primary-soft);
-  box-shadow: inset 3px 0 var(--primary);
-}
-.organization-teams button > span {
-  margin-left: auto;
-  white-space: nowrap;
-  font-size: 13px;
-}
-.organization-teams small {
-  white-space: nowrap;
-}
-.organization-members {
-  padding: 20px;
-  min-width: 0;
-}
-.organization-members h3 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-.organization-table-wrap {
-  overflow: auto;
-}
-.organization-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-.organization-table th,
-.organization-table td {
-  padding: 12px 8px;
-  border-bottom: 1px solid var(--border);
-}
-.organization-table th {
-  background: var(--background);
-  font-size: 14px;
-}
-.organization-table input {
-  width: 22px;
-  height: 22px;
-  accent-color: var(--primary);
-}
-.organization-person {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  white-space: nowrap;
-}
-.organization-table select {
-  min-height: 32px;
-  border: 0;
-  background: transparent;
-  font: inherit;
-  color: inherit;
-}
-.organization-message {
-  padding: 24px;
-  text-align: center;
-}
-@media (max-width: 767px) {
-  .organization-columns {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .organization-teams {
-    max-height: 190px;
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .organization-members {
-    padding: 12px;
-  }
-  .organization-table {
-    min-width: 510px;
-  }
-  .role-legend {
-    flex-direction: column;
-  }
-}
-
-/* Keep all three peer section titles at the same visual hierarchy. */
 .topic-editor-form.stack-form > .field > label,
-.topic-editor-form.stack-form > .people-picker > legend,
-.topic-editor-form.stack-form > .topic-role-editor > h2 {
+.topic-participants-title {
   margin: 0;
   font-size: 20px;
   font-weight: 700;
   line-height: 1.4;
   letter-spacing: -0.025em;
   color: var(--text);
+}
+.topic-owner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+.topic-owner-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--warning-soft);
+  color: var(--warning-text);
+  font-weight: 600;
+}
+.topic-role-section {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  min-width: 0;
+}
+.topic-editor-form.stack-form .topic-role-section legend {
+  margin-bottom: 16px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.topic-role-description {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.topic-role-section .person-chip {
+  flex-wrap: nowrap;
+  background: var(--background);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.topic-role-section .person-chip-name {
+  overflow-wrap: anywhere;
+}
+.topic-role-section .person-option {
+  gap: 6px;
+  padding: 6px 8px;
+  min-height: 52px;
+}
+.topic-role-section .person-option > .person-avatar {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.topic-role-section .person-option small {
+  overflow-wrap: anywhere;
+}
+.topic-form-modal .topic-role-section .people-options {
+  max-height: 180px;
+}
+@media (min-width: 768px) {
+  .topic-role-section .people-options {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.topic-role-section .picker-label-description {
+  display: inline;
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.topic-participants-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.topic-participants-heading .topic-owner {
+  gap: 6px;
+  min-width: 0;
+}
+.topic-participants-heading .topic-owner > span:first-child {
+  overflow-wrap: anywhere;
+}
+.topic-participants-heading .topic-owner-badge {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  font-size: 12px;
 }

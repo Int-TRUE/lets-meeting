@@ -144,6 +144,12 @@ export function openDemoDatabase(path: string, profile: SeedProfile = 'clean') {
     try {
       const version = sql.prepare("SELECT value FROM metadata WHERE key='seed-version'").get();
       if (version?.value === expected) {
+        // Refresh demo labels only; stable IDs and all activity remain intact.
+        if (profile !== 'reference')
+          for (const person of testDirectory.filter((p) => p.isTestAccount))
+            sql
+              .prepare("UPDATE people SET data=json_set(data,'$.name',?) WHERE id=?")
+              .run(person.name, person.id);
         sql.exec('COMMIT');
         return;
       }

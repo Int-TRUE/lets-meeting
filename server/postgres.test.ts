@@ -196,9 +196,14 @@ describe.skipIf(!process.env.POSTGRES_TEST_URL)('real PostgreSQL transactions', 
         { title: '새 테스트', description: '보존 확인', managerIds: ['wooseok'] },
         'clean-test',
       );
+      const account = (await clean.directory()).find((p) => p.id === 'sujin')!;
+      await sql.query(
+        `UPDATE "${schema}".people SET data=jsonb_set(data,'{name}','"stale demo label"') WHERE id='sujin'`,
+      );
       const reopened = openPostgresDatabase(url, schema, url);
       try {
         await reopened.seed();
+        expect((await reopened.directory()).find((p) => p.id === 'sujin')).toEqual(account);
         configureTransactionAdapter(reopened.transaction);
         expect((await localService.snapshot('wooseok')).topics.some((t) => t.id === id)).toBe(true);
       } finally {

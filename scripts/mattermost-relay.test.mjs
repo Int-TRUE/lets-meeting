@@ -176,8 +176,8 @@ test('interactive callbacks verify recipient and original bot post before any cl
       mutations++;
       return {
         participants: [
-          { id: 'taeheon', name: '김태헌' },
-          { id: 'wooseok', name: '장우석' },
+          { id: 'taeheon', name: '태평양' },
+          { id: 'wooseok', name: '장금별' },
         ],
       };
     },

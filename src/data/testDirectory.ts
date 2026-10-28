@@ -3,15 +3,15 @@ import type { Person } from '../domain/models.js';
 export const testAccounts: Person[] = [
   {
     id: 'taeheon',
-    name: '김태헌',
+    name: '태평양',
     team: '시스템관리팀',
     position: '차장',
     isTestAccount: true,
     isAdmin: true,
   },
-  { id: 'sujin', name: '정수진', team: '정보개발팀', position: '대리', isTestAccount: true },
-  { id: 'wooseok', name: '장우석', team: 'DevOps기술팀', position: '계장', isTestAccount: true },
-  { id: 'jooyoung', name: '김주영', team: 'CMS개발팀', position: '계장', isTestAccount: true },
+  { id: 'sujin', name: '정금결', team: '정보개발팀', position: '대리', isTestAccount: true },
+  { id: 'wooseok', name: '장금별', team: 'DevOps기술팀', position: '계장', isTestAccount: true },
+  { id: 'jooyoung', name: '김금달', team: 'CMS개발팀', position: '계장', isTestAccount: true },
 ];
 
 // Fictional directory entries for participant selection, separate from sign-in accounts.

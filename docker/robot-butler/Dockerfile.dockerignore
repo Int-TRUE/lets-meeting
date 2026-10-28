@@ -11,3 +11,6 @@ data
 playwright-report
 test-results
 .agents
+
+backup
+.account-maintenance.lock

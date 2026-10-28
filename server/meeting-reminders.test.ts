@@ -184,14 +184,14 @@ test('invitation format contains topic, host, participants, materials and a safe
   Object.assign(log.payload!, {
     topicTitle: '정기 점검',
     host: '최승호 차장',
-    participants: ['정수진', '김태헌'],
+    participants: ['정금결', '태평양'],
     material: 'pending',
   });
   const message = notificationMessage(log, 'https://app.example');
   for (const text of [
     '**[회의 초대] 정기 점검 > 주간 회의**',
     '· **주최**: 최승호 차장',
-    '· 참가자: 정수진, 김태헌',
+    '· 참가자: 정금결, 태평양',
     '· 자료: 등록예정',
     '[회의상세보기](https://app.example/meetings/meeting)',
   ])

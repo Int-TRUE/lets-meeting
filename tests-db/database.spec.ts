@@ -21,13 +21,13 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
   await expect(page.getByRole('heading', { name: '테스트 계정 선택' })).toBeVisible();
   await mkdir('test-results/clean-workspace', { recursive: true });
   await page.screenshot({ path: 'test-results/clean-workspace/accounts.png', fullPage: true });
-  for (const name of ['김태헌', '정수진', '장우석', '김주영']) {
+  for (const name of ['태평양', '정금결', '장금별', '김금달']) {
     await page.getByRole('button', { name: `${name}으로 시작` }).click();
     await expect(page.getByRole('heading', { level: 1 })).toContainText(name);
     await expect(page.getByText('아직 예정된 회의가 없어요')).toBeVisible();
     await expect(page.getByText('아직 참여 중인 토픽이 없어요')).toBeVisible();
     await expect(page.getByRole('link', { name: '관리자 관리', exact: true })).toHaveCount(
-      name === '김태헌' ? 1 : 0,
+      name === '태평양' ? 1 : 0,
     );
     await expect(page.locator('.account-chooser')).toHaveCount(0);
     await expect(page.locator('.test-session-bar')).toHaveCount(0);
@@ -42,8 +42,8 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
     await page.getByRole('button', { name: '테스트 계정 변경', exact: true }).click();
     await expect(page).toHaveURL(/\/login$/);
   }
-  await page.getByRole('button', { name: '정수진으로 시작' }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('정수진');
+  await page.getByRole('button', { name: '정금결으로 시작' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('정금결');
   await page.screenshot({ path: 'test-results/clean-workspace/empty-home.png', fullPage: true });
   await page.getByRole('link', { name: '토픽 만들기', exact: true }).first().click();
   await page.getByLabel(/^주제명/).fill('첫 회의 테스트');
@@ -51,13 +51,13 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
   await page
     .getByRole('group', { name: 'Master', exact: true })
     .getByRole('searchbox')
-    .fill('장우석');
-  await page.getByRole('checkbox', { name: /장우석/ }).check();
+    .fill('장금별');
+  await page.getByRole('checkbox', { name: /장금별/ }).check();
   await page
     .getByRole('group', { name: 'Master', exact: true })
     .getByRole('searchbox')
-    .fill('김주영');
-  await page.getByRole('checkbox', { name: /김주영/ }).check();
+    .fill('김금달');
+  await page.getByRole('checkbox', { name: /김금달/ }).check();
   await page
     .getByRole('group', { name: 'Master', exact: true })
     .getByRole('searchbox')
@@ -76,10 +76,10 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
   const picker = page.locator('.people-picker');
   await expect(picker.getByRole('checkbox')).toHaveCount(4);
   await picker.getByRole('button', { name: '전체 추가', exact: true }).click();
-  await expect(picker.getByRole('checkbox', { name: /장우석/ })).toBeChecked();
+  await expect(picker.getByRole('checkbox', { name: /장금별/ })).toBeChecked();
   await picker.getByRole('searchbox').fill('CMS개발팀');
   await expect(picker.getByRole('checkbox')).toHaveCount(1);
-  await picker.getByRole('checkbox', { name: /김주영/ }).check();
+  await picker.getByRole('checkbox', { name: /김금달/ }).check();
   await picker.getByRole('searchbox').fill('박성민');
   await expect(picker.getByRole('checkbox')).toHaveCount(1);
   await expect(picker.locator('.person-option .person-avatar')).toHaveText('박');

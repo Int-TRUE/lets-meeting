@@ -187,6 +187,12 @@ export function openPostgresDatabase(
           [expected],
         );
       }
+      if (profile !== 'reference')
+        for (const person of testDirectory.filter((p) => p.isTestAccount))
+          await client.query(
+            `UPDATE ${table('people')} SET data=jsonb_set(data,'{name}',to_jsonb($1::text)) WHERE id=$2`,
+            [person.name, person.id],
+          );
       await client.query('COMMIT');
     } catch (error) {
       await client.query('ROLLBACK');

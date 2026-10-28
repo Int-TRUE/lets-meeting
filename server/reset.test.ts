@@ -52,7 +52,7 @@ test('reset replaces old accounts and activity once, preserves all rooms, and ke
         .directory()
         .filter((p) => p.isTestAccount)
         .map((p) => p.name),
-    ).toEqual(['김태헌', '정수진', '장우석', '김주영']);
+    ).toEqual(['태평양', '정금결', '장금별', '김금달']);
     expect(db.directory().some((p) => p.id === 'me')).toBe(false);
     for (const table of [
       'topics',
@@ -72,10 +72,29 @@ test('reset replaces old accounts and activity once, preserves all rooms, and ke
       { title: '처음 만든 Topic', description: '초기화 후 생성', managerIds: ['sujin'] },
       'new-topic',
     );
+    const account = db.directory().find((p) => p.id === 'sujin')!;
+    db.sql
+      .prepare('UPDATE people SET data=? WHERE id=?')
+      .run(JSON.stringify({ ...account, name: 'stale demo label' }), 'sujin');
+    const before = Object.fromEntries(
+      [
+        'topics',
+        'topic_members',
+        'meetings',
+        'meeting_participants',
+        'attachments',
+        'preferences',
+        'delivery_logs',
+        'requests',
+      ].map((table) => [table, db.sql.prepare(`SELECT * FROM ${table}`).all()]),
+    );
     db.close();
     db = openDemoDatabase(path);
     await db.seed();
     configureTransactionAdapter(db.transaction);
+    expect(db.directory().find((p) => p.id === 'sujin')).toEqual(account);
+    for (const [table, rows] of Object.entries(before))
+      expect(db.sql.prepare(`SELECT * FROM ${table}`).all()).toEqual(rows);
     expect((await localService.snapshot('sujin')).topics.find((t) => t.id === id)?.title).toBe(
       '처음 만든 Topic',
     );

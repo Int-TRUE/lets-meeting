@@ -27,7 +27,7 @@ assert.deepEqual(
     .filter((p) => p.isTestAccount)
     .map((p) => p.name)
     .sort(),
-  ['김태헌', '정수진', '장우석', '김주영'].sort(),
+  ['태평양', '정금결', '장금별', '김금달'].sort(),
 );
 const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL ?? 'chrome' });
 const output = 'test-results/deployment';
@@ -56,8 +56,8 @@ try {
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole('heading', { name: '테스트 계정 선택' })).toBeVisible();
   await page.screenshot({ path: output + '/accounts.png', fullPage: true });
-  await page.getByRole('button', { name: '정수진으로 시작' }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('정수진');
+  await page.getByRole('button', { name: '정금결으로 시작' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('정금결');
   await page.locator('img').evaluateAll((images) => Promise.all(images.map((img) => img.decode())));
   await page.screenshot({ path: output + '/home.png', fullPage: true });
   await page.goto('/rooms');
@@ -101,8 +101,8 @@ try {
     await page.getByRole('button', { name: '14:00 예약 가능', exact: true }).click();
     await page.getByRole('button', { name: '다음', exact: true }).click();
     await expect(page.locator('.people-picker').getByRole('checkbox')).toHaveCount(0);
-    await page.getByLabel('참가자 검색').fill('김주영');
-    await page.getByRole('checkbox', { name: /김주영/ }).check();
+    await page.getByLabel('참가자 검색').fill('김금달');
+    await page.getByRole('checkbox', { name: /김금달/ }).check();
     await page.getByLabel('참가자 검색').fill('박성민');
     await page.getByRole('checkbox', { name: /박성민/ }).check();
     await page.screenshot({ path: output + '/staff-picker.png', fullPage: true });

@@ -10,7 +10,7 @@
 - `.env.local`의 서버 전용 변수로 활성화한다. `VITE_` 접두사를 사용하지 않는다.
 - `MATTERMOST_ENABLED=true`, `MATTERMOST_URL`, `MATTERMOST_BOT_ID`, `MATTERMOST_BOT_TOKEN`, `MATTERMOST_USER_MAP`(직원 ID → Mattermost 사용자 ID JSON), `ROBOT_BUTLER_URL`을 설정한다.
 - 토큰·계정 비밀번호·매핑 파일은 Git에서 제외한다. URL은 HTTPS 또는 로컬 HTTP만 허용한다. 외부 응답·인증정보는 발송 이력에 남기지 않는다.
-- 시연 참가자 24명은 각각 별도 계정에 연결한다. 정수진은 사용자가 지정한 기존 관리자 계정에 연결하고, 나머지는 로컬 시연 전용 계정을 사용한다. 다른 사람의 알림을 관리자 한 명에게 몰아 보내지 않는다.
+- 시연 참가자 24명은 각각 별도 계정에 연결한다. 정금결은 사용자가 지정한 기존 관리자 계정에 연결하고, 나머지는 로컬 시연 전용 계정을 사용한다. 다른 사람의 알림을 관리자 한 명에게 몰아 보내지 않는다.
 
 ## 동작과 실패 처리
 
@@ -42,7 +42,7 @@ Vercel은 Mac의 `localhost`에 직접 접속하지 않는다. 사용자 요청�
 
 1. 처음 설치하거나 코드를 갱신한 뒤에는 프로젝트의 `start-mattermost-demo.command`를 더블 클릭한다. Docker Desktop을 열고 세 컨테이너를 생성·갱신한다. Mac에 Node.js를 별도로 실행할 필요가 없다.
 2. Docker Desktop에서 `relay`가 실행 중이고 건강 상태가 healthy인지 확인한다. 정상적인 인증·서버 조회에 성공하면 건강 상태가 갱신된다. 시작 직후에는 starting으로 표시될 수 있다.
-3. https://robot-butler.vercel.app 에서 회의를 생성·변경·취소한다. http://localhost:8065 의 `robot-butler` DM에서 확인한다. 정수진은 기존 `inttrue` 계정이다. 발송 결과는 회의 화면의 새로고침으로 확인한다.
+3. https://robot-butler.vercel.app 에서 회의를 생성·변경·취소한다. http://localhost:8065 의 `robot-butler` DM에서 확인한다. 정금결은 `jeong` 계정이다. 발송 결과는 회의 화면의 새로고침으로 확인한다.
 4. 시작 파일의 터미널 창은 닫아도 된다. 종료하려면 Docker Desktop에서 그룹 전체를 정지하거나 Docker Desktop을 종료한다. Mac의 잠자기·덮개 닫힘 상태에서는 중계도 중단되므로 시연 중에는 맥을 깨어 있게 둔다.
 
 Docker의 `restart: always` 정책을 사용하므로 수동 정지한 컨테이너도 다음 Docker 재시작 때 다시 시작된다. macOS 로그인 시 Docker 자체를 자동 실행하는 설정까지 변경한 것은 아니다. [Docker 재시작 정책](https://docs.docker.com/engine/containers/start-containers-automatically/) 참고.

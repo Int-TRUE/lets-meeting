@@ -143,7 +143,7 @@ try {
       await page.goto(env.PUBLIC_ORIGIN + '/login');
       assert.equal(await page.evaluate(() => isSecureContext), false);
       assert.equal(await page.evaluate(() => typeof crypto.randomUUID), 'undefined');
-      await page.getByRole('button', { name: '김태헌으로 시작' }).click();
+      await page.getByRole('button', { name: '태평양으로 시작' }).click();
       await page.getByRole('link', { name: '토픽 만들기', exact: true }).first().click();
       await page.getByLabel(/^주제명/).fill('HTTP browser topic');
       await page

@@ -229,3 +229,23 @@ test('meeting edit, file registration and deletion respect actor permissions', a
   await page.goto(url + '/edit');
   await expect(page.getByRole('heading', { name: '이 정보에 접근할 수 없어요' })).toBeVisible();
 });
+
+test('last evening slot books through 23:00', async ({ page }) => {
+  await open(page, '/topics/system/meetings/new');
+  await page.getByLabel(/^회의명/).fill('저녁 회의');
+  await page.getByLabel(/^회의 내용·안건/).fill('23시까지 예약 확인');
+  await page.getByRole('button', { name: '다음', exact: true }).click();
+  await page.getByLabel('회의 일자 *').fill('2026-10-21');
+  await expect(page.getByText('예약 가능 시간 09:00–23:00 · 30분 단위')).toBeVisible();
+  await expect(page.getByRole('button', { name: '23:00 예약 가능', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: '22:30 예약 가능', exact: true }).click();
+  await expect(page.getByText('22:30 – 23:00 · 30분')).toBeVisible();
+  await page.getByRole('button', { name: '다음', exact: true }).click();
+  await page.getByRole('button', { name: '다음', exact: true }).click();
+  await page.getByRole('button', { name: '회의 생성', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '회의 생성이 완료되었어요!' })).toBeVisible();
+  await page.getByRole('link', { name: '회의 상세 보기', exact: true }).click();
+  await page.reload();
+  await expect(page.getByRole('heading', { level: 1, name: '저녁 회의' })).toBeVisible();
+  await expect(page.locator('.meeting-header-meta')).toContainText('23:00');
+});

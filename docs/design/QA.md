@@ -77,3 +77,8 @@ Markdown 내부 링크, 필수 20개 화면 ID, 토큰 JSON, 이미지 존재·�
 ## 2026-10-26 - Approved standalone server and delivery UI removal
 
 User approved replacing the relay with direct delivery in the standalone server and starting a fresh PostgreSQL database, leaving Neon untouched. Screens 12 and 13 no longer show delivery status or refresh controls; the creator's manual reminder remains. Screen 19 delivery history is removed, and its old URL redirects to permission-checked room administration. Public delivery-history APIs are disabled. Internal send intents and receipts remain for duplicate prevention. Verify scheduled reminders, signed late/extension actions, reservation conflicts, restart ambiguity, attachment preservation, and the absence of delivery UI.
+
+
+## 2026-10-30 — 기본 예약 시간 확대
+
+사용자 요청으로 D04의 기본 시간을 09:00~23:00으로 변경한다. 화면 10의 시간 선택·안내, 서버 예약 검증과 회의 연장에 동일한 정책을 적용한다. 22:30~23:00 예약과 23:00까지 연장은 허용하고, 09:00 이전·23:00 이후와 30분 단위 밖의 예약은 거절한다.

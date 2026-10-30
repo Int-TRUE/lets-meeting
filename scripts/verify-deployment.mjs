@@ -21,13 +21,13 @@ const rpc = async (method, args) => {
 const directoryResponse = await fetch(new URL('/api/demo/directory', target), { headers: auth });
 assert.equal(directoryResponse.status, 200);
 const catalog = await directoryResponse.json();
-assert.equal(catalog.people.length, 4);
+assert.equal(catalog.people.length, 5);
 assert.deepEqual(
   catalog.people
     .filter((p) => p.isTestAccount)
     .map((p) => p.name)
     .sort(),
-  ['태평양', '정금결', '장금별', '김금달'].sort(),
+  ['테스터', '태평양', '정금결', '장금별', '김금달'].sort(),
 );
 const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL ?? 'chrome' });
 const output = 'test-results/deployment';
@@ -159,8 +159,8 @@ try {
       status: 'passed',
       origin: target.origin,
       checks: [
-        '24 employees',
-        '4 account choices',
+        '25 directory entries',
+        '5 account choices',
         'home',
         ...(process.env.DEPLOYMENT_WRITE_TEST === 'true'
           ? ['first meeting', 'staff picker', 'cross-browser persistence', 'file bytes', 'reload']

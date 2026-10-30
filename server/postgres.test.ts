@@ -175,7 +175,7 @@ describe.skipIf(!process.env.POSTGRES_TEST_URL)('real PostgreSQL transactions', 
       const before = (await sql.query(`SELECT * FROM "${schema}".rooms ORDER BY id`)).rows;
       await clean.seed();
       expect((await sql.query(`SELECT * FROM "${schema}".rooms ORDER BY id`)).rows).toEqual(before);
-      expect(await clean.directory()).toHaveLength(24);
+      expect(await clean.directory()).toHaveLength(25);
       for (const name of [
         'topics',
         'meetings',
@@ -200,11 +200,16 @@ describe.skipIf(!process.env.POSTGRES_TEST_URL)('real PostgreSQL transactions', 
       await sql.query(
         `UPDATE "${schema}".people SET data=jsonb_set(data,'{name}','"stale demo label"') WHERE id='sujin'`,
       );
+      await sql.query(`DELETE FROM "${schema}".people WHERE id='tester'`);
       const reopened = openPostgresDatabase(url, schema, url);
       try {
         await reopened.seed();
         expect((await reopened.directory()).find((p) => p.id === 'sujin')).toEqual(account);
         configureTransactionAdapter(reopened.transaction);
+        expect((await reopened.directory()).filter((p) => p.id === 'tester')).toHaveLength(1);
+        const tester = await localService.snapshot('tester');
+        expect(tester.user.isAdmin).toBeFalsy();
+        expect(tester.topics).toHaveLength(0);
         expect((await localService.snapshot('wooseok')).topics.some((t) => t.id === id)).toBe(true);
       } finally {
         await reopened.close();

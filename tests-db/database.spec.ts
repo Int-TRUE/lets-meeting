@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { mkdir, readFile } from 'node:fs/promises';
 
-test('clean workspace: four accounts, staff directory, first meeting and shared files', async ({
+test('clean workspace: five accounts, staff directory, first meeting and shared files', async ({
   page,
   browser,
   request,
@@ -11,9 +11,9 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
       sessionStorage.setItem('robot-butler:preview-user:v1', 'me');
   });
   const catalog = await (await request.get('/api/demo/directory')).json();
-  expect(catalog.people).toHaveLength(4);
+  expect(catalog.people).toHaveLength(5);
   expect(catalog.people.filter((p: { isTestAccount?: boolean }) => p.isTestAccount)).toHaveLength(
-    4,
+    5,
   );
   expect(catalog.rooms).toHaveLength(5);
   await page.goto('/');
@@ -21,7 +21,7 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
   await expect(page.getByRole('heading', { name: '테스트 계정 선택' })).toBeVisible();
   await mkdir('test-results/clean-workspace', { recursive: true });
   await page.screenshot({ path: 'test-results/clean-workspace/accounts.png', fullPage: true });
-  for (const name of ['태평양', '정금결', '장금별', '김금달']) {
+  for (const name of ['테스터', '태평양', '정금결', '장금별', '김금달']) {
     await page.getByRole('button', { name: `${name}으로 시작` }).click();
     await expect(page.getByRole('heading', { level: 1 })).toContainText(name);
     await expect(page.getByText('아직 예정된 회의가 없어요')).toBeVisible();

@@ -113,7 +113,7 @@ try {
   start();
   await ready();
   const directory = await (await fetch('http://127.0.0.1:18088/api/demo/directory')).json();
-  assert.equal(directory.people.length, 4);
+  assert.equal(directory.people.length, 5);
   assert.match(await (await fetch('http://127.0.0.1:18088/login')).text(), /<div id="root">/);
   for (const method of ['meetingDelivery', 'adminLogs'])
     assert.equal(

@@ -46,13 +46,13 @@ test('reset replaces old accounts and activity once, preserves all rooms, and ke
     db = openDemoDatabase(path);
     await db.seed();
     expect(db.rooms()).toEqual(rooms);
-    expect(db.directory()).toHaveLength(24);
+    expect(db.directory()).toHaveLength(25);
     expect(
       db
         .directory()
         .filter((p) => p.isTestAccount)
         .map((p) => p.name),
-    ).toEqual(['태평양', '정금결', '장금별', '김금달']);
+    ).toEqual(['테스터', '태평양', '정금결', '장금별', '김금달']);
     expect(db.directory().some((p) => p.id === 'me')).toBe(false);
     for (const table of [
       'topics',
@@ -76,6 +76,8 @@ test('reset replaces old accounts and activity once, preserves all rooms, and ke
     db.sql
       .prepare('UPDATE people SET data=? WHERE id=?')
       .run(JSON.stringify({ ...account, name: 'stale demo label' }), 'sujin');
+    // Simulate an existing installation from before the tester account was added.
+    db.sql.prepare("DELETE FROM people WHERE id='tester'").run();
     const before = Object.fromEntries(
       [
         'topics',
@@ -93,6 +95,10 @@ test('reset replaces old accounts and activity once, preserves all rooms, and ke
     await db.seed();
     configureTransactionAdapter(db.transaction);
     expect(db.directory().find((p) => p.id === 'sujin')).toEqual(account);
+    expect(db.directory().filter((p) => p.id === 'tester')).toHaveLength(1);
+    const tester = await localService.snapshot('tester');
+    expect(tester.user.isAdmin).toBeFalsy();
+    expect(tester.topics).toHaveLength(0);
     for (const [table, rows] of Object.entries(before))
       expect(db.sql.prepare(`SELECT * FROM ${table}`).all()).toEqual(rows);
     expect((await localService.snapshot('sujin')).topics.find((t) => t.id === id)?.title).toBe(

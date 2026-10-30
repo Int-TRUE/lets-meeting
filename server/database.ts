@@ -144,12 +144,16 @@ export function openDemoDatabase(path: string, profile: SeedProfile = 'clean') {
     try {
       const version = sql.prepare("SELECT value FROM metadata WHERE key='seed-version'").get();
       if (version?.value === expected) {
-        // Refresh demo labels only; stable IDs and all activity remain intact.
+        // Add missing sign-in accounts without resetting activity or existing permissions.
         if (profile !== 'reference')
-          for (const person of testDirectory.filter((p) => p.isTestAccount))
+          for (const person of testDirectory.filter((p) => p.isTestAccount)) {
+            sql
+              .prepare('INSERT OR IGNORE INTO people VALUES (?,?)')
+              .run(person.id, JSON.stringify(person));
             sql
               .prepare("UPDATE people SET data=json_set(data,'$.name',?) WHERE id=?")
               .run(person.name, person.id);
+          }
         sql.exec('COMMIT');
         return;
       }

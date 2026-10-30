@@ -1,6 +1,7 @@
 import type { Person } from '../domain/models.js';
 
 export const testAccounts: Person[] = [
+  { id: 'tester', name: '테스터', team: '테스트', isTestAccount: true },
   {
     id: 'taeheon',
     name: '태평양',

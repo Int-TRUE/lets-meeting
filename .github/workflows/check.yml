@@ -38,6 +38,7 @@ jobs:
       - run: npm run test:selfhost:http
       - run: python3 scripts/selfhost-network.test.py
       - run: python3 scripts/account-maintenance.test.py
+      - run: python3 scripts/link-tester-account.test.py
       - run: node --test scripts/judging-dataset.test.mjs
       - run: python3 scripts/replace-judging-data.test.py
       - name: Verify preinstalled browser

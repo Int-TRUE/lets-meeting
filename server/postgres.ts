@@ -188,11 +188,16 @@ export function openPostgresDatabase(
         );
       }
       if (profile !== 'reference')
-        for (const person of testDirectory.filter((p) => p.isTestAccount))
+        for (const person of testDirectory.filter((p) => p.isTestAccount)) {
+          await client.query(
+            `INSERT INTO ${table('people')} (id,data) VALUES ($1,$2) ON CONFLICT(id) DO NOTHING`,
+            [person.id, JSON.stringify(person)],
+          );
           await client.query(
             `UPDATE ${table('people')} SET data=jsonb_set(data,'{name}',to_jsonb($1::text)) WHERE id=$2`,
             [person.name, person.id],
           );
+        }
       await client.query('COMMIT');
     } catch (error) {
       await client.query('ROLLBACK');

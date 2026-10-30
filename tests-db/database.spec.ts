@@ -118,6 +118,17 @@ test('clean workspace: four accounts, staff directory, first meeting and shared 
   });
   await other.goto('/rooms');
   await other.locator('.room-list-item').filter({ hasText: '9층 대회의실' }).click();
+  // A reservation three days ahead can belong to the next month at month-end.
+  const [bookingYear, bookingMonth] = date.split('-').map(Number);
+  const calendarHeading = other.locator('.room-calendar-header h3');
+  const displayedMonth = await calendarHeading.innerText();
+  const [currentYear, currentMonth] = displayedMonth.match(/\d+/g)!.map(Number);
+  const monthOffset = (bookingYear - currentYear) * 12 + bookingMonth - currentMonth;
+  for (let i = 0; i < Math.abs(monthOffset); i++)
+    await other
+      .getByRole('button', { name: monthOffset > 0 ? '다음 달' : '이전 달', exact: true })
+      .click();
+  await expect(calendarHeading).toHaveText(`${bookingYear}년 ${bookingMonth}월`);
   await other.getByRole('button', { name: new RegExp(`^${date}, 회의`) }).click();
   await expect(other.locator('.room-agenda')).toContainText('처음 만드는 회의');
   await page.route('**/api/demo/roomSchedule', (route) =>

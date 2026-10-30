@@ -117,7 +117,11 @@ test('extension checks intervening reservations, original end, business hours an
   expect(db.logs.filter((l) => l.event === 'changed')).toHaveLength(3);
   const late = fixture();
   late.meetings[0].end = '2026-10-26T18:00:00+09:00';
-  expect(availableExtensions(late, late.meetings[0], at('17:55'))).toEqual([]);
+  expect(availableExtensions(late, late.meetings[0], at('17:55'))).toEqual([30, 60]);
+  late.meetings[0].end = '2026-10-26T22:30:00+09:00';
+  expect(availableExtensions(late, late.meetings[0], at('22:25'))).toEqual([30]);
+  late.meetings[0].end = '2026-10-26T23:00:00+09:00';
+  expect(availableExtensions(late, late.meetings[0], at('22:55'))).toEqual([]);
 });
 test('text stays accessible, banners are limited, tickets cannot be altered or used after expiry', () => {
   const db = fixture(),

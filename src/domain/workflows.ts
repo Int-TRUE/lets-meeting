@@ -32,7 +32,7 @@ export const rooms: Room[] = [
   },
 ];
 // Preview configuration, not a decision about the external reservation service.
-export const previewPolicy = { slotMinutes: 30, startHour: 9, endHour: 18 };
+export const previewPolicy = { slotMinutes: 30, startHour: 9, endHour: 23 };
 export const reminderChoices = ['전일 17시', '1시간 전', '30분 전', '10분 전'];
 export const defaultPreferences: NotificationSettings = {
   materials: true,

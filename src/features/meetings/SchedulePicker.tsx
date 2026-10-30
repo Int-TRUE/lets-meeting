@@ -178,7 +178,11 @@ export function SchedulePicker({
                 ? `${value.startTime} – ${value.endTime} · ${minutes}분`
                 : '시간을 선택해주세요'}
             </strong>
-            <p>미리보기는 30분 단위 · 09:00–18:00 예시 정책입니다.</p>
+            <p>
+              예약 가능 시간 {String(previewPolicy.startHour).padStart(2, '0')}:00–
+              {String(previewPolicy.endHour).padStart(2, '0')}:00 · {previewPolicy.slotMinutes}분
+              단위
+            </p>
           </div>
         </Card>
         {actions}

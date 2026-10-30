@@ -537,3 +537,33 @@ it('creates explicit topic participants without promoting Attendees to Master', 
     ).rejects.toThrow();
   }
 });
+
+it('books through 23:00 while rejecting out-of-hours and off-grid reservations', async () => {
+  const id = await previewService.createMeeting(
+    'kim',
+    input({
+      start: '2026-10-21T22:30:00+09:00',
+      end: '2026-10-21T23:00:00+09:00',
+    }),
+    'evening',
+  );
+  expect((await previewService.snapshot('kim')).meetings.find((m) => m.id === id)?.end).toBe(
+    '2026-10-21T23:00:00+09:00',
+  );
+  for (const [start, end] of [
+    ['08:30', '09:00'],
+    ['23:00', '23:30'],
+    ['21:05', '21:35'],
+  ]) {
+    await expect(
+      previewService.createMeeting(
+        'kim',
+        input({
+          start: `2026-10-21T${start}:00+09:00`,
+          end: `2026-10-21T${end}:00+09:00`,
+        }),
+        `invalid-${start}`,
+      ),
+    ).rejects.toThrow('예약 범위');
+  }
+});
